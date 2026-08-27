@@ -1,0 +1,406 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "trip_type",
+  "column_break_39",
+  "customer",
+  "customer_name",
+  "customer_phone",
+  "itinerary_37",
+  "route_stops",
+  "total_distance_km",
+  "column_break_40",
+  "departure_datetime",
+  "return_trip",
+  "capacity_38",
+  "vehicle_type",
+  "passengers",
+  "column_break_41",
+  "luggage_pieces",
+  "special_requirements",
+  "pricing_negotiated_39",
+  "suggested_fare",
+  "agreed_price",
+  "column_break_42",
+  "negotiation_note",
+  "quoted_by",
+  "quoted_on",
+  "quote_expires_on",
+  "currency",
+  "payment_40",
+  "payment_method",
+  "payment_status",
+  "column_break_43",
+  "payment_transaction",
+  "dispatch_41",
+  "assigned_driver",
+  "dispatch_trip",
+  "column_break_44",
+  "current_stop_index",
+  "picked_up_at",
+  "completed_at",
+  "state_42",
+  "workflow_state",
+  "status_history",
+  "cancellation_reason"
+ ],
+ "fields": [
+  {
+   "default": "TR-.YYYY.-.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "idx": 1,
+   "label": "Series",
+   "no_copy": 1,
+   "options": "TR-.YYYY.-.####",
+   "print_hide": 1,
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "default": "Passenger",
+   "fieldname": "trip_type",
+   "fieldtype": "Select",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Trip Type",
+   "options": "Passenger\nGoods"
+  },
+  {
+   "fieldname": "column_break_39",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Customer (User)",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "customer.full_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "customer_phone",
+   "fieldtype": "Data",
+   "idx": 6,
+   "label": "Customer Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "itinerary_37",
+   "fieldtype": "Section Break",
+   "idx": 7,
+   "label": "Itinerary"
+  },
+  {
+   "description": "Ordered list of stops. First = pickup origin, last = final destination.",
+   "fieldname": "route_stops",
+   "fieldtype": "Table",
+   "idx": 8,
+   "label": "Route Stops",
+   "options": "Transport Stop",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_distance_km",
+   "fieldtype": "Float",
+   "idx": 9,
+   "label": "Total Distance (km)",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_40",
+   "fieldtype": "Column Break",
+   "idx": 10
+  },
+  {
+   "fieldname": "departure_datetime",
+   "fieldtype": "Datetime",
+   "idx": 11,
+   "label": "Requested Departure"
+  },
+  {
+   "default": "0",
+   "fieldname": "return_trip",
+   "fieldtype": "Check",
+   "idx": 12,
+   "label": "Return Trip"
+  },
+  {
+   "fieldname": "capacity_38",
+   "fieldtype": "Section Break",
+   "idx": 13,
+   "label": "Capacity"
+  },
+  {
+   "default": "Car",
+   "fieldname": "vehicle_type",
+   "fieldtype": "Select",
+   "idx": 14,
+   "in_standard_filter": 1,
+   "label": "Vehicle Type",
+   "options": "Car\nVan\nPickup\nTruck\nBus",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "passengers",
+   "fieldtype": "Int",
+   "idx": 15,
+   "label": "Passengers"
+  },
+  {
+   "fieldname": "column_break_41",
+   "fieldtype": "Column Break",
+   "idx": 16
+  },
+  {
+   "default": "0",
+   "fieldname": "luggage_pieces",
+   "fieldtype": "Int",
+   "idx": 17,
+   "label": "Luggage Pieces"
+  },
+  {
+   "fieldname": "special_requirements",
+   "fieldtype": "Small Text",
+   "idx": 18,
+   "label": "Special Requirements"
+  },
+  {
+   "fieldname": "pricing_negotiated_39",
+   "fieldtype": "Section Break",
+   "idx": 19,
+   "label": "Pricing (negotiated)"
+  },
+  {
+   "description": "Computed reference only - the binding price is the agreed price.",
+   "fieldname": "suggested_fare",
+   "fieldtype": "Currency",
+   "idx": 20,
+   "label": "System Suggested Fare",
+   "read_only": 1
+  },
+  {
+   "description": "Entered by Operations after direct contact with the customer.",
+   "fieldname": "agreed_price",
+   "fieldtype": "Currency",
+   "idx": 21,
+   "in_list_view": 1,
+   "label": "Agreed Price"
+  },
+  {
+   "fieldname": "column_break_42",
+   "fieldtype": "Column Break",
+   "idx": 22
+  },
+  {
+   "fieldname": "negotiation_note",
+   "fieldtype": "Small Text",
+   "idx": 23,
+   "label": "Negotiation Note"
+  },
+  {
+   "fieldname": "quoted_by",
+   "fieldtype": "Link",
+   "idx": 24,
+   "label": "Quoted By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "quoted_on",
+   "fieldtype": "Datetime",
+   "idx": 25,
+   "label": "Quoted On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "quote_expires_on",
+   "fieldtype": "Datetime",
+   "idx": 26,
+   "label": "Quote Expires On",
+   "read_only": 1
+  },
+  {
+   "default": "TZS",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "idx": 27,
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "fieldname": "payment_40",
+   "fieldtype": "Section Break",
+   "idx": 28,
+   "label": "Payment"
+  },
+  {
+   "default": "Cash On Delivery",
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
+   "idx": 29,
+   "label": "Payment Method",
+   "options": "Cash On Delivery\nM-Pesa\nTigo Pesa\nCard"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "idx": 30,
+   "in_standard_filter": 1,
+   "label": "Payment Status",
+   "options": "Pending\nAuthorized\nPaid\nFailed\nRefunded"
+  },
+  {
+   "fieldname": "column_break_43",
+   "fieldtype": "Column Break",
+   "idx": 31
+  },
+  {
+   "fieldname": "payment_transaction",
+   "fieldtype": "Link",
+   "idx": 32,
+   "label": "Payment Transaction",
+   "options": "Payment Transaction",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dispatch_41",
+   "fieldtype": "Section Break",
+   "idx": 33,
+   "label": "Dispatch"
+  },
+  {
+   "fieldname": "assigned_driver",
+   "fieldtype": "Link",
+   "idx": 34,
+   "in_standard_filter": 1,
+   "label": "Assigned Driver",
+   "options": "Delivery Driver"
+  },
+  {
+   "fieldname": "dispatch_trip",
+   "fieldtype": "Link",
+   "idx": 35,
+   "label": "Dispatch Trip",
+   "options": "Dispatch Trip",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_44",
+   "fieldtype": "Column Break",
+   "idx": 36
+  },
+  {
+   "default": "0",
+   "fieldname": "current_stop_index",
+   "fieldtype": "Int",
+   "idx": 37,
+   "label": "Current Stop"
+  },
+  {
+   "fieldname": "picked_up_at",
+   "fieldtype": "Datetime",
+   "idx": 38,
+   "label": "Trip Started At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed_at",
+   "fieldtype": "Datetime",
+   "idx": 39,
+   "label": "Completed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "state_42",
+   "fieldtype": "Section Break",
+   "idx": 40,
+   "label": "State"
+  },
+  {
+   "default": "REQUESTED",
+   "fieldname": "workflow_state",
+   "fieldtype": "Select",
+   "idx": 41,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Workflow State",
+   "options": "REQUESTED\nUNDER_REVIEW\nPRICE_AGREED\nPENDING\nACCEPTED\nPREPARING\nDRIVER_ASSIGNED\nPICKED_UP\nCOMPLETED\nCANCELLED",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status_history",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "idx": 42,
+   "label": "Status History",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Small Text",
+   "idx": 43,
+   "label": "Cancellation Reason"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Transport Request",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Driver",
+   "write": 1
+  },
+  {
+   "if_owner": 1,
+   "read": 1,
+   "role": "Customer"
+  }
+ ],
+ "search_fields": "customer_name,workflow_state",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "customer_name"
+}

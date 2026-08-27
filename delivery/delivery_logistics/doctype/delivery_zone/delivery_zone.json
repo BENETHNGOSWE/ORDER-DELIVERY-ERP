@@ -1,0 +1,118 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:zone_name",
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "zone_name",
+  "city",
+  "column_break_13",
+  "base_fee",
+  "per_km_fee",
+  "distance_km",
+  "coverage_12",
+  "enabled",
+  "services"
+ ],
+ "fields": [
+  {
+   "fieldname": "zone_name",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Zone Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Dar es Salaam",
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "City"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "default": "2000",
+   "fieldname": "base_fee",
+   "fieldtype": "Currency",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Base Delivery Fee"
+  },
+  {
+   "default": "500",
+   "fieldname": "per_km_fee",
+   "fieldtype": "Currency",
+   "idx": 5,
+   "label": "Per KM Fee"
+  },
+  {
+   "default": "5",
+   "fieldname": "distance_km",
+   "fieldtype": "Float",
+   "idx": 6,
+   "label": "Typical Distance (km)"
+  },
+  {
+   "fieldname": "coverage_12",
+   "fieldtype": "Section Break",
+   "idx": 7,
+   "label": "Coverage"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "idx": 8,
+   "label": "Enabled"
+  },
+  {
+   "description": "Comma separated: Food, Retail, Parcel, Transport",
+   "fieldname": "services",
+   "fieldtype": "Small Text",
+   "idx": 9,
+   "label": "Supported Services"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Delivery Zone",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

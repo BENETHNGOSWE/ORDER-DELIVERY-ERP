@@ -1,0 +1,252 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:merchant_id",
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "merchant_id",
+  "merchant_name",
+  "column_break_8",
+  "service_type",
+  "status",
+  "contact_location_8",
+  "phone",
+  "email",
+  "column_break_9",
+  "city",
+  "area",
+  "full_address",
+  "portal_access_9",
+  "portal_user",
+  "column_break_10",
+  "commission_rate",
+  "operations_10",
+  "avg_prep_minutes",
+  "delivery_radius_km",
+  "column_break_11",
+  "minimum_order_value",
+  "logo",
+  "geo_11",
+  "latitude",
+  "column_break_12",
+  "longitude"
+ ],
+ "fields": [
+  {
+   "fieldname": "merchant_id",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Merchant ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "merchant_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Merchant Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "default": "Food",
+   "fieldname": "service_type",
+   "fieldtype": "Select",
+   "idx": 4,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Service Type",
+   "options": "Food\nRetail\nFood & Retail",
+   "reqd": 1
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 5,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nClosed\nSuspended"
+  },
+  {
+   "fieldname": "contact_location_8",
+   "fieldtype": "Section Break",
+   "idx": 6,
+   "label": "Contact & Location"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "idx": 7,
+   "label": "Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "idx": 8,
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "default": "Dar es Salaam",
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "idx": 10,
+   "label": "City"
+  },
+  {
+   "description": "e.g. Mikocheni, Masaki, Kariakoo",
+   "fieldname": "area",
+   "fieldtype": "Data",
+   "idx": 11,
+   "label": "Area / Zone"
+  },
+  {
+   "fieldname": "full_address",
+   "fieldtype": "Small Text",
+   "idx": 12,
+   "label": "Pickup Address"
+  },
+  {
+   "fieldname": "portal_access_9",
+   "fieldtype": "Section Break",
+   "idx": 13,
+   "label": "Portal Access"
+  },
+  {
+   "description": "The login that may accept orders and manage this catalog.",
+   "fieldname": "portal_user",
+   "fieldtype": "Link",
+   "idx": 14,
+   "label": "Portal User",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break",
+   "idx": 15
+  },
+  {
+   "description": "Blank = use the Logistics Settings default.",
+   "fieldname": "commission_rate",
+   "fieldtype": "Percent",
+   "idx": 16,
+   "label": "Commission (%)"
+  },
+  {
+   "fieldname": "operations_10",
+   "fieldtype": "Section Break",
+   "idx": 17,
+   "label": "Operations"
+  },
+  {
+   "default": "25",
+   "fieldname": "avg_prep_minutes",
+   "fieldtype": "Int",
+   "idx": 18,
+   "label": "Average Prep Time (min)"
+  },
+  {
+   "default": "10",
+   "fieldname": "delivery_radius_km",
+   "fieldtype": "Float",
+   "idx": 19,
+   "label": "Delivery Radius (km)"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break",
+   "idx": 20
+  },
+  {
+   "default": "0",
+   "fieldname": "minimum_order_value",
+   "fieldtype": "Currency",
+   "idx": 21,
+   "label": "Minimum Order Value"
+  },
+  {
+   "fieldname": "logo",
+   "fieldtype": "Attach Image",
+   "idx": 22,
+   "label": "Logo"
+  },
+  {
+   "fieldname": "geo_11",
+   "fieldtype": "Section Break",
+   "idx": 23,
+   "label": "Geo"
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "idx": 24,
+   "label": "Latitude",
+   "precision": "6"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break",
+   "idx": 25
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "idx": 26,
+   "label": "Longitude",
+   "precision": "6"
+  }
+ ],
+ "image_field": "logo",
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Merchant",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Merchant User"
+  }
+ ],
+ "search_fields": "merchant_name,city",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "merchant_name"
+}

@@ -1,0 +1,21 @@
+{% set u = frappe.session.user %}
+{% set roles = frappe.get_roles(u) if (u and u != 'Guest') else [] %}
+{% set here = frappe.request.path if frappe.request else '' %}
+<nav class="dl-nav">
+  <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}>Home</a>
+  <a href="/delivery/menu">Menu</a>
+  <a href="/delivery/cart">Cart (<span data-cart-count>0</span>)</a>
+  <a href="/delivery/parcel">Parcel</a>
+  <a href="/delivery/transport">Transport</a>
+  <a href="/delivery/track">Track</a>
+  {% if u and u != 'Guest' %}
+    <a href="/delivery/me">My Orders</a>
+    {% if 'Merchant User' in roles %}<a href="/delivery/merchant">Merchant</a>{% endif %}
+    {% if 'Delivery Operations' in roles or 'System Manager' in roles %}
+      <a href="/delivery/operations">Operations</a>{% endif %}
+    {% if 'Driver' in roles %}<a href="/delivery/driver">Driver</a>{% endif %}
+    <a href="/api/method/logout">Log out</a>
+  {% else %}
+    <a href="/login?redirect-to=/delivery">Log in</a>
+  {% endif %}
+</nav>

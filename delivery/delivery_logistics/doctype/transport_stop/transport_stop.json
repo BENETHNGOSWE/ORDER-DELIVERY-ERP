@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "idx_label",
+  "address",
+  "column_break_45",
+  "stop_type",
+  "distance_from_prev_km",
+  "status",
+  "eta_minutes",
+  "section_43",
+  "contact_name",
+  "contact_phone",
+  "notes"
+ ],
+ "fields": [
+  {
+   "description": "e.g. Home, Airport, Office",
+   "fieldname": "idx_label",
+   "fieldtype": "Data",
+   "idx": 1,
+   "label": "Stop Label"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_45",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "default": "Waypoint",
+   "fieldname": "stop_type",
+   "fieldtype": "Select",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Stop Type",
+   "options": "Pickup\nDrop-off\nWaypoint"
+  },
+  {
+   "fieldname": "distance_from_prev_km",
+   "fieldtype": "Float",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Distance From Previous (km)",
+   "precision": "2"
+  },
+  {
+   "default": "Pending",
+   "description": "Advanced by the driver as the trip progresses.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 6,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nArrived\nCompleted\nSkipped"
+  },
+  {
+   "fieldname": "eta_minutes",
+   "fieldtype": "Int",
+   "idx": 7,
+   "label": "ETA (min from start)"
+  },
+  {
+   "fieldname": "section_43",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": ""
+  },
+  {
+   "fieldname": "contact_name",
+   "fieldtype": "Data",
+   "idx": 9,
+   "label": "Contact Name"
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "idx": 10,
+   "label": "Contact Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "idx": 11,
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Transport Stop",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

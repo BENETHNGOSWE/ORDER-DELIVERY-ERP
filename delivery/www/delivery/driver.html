@@ -1,0 +1,104 @@
+{% set page_title = "Driver" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <div class="dl-between">
+    <div><h2 id="who" class="dl-section-title" style="margin:0">Driver dashboard</h2>
+      <div id="meta" class="dl-mut"></div></div>
+    <select id="avail" class="dl-select" style="max-width:170px">
+      <option>Available</option><option>On Trip</option><option>Offline</option>
+    </select>
+  </div>
+
+  <div id="kpi" class="dl-kpi" style="margin-top:14px"></div>
+
+  <h2 class="dl-section-title">My jobs</h2>
+  <div id="jobs" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  function profile() {
+    DELIVERY.call("delivery.api.driver.profile").then(function (p) {
+      document.getElementById("who").textContent = p.driver_name;
+      document.getElementById("meta").textContent =
+        p.driver_code + " · " + p.vehicle_type + " · " + p.max_load_kg + " kg · rating " + p.rating;
+      document.getElementById("avail").value = p.status === "Offline" ? "Offline" : p.status;
+    }).catch(function (e) {
+      document.getElementById("jobs").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+    });
+  }
+
+  function jobs() {
+    DELIVERY.call("delivery.api.driver.my_jobs").then(function (rows) {
+      var host = document.getElementById("jobs");
+      document.getElementById("kpi").innerHTML =
+        '<div class="dl-card"><b>' + rows.length + '</b><span class="dl-mut">Active jobs</span></div>';
+      if (!rows.length) { host.innerHTML = '<div class="dl-empty">No active jobs.</div>'; return; }
+
+      host.innerHTML = rows.map(function (j) {
+        var actions = "";
+        if (j.state === "DRIVER_ASSIGNED" || j.state === "ACCEPTED" || j.state === "PREPARING") {
+          actions = '<button class="dl-btn" data-pick="' + j.reference + '">Confirm pickup</button>';
+        } else if (j.state === "PICKED_UP") {
+          actions = j.service === "Transport"
+            ? '<button class="dl-btn" data-stop="' + j.reference + '">Next stop</button>'
+            : '<button class="dl-btn" data-done="' + j.reference + '">Complete handoff</button>';
+        }
+        return '<div class="dl-card" style="margin-bottom:10px"><div class="dl-between">' +
+          "<div><b>" + j.reference + "</b> &middot; " + DELIVERY.esc(j.service) + "<br>" +
+          '<span class="dl-mut">' + DELIVERY.esc(j.address || "") + "</span></div>" +
+          DELIVERY.statePill(j.state) + "</div>" +
+          '<div class="dl-between" style="margin-top:8px">' +
+            '<span class="dl-price">' + DELIVERY.fmt(j.amount) + " &middot; " +
+              DELIVERY.esc(j.payment_status || "") + "</span><span>" + actions + "</span></div></div>";
+      }).join("");
+
+      host.querySelectorAll("[data-pick]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          DELIVERY.call("delivery.api.driver.confirm_pickup", { reference: b.dataset.pick })
+            .then(function (r) { DELIVERY.toast(r.reference + " picked up", "success"); jobs(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+      host.querySelectorAll("[data-stop]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          DELIVERY.call("delivery.api.driver.advance_transport_stop", { reference: b.dataset.stop })
+            .then(function (r) {
+              DELIVERY.toast(r.state === "COMPLETED" ? "Trip completed"
+                             : "Stop " + r.stop + "/" + r.total_stops + " reached", "success");
+              jobs();
+            }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+      host.querySelectorAll("[data-done]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var otp = prompt("Customer's 4-digit handoff code");
+          if (otp === null) return;
+          var cash = prompt("Cash collected (0 if already paid)", "0");
+          DELIVERY.call("delivery.api.driver.complete_handoff",
+                        { reference: b.dataset.done, otp: otp, collected_amount: Number(cash || 0) })
+            .then(function (r) { DELIVERY.toast(r.reference + " delivered", "success"); jobs(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+    }).catch(function (e) {
+      document.getElementById("jobs").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+    });
+  }
+
+  document.getElementById("avail").addEventListener("change", function () {
+    DELIVERY.call("delivery.api.driver.set_availability", { status: this.value })
+      .then(function (r) { DELIVERY.toast("Status: " + r.status, "success"); })
+      .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
+    DELIVERY.currency = c.currency; profile(); jobs();
+  }).catch(function () { profile(); jobs(); });
+})();
+</script>
+</body></html>

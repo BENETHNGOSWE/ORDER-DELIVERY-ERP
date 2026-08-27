@@ -1,0 +1,148 @@
+{% set page_title = "Merchant portal" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <div class="dl-between">
+    <div><h2 id="who" class="dl-section-title" style="margin:0">Merchant portal</h2>
+      <div id="st" class="dl-mut"></div></div>
+    <button id="toggle" class="dl-btn sec">Close shop</button>
+  </div>
+
+  <div id="kpi" class="dl-kpi" style="margin-top:14px"></div>
+
+  <h2 class="dl-section-title">Orders awaiting acceptance</h2>
+  <div id="inbox" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+
+  <h2 class="dl-section-title">Catalogue</h2>
+  <div class="dl-card">
+    <div class="dl-row">
+      <input id="new-name" class="dl-input" style="flex:1" placeholder="Item name">
+      <input id="new-cat" class="dl-input" style="max-width:150px" placeholder="Category">
+      <input id="new-rate" class="dl-input" style="max-width:120px" type="number" placeholder="Price">
+      <input id="new-prep" class="dl-input" style="max-width:110px" type="number" placeholder="Prep min">
+      <button id="add" class="dl-btn">Add item</button>
+    </div>
+    <table class="dl-table" style="margin-top:12px">
+      <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Live</th><th></th></tr></thead>
+      <tbody id="cat"></tbody></table>
+  </div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  var ME = null;
+
+  function boot() {
+    DELIVERY.call("delivery.api.merchant.whoami").then(function (w) {
+      ME = w.merchant;
+      document.getElementById("who").textContent = w.merchant_name;
+      document.getElementById("st").textContent = w.service_type + " · " + w.status;
+      document.getElementById("toggle").textContent = w.status === "Open" ? "Close shop" : "Open shop";
+      inbox(); catalogue(); stats();
+    }).catch(function (e) {
+      document.getElementById("inbox").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+    });
+  }
+
+  function stats() {
+    DELIVERY.call("delivery.api.merchant.stats").then(function (s) {
+      DELIVERY.currency = DELIVERY.currency;
+      var b = s.by_state || {};
+      document.getElementById("kpi").innerHTML =
+        '<div class="dl-card"><b>' + (s.orders || 0) + '</b><span class="dl-mut">Orders</span></div>' +
+        '<div class="dl-card"><b>' + (b.COMPLETED || 0) + '</b><span class="dl-mut">Completed</span></div>' +
+        '<div class="dl-card"><b>' + DELIVERY.fmt(s.completed_revenue) + '</b><span class="dl-mut">Revenue</span></div>' +
+        '<div class="dl-card"><b>' + (s.catalog_items || 0) + '</b><span class="dl-mut">Items</span></div>';
+    }).catch(function () {});
+  }
+
+  function inbox() {
+    DELIVERY.call("delivery.api.merchant.pending_orders").then(function (rows) {
+      var host = document.getElementById("inbox");
+      if (!rows.length) { host.innerHTML = '<div class="dl-empty">Nothing waiting.</div>'; return; }
+      host.innerHTML = '<table class="dl-table"><thead><tr><th>Order</th><th>Customer</th>' +
+        '<th>Total</th><th>Address</th><th></th></tr></thead><tbody>' +
+        rows.map(function (o) {
+          return "<tr><td>" + o.name + "</td><td>" + DELIVERY.esc(o.customer_name || "") +
+            "<br><span class='dl-mut'>" + DELIVERY.esc(o.customer_phone || "") + "</span></td>" +
+            "<td>" + DELIVERY.fmt(o.grand_total) + "</td>" +
+            "<td>" + DELIVERY.esc(o.delivery_address || "") + "</td>" +
+            '<td><button class="dl-btn" data-acc="' + o.name + '">Accept</button> ' +
+            '<button class="dl-btn danger" data-rej="' + o.name + '">Reject</button></td></tr>';
+        }).join("") + "</tbody></table>";
+
+      host.querySelectorAll("[data-acc]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var mins = prompt("Preparation time in minutes", "30");
+          if (mins === null) return;
+          DELIVERY.call("delivery.api.merchant.accept_order",
+                        { order: b.dataset.acc, prep_minutes: Number(mins) })
+            .then(function (r) { DELIVERY.toast(r.order + " accepted, ready " + r.ready_at, "success");
+                                 inbox(); stats(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+      host.querySelectorAll("[data-rej]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var why = prompt("Reason for rejecting");
+          if (!why) return;
+          DELIVERY.call("delivery.api.merchant.reject_order",
+                        { order: b.dataset.rej, reason: why })
+            .then(function () { inbox(); stats(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+    }).catch(function () {});
+  }
+
+  function catalogue() {
+    DELIVERY.call("delivery.api.merchant.catalog").then(function (rows) {
+      document.getElementById("cat").innerHTML = rows.map(function (i) {
+        return "<tr><td>" + DELIVERY.esc(i.item_name) + "</td><td>" + DELIVERY.esc(i.category || "") +
+          "</td><td>" + DELIVERY.fmt(i.standard_rate) + "</td>" +
+          '<td><input class="dl-input stk" data-item="' + i.name + '" style="max-width:90px" value="' +
+            (i.available_stock || 0) + '"></td>' +
+          "<td>" + (i.published ? "Yes" : "No") + "</td>" +
+          '<td><button class="dl-btn sec" data-save="' + i.name + '">Save</button></td></tr>';
+      }).join("") || '<tr><td colspan="6" class="dl-empty">No items yet.</td></tr>';
+
+      document.querySelectorAll("[data-save]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var input = document.querySelector('.stk[data-item="' + b.dataset.save + '"]');
+          DELIVERY.call("delivery.api.merchant.set_stock",
+                        { item: b.dataset.save, qty: Number(input.value) })
+            .then(function () { DELIVERY.toast("Stock updated", "success"); catalogue(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+    }).catch(function () {});
+  }
+
+  document.getElementById("toggle").addEventListener("click", function () {
+    var opening = this.textContent.indexOf("Open") === 0;
+    DELIVERY.call("delivery.api.merchant.set_open", { is_open: opening ? 1 : 0 })
+      .then(function (r) { DELIVERY.toast("Shop is " + r.status, "success"); boot(); })
+      .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  document.getElementById("add").addEventListener("click", function () {
+    DELIVERY.call("delivery.api.merchant.add_item", {
+      merchant: ME,
+      item_name: document.getElementById("new-name").value,
+      category: document.getElementById("new-cat").value || "General",
+      standard_rate: Number(document.getElementById("new-rate").value || 0),
+      prep_minutes: Number(document.getElementById("new-prep").value || 0),
+      published: 1
+    }).then(function () { DELIVERY.toast("Item added", "success"); catalogue(); stats(); })
+      .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
+    DELIVERY.currency = c.currency; boot();
+  }).catch(boot);
+})();
+</script>
+</body></html>

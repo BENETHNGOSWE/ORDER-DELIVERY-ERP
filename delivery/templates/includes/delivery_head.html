@@ -1,0 +1,13 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title or "Swift Logistics" }} &middot; {{ platform_name or "Delivery" }}</title>
+<link rel="stylesheet" href="/assets/delivery/css/delivery_portal.css">
+<style>
+  body { margin: 0; background: #f5f7fa; color: #16202e;
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                      Helvetica, Arial, sans-serif; }
+</style>
+<!-- The CSRF token is fetched by delivery_portal.js from
+     delivery.portal.session_csrf. It is deliberately NOT rendered here: a bad
+     accessor in a Jinja expression raises during render and 500s the page. -->
+<script>window.csrf_token = window.csrf_token || "";</script>

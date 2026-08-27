@@ -1,0 +1,208 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:item_code",
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "column_break_14",
+  "merchant",
+  "item_type",
+  "catalogue_13",
+  "category",
+  "description",
+  "column_break_15",
+  "item_image",
+  "is_featured",
+  "pricing_stock_14",
+  "standard_rate",
+  "discount_rate",
+  "column_break_16",
+  "available_stock",
+  "track_stock",
+  "prep_minutes",
+  "published"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Item Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "fieldname": "merchant",
+   "fieldtype": "Link",
+   "idx": 4,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Merchant",
+   "options": "Merchant",
+   "reqd": 1
+  },
+  {
+   "default": "Food",
+   "fieldname": "item_type",
+   "fieldtype": "Select",
+   "idx": 5,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item Type",
+   "options": "Food\nRetail\nGrocery"
+  },
+  {
+   "fieldname": "catalogue_13",
+   "fieldtype": "Section Break",
+   "idx": 6,
+   "label": "Catalogue"
+  },
+  {
+   "description": "e.g. Main Course, Drinks, Electronics",
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "idx": 7,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "idx": 8,
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "fieldname": "item_image",
+   "fieldtype": "Attach Image",
+   "idx": 10,
+   "label": "Item Image"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_featured",
+   "fieldtype": "Check",
+   "idx": 11,
+   "label": "Featured"
+  },
+  {
+   "fieldname": "pricing_stock_14",
+   "fieldtype": "Section Break",
+   "idx": 12,
+   "label": "Pricing & Stock"
+  },
+  {
+   "fieldname": "standard_rate",
+   "fieldtype": "Currency",
+   "idx": 13,
+   "in_list_view": 1,
+   "label": "Standard Rate",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "discount_rate",
+   "fieldtype": "Currency",
+   "idx": 14,
+   "label": "Discount Rate"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break",
+   "idx": 15
+  },
+  {
+   "default": "100",
+   "fieldname": "available_stock",
+   "fieldtype": "Int",
+   "idx": 16,
+   "in_list_view": 1,
+   "label": "Available Stock"
+  },
+  {
+   "default": "1",
+   "fieldname": "track_stock",
+   "fieldtype": "Check",
+   "idx": 17,
+   "label": "Track Stock"
+  },
+  {
+   "default": "20",
+   "fieldname": "prep_minutes",
+   "fieldtype": "Int",
+   "idx": 18,
+   "label": "Prep Time (min)"
+  },
+  {
+   "default": "1",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "idx": 19,
+   "label": "Published On Portal"
+  }
+ ],
+ "image_field": "item_image",
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "DL Menu Item",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Merchant User"
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "search_fields": "item_name,category",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "item_name"
+}

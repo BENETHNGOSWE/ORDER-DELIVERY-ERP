@@ -1,0 +1,232 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:driver_code",
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "driver_code",
+  "driver_name",
+  "column_break_18",
+  "user",
+  "status",
+  "contact_16",
+  "phone",
+  "licence_no",
+  "column_break_19",
+  "vehicle_type",
+  "vehicle_plate",
+  "capabilities_17",
+  "can_food",
+  "can_parcel",
+  "can_transport",
+  "column_break_20",
+  "max_load_kg",
+  "base_zone",
+  "geo_18",
+  "latitude",
+  "column_break_21",
+  "longitude",
+  "rating"
+ ],
+ "fields": [
+  {
+   "fieldname": "driver_code",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Driver Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "driver_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Driver Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "description": "Login used on the Driver Web Dashboard.",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "idx": 4,
+   "label": "Portal User",
+   "options": "User"
+  },
+  {
+   "default": "Available",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 5,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Available\nOn Trip\nOffline\nSuspended"
+  },
+  {
+   "fieldname": "contact_16",
+   "fieldtype": "Section Break",
+   "idx": 6,
+   "label": "Contact"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "licence_no",
+   "fieldtype": "Data",
+   "idx": 8,
+   "label": "Driving Licence No."
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "default": "Motorcycle",
+   "fieldname": "vehicle_type",
+   "fieldtype": "Select",
+   "idx": 10,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Vehicle Type",
+   "options": "Bicycle\nMotorcycle\nCar\nVan\nPickup\nTruck\nBus"
+  },
+  {
+   "fieldname": "vehicle_plate",
+   "fieldtype": "Data",
+   "idx": 11,
+   "label": "Vehicle Plate"
+  },
+  {
+   "fieldname": "capabilities_17",
+   "fieldtype": "Section Break",
+   "idx": 12,
+   "label": "Capabilities"
+  },
+  {
+   "default": "1",
+   "fieldname": "can_food",
+   "fieldtype": "Check",
+   "idx": 13,
+   "label": "Food & Retail"
+  },
+  {
+   "default": "1",
+   "fieldname": "can_parcel",
+   "fieldtype": "Check",
+   "idx": 14,
+   "label": "Parcel"
+  },
+  {
+   "default": "0",
+   "fieldname": "can_transport",
+   "fieldtype": "Check",
+   "idx": 15,
+   "label": "Transport"
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break",
+   "idx": 16
+  },
+  {
+   "default": "25",
+   "fieldname": "max_load_kg",
+   "fieldtype": "Float",
+   "idx": 17,
+   "label": "Max Load (kg)"
+  },
+  {
+   "fieldname": "base_zone",
+   "fieldtype": "Link",
+   "idx": 18,
+   "label": "Base Zone",
+   "options": "Delivery Zone"
+  },
+  {
+   "fieldname": "geo_18",
+   "fieldtype": "Section Break",
+   "idx": 19,
+   "label": "Geo"
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "idx": 20,
+   "label": "Latitude",
+   "precision": "6"
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break",
+   "idx": 21
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "idx": 22,
+   "label": "Longitude",
+   "precision": "6"
+  },
+  {
+   "default": "5",
+   "fieldname": "rating",
+   "fieldtype": "Float",
+   "idx": 23,
+   "label": "Rating",
+   "precision": "2",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Delivery Driver",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Driver"
+  }
+ ],
+ "search_fields": "driver_name,phone",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "driver_name"
+}

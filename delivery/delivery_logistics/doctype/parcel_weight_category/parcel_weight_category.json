@@ -1,0 +1,120 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:category_name",
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "category_name",
+  "min_weight_kg",
+  "max_weight_kg",
+  "column_break_17",
+  "base_charge",
+  "per_kg_charge",
+  "priority",
+  "section_15",
+  "enabled"
+ ],
+ "fields": [
+  {
+   "description": "e.g. Envelope, Small Box, Medium Box",
+   "fieldname": "category_name",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Category Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "min_weight_kg",
+   "fieldtype": "Float",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Min Weight (kg)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "max_weight_kg",
+   "fieldtype": "Float",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Max Weight (kg)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "base_charge",
+   "fieldtype": "Currency",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Base Charge",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "per_kg_charge",
+   "fieldtype": "Currency",
+   "idx": 6,
+   "label": "Charge Per Extra KG"
+  },
+  {
+   "default": "0",
+   "description": "Higher priority wins when two ranges overlap.",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "idx": 7,
+   "label": "Priority"
+  },
+  {
+   "fieldname": "section_15",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": ""
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "idx": 9,
+   "label": "Enabled"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Parcel Weight Category",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,16 @@
+[project]
+name = "delivery"
+version = "1.0.0"
+description = "Multi-Service Delivery & Logistics Platform for ERPNext 16"
+requires-python = ">=3.14"
+authors = [{ name = "Swift Logistics", email = "ops@swiftlogistics.test" }]
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = []
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.module]
+name = "delivery"

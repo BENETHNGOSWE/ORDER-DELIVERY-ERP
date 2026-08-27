@@ -1,0 +1,100 @@
+{% set page_title = "Transport" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <div class="dl-hero"><h1>Negotiated transport</h1>
+    <p>Build a multi-stop itinerary. Operations calls you to agree the fare
+       &mdash; you only pay once you have approved it.</p></div>
+
+  <div class="dl-card">
+    <div class="dl-row">
+      <div style="flex:1"><label class="dl-label">Trip type</label>
+        <select id="trip" class="dl-select"><option>Passenger</option><option>Goods</option></select></div>
+      <div style="flex:1"><label class="dl-label">Vehicle</label>
+        <select id="veh" class="dl-select"><option>Car</option><option>Van</option>
+          <option>Pickup</option><option>Truck</option><option>Bus</option></select></div>
+      <div style="flex:1"><label class="dl-label">Passengers</label>
+        <input id="pax" class="dl-input" type="number" value="1"></div>
+      <div style="flex:1"><label class="dl-label">Phone (required)</label>
+        <input id="phone" class="dl-input" placeholder="+255..."></div>
+    </div>
+
+    <label class="dl-label">Itinerary</label>
+    <div id="stops"></div>
+    <button id="add" class="dl-btn sec" style="margin-top:8px">Add stop</button>
+
+    <label class="dl-label">Departure</label>
+    <input id="when" class="dl-input" type="datetime-local">
+    <label class="dl-label">Special requirements</label>
+    <input id="req" class="dl-input">
+
+    <div class="dl-between" style="margin-top:12px">
+      <div id="est" class="dl-mut"></div>
+      <span><button id="est-btn" class="dl-btn sec">Estimate</button>
+            <button id="go" class="dl-btn">Submit request</button></span>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  var host = document.getElementById("stops");
+
+  function row(i, label, addr, km) {
+    var d = document.createElement("div");
+    d.className = "dl-row"; d.style.marginTop = "6px";
+    d.innerHTML = '<input class="dl-input lbl" style="max-width:90px" value="' + (label || ("Stop " + i)) + '">' +
+      '<input class="dl-input adr" style="flex:1" placeholder="Address" value="' + (addr || "") + '">' +
+      '<input class="dl-input km" style="max-width:110px" type="number" step="0.1" value="' + (km || 0) + '" title="km from previous">' +
+      '<button class="dl-btn danger rm">X</button>';
+    d.querySelector(".rm").addEventListener("click", function () { d.remove(); });
+    host.appendChild(d);
+  }
+  row(1, "Origin", "", 0); row(2, "Destination", "", 0);
+  document.getElementById("add").addEventListener("click", function () {
+    row(host.children.length + 1);
+  });
+
+  function collect() {
+    return Array.prototype.map.call(host.children, function (d, i) {
+      return { idx_label: d.querySelector(".lbl").value,
+               address: d.querySelector(".adr").value,
+               stop_type: i === 0 ? "Pickup" : "Drop-off",
+               distance_from_prev_km: Number(d.querySelector(".km").value || 0) };
+    });
+  }
+
+  document.getElementById("est-btn").addEventListener("click", function () {
+    DELIVERY.call("delivery.api.customer.quote_transport", {
+      stops: JSON.stringify(collect()),
+      vehicle_type: document.getElementById("veh").value,
+      passengers: document.getElementById("pax").value
+    }).then(function (r) {
+      DELIVERY.currency = r.currency;
+      document.getElementById("est").innerHTML =
+        "Reference fare <b>" + DELIVERY.fmt(r.suggested_fare) + "</b> over " +
+        r.total_distance_km + " km &mdash; " + DELIVERY.esc(r.note);
+    }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  document.getElementById("go").addEventListener("click", function () {
+    var b = this; b.disabled = true;
+    DELIVERY.call("delivery.api.customer.place_transport_request", {
+      stops: JSON.stringify(collect()),
+      trip_type: document.getElementById("trip").value,
+      vehicle_type: document.getElementById("veh").value,
+      passengers: document.getElementById("pax").value,
+      phone: document.getElementById("phone").value,
+      departure_datetime: document.getElementById("when").value || null,
+      special_requirements: document.getElementById("req").value
+    }).then(function (r) {
+      DELIVERY.toast(r.message, "success");
+      setTimeout(function () { location.href = "/delivery/track?ref=" + r.request; }, 1400);
+    }).catch(function (e) { DELIVERY.toast(e.message, "error"); b.disabled = false; });
+  });
+})();
+</script>
+</body></html>

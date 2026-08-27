@@ -1,0 +1,103 @@
+{% set page_title = "Parcel" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <div class="dl-hero"><h1>Send a parcel</h1>
+    <p>Standard weights are billed instantly. Heavy, oversized or unusual items
+       go to operations for a custom tariff.</p></div>
+
+  <div class="dl-card">
+    <div class="dl-row">
+      <div style="flex:1"><label class="dl-label">Pickup address</label>
+        <textarea id="pickup" class="dl-textarea" rows="2"></textarea></div>
+      <div style="flex:1"><label class="dl-label">Drop-off address</label>
+        <textarea id="dropoff" class="dl-textarea" rows="2"></textarea></div>
+    </div>
+    <label class="dl-label">Description</label>
+    <input id="desc" class="dl-input">
+    <div class="dl-row">
+      <div style="flex:1"><label class="dl-label">Weight (kg)</label>
+        <input id="w" class="dl-input" type="number" step="0.1" value="1"></div>
+      <div style="flex:1"><label class="dl-label">Length (cm)</label>
+        <input id="l" class="dl-input" type="number" value="0"></div>
+      <div style="flex:1"><label class="dl-label">Width (cm)</label>
+        <input id="wd" class="dl-input" type="number" value="0"></div>
+      <div style="flex:1"><label class="dl-label">Height (cm)</label>
+        <input id="h" class="dl-input" type="number" value="0"></div>
+    </div>
+    <div class="dl-row">
+      <div style="flex:1"><label class="dl-label">Distance (km)</label>
+        <input id="km" class="dl-input" type="number" step="0.1" value="0"></div>
+      <div style="flex:1"><label class="dl-label">Declared value</label>
+        <input id="val" class="dl-input" type="number" value="0"></div>
+      <div style="flex:1"><label class="dl-label">Phone</label>
+        <input id="phone" class="dl-input"></div>
+      <div style="flex:1"><label class="dl-label">Payment</label>
+        <select id="pay" class="dl-select"></select></div>
+    </div>
+    <label class="dl-row" style="margin-top:10px">
+      <input id="fragile" type="checkbox"> Fragile &mdash; handle with care
+    </label>
+    <div class="dl-between" style="margin-top:12px">
+      <div id="quote" class="dl-mut"></div>
+      <span>
+        <button id="q" class="dl-btn sec">Get quote</button>
+        <button id="go" class="dl-btn">Send parcel</button>
+      </span>
+    </div>
+  </div>
+
+  <h2 class="dl-section-title">Weight bands</h2>
+  <div class="dl-card"><table class="dl-table">
+    <thead><tr><th>Band</th><th>From</th><th>To</th><th>Base</th><th>Per extra kg</th></tr></thead>
+    <tbody id="bands"></tbody></table></div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  function v(id) { return document.getElementById(id).value; }
+  function payload() {
+    return { weight_kg: v("w"), length_cm: v("l"), width_cm: v("wd"),
+             height_cm: v("h"), distance_km: v("km"), is_fragile: document.getElementById("fragile").checked ? 1 : 0 };
+  }
+
+  DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
+    DELIVERY.currency = c.currency;
+    document.getElementById("pay").innerHTML =
+      c.payment_methods.map(function (m) { return "<option>" + m + "</option>"; }).join("");
+  }).catch(function () {});
+
+  DELIVERY.call("delivery.api.customer.parcel_weight_categories").then(function (rows) {
+    document.getElementById("bands").innerHTML = rows.map(function (b) {
+      return "<tr><td>" + DELIVERY.esc(b.category_name) + "</td><td>" + b.min_weight_kg +
+        " kg</td><td>" + (b.max_weight_kg || "&infin;") + " kg</td><td>" +
+        DELIVERY.fmt(b.base_charge) + "</td><td>" + DELIVERY.fmt(b.per_kg_charge) + "</td></tr>";
+    }).join("");
+  }).catch(function () {});
+
+  document.getElementById("q").addEventListener("click", function () {
+    DELIVERY.call("delivery.api.customer.quote_parcel", payload()).then(function (r) {
+      document.getElementById("quote").innerHTML = r.needs_review
+        ? "<b>Manual quote needed</b> &mdash; operations will price this parcel."
+        : "Tariff <b>" + DELIVERY.fmt(r.tariff_amount) + "</b>" +
+          (r.weight_category ? " (" + DELIVERY.esc(r.weight_category) + ")" : "");
+    }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  document.getElementById("go").addEventListener("click", function () {
+    var b = this; b.disabled = true;
+    var p = payload();
+    p.pickup_address = v("pickup"); p.dropoff_address = v("dropoff");
+    p.parcel_description = v("desc"); p.declared_value = v("val");
+    p.phone = v("phone"); p.payment_method = v("pay");
+    DELIVERY.call("delivery.api.customer.place_parcel_request", p).then(function (r) {
+      DELIVERY.toast("Parcel " + r.parcel + " created", "success");
+      setTimeout(function () { location.href = "/delivery/track?ref=" + r.parcel; }, 900);
+    }).catch(function (e) { DELIVERY.toast(e.message, "error"); b.disabled = false; });
+  });
+})();
+</script>
+</body></html>

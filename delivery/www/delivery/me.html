@@ -1,0 +1,90 @@
+{% set page_title = "My orders" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <h2 class="dl-section-title" style="margin-top:0">My orders</h2>
+  <div id="orders" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+
+  <h2 class="dl-section-title">My parcels</h2>
+  <div id="parcels" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+
+  <h2 class="dl-section-title">My transport</h2>
+  <div id="transport" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  function table(rows, cols, empty) {
+    if (!rows.length) return '<div class="dl-empty">' + empty + "</div>";
+    return '<table class="dl-table"><thead><tr>' +
+      cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") +
+      "</tr></thead><tbody>" + rows.map(function (r) {
+        return "<tr>" + cols.map(function (c) {
+          var v = c[2] ? c[2](r) : (r[c[0]] == null ? "" : r[c[0]]);
+          return "<td>" + v + "</td>";
+        }).join("") + "</tr>";
+      }).join("") + "</tbody></table>";
+  }
+  function link(r) { return '<a href="/delivery/track?ref=' + encodeURIComponent(r.name) + '">' + r.name + "</a>"; }
+
+  DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
+    DELIVERY.currency = c.currency;
+  }).catch(function () {});
+
+  DELIVERY.call("delivery.api.customer.my_orders").then(function (rows) {
+    document.getElementById("orders").innerHTML = table(rows, [
+      ["name", "Reference", link],
+      ["order_type", "Type"],
+      ["workflow_state", "State", function (r) { return DELIVERY.statePill(r.workflow_state); }],
+      ["grand_total", "Total", function (r) { return DELIVERY.fmt(r.grand_total); }],
+      ["payment_status", "Payment"]], "No orders yet.");
+  }).catch(function (e) {
+    document.getElementById("orders").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+  });
+
+  DELIVERY.call("delivery.api.customer.my_parcels").then(function (rows) {
+    document.getElementById("parcels").innerHTML = table(rows, [
+      ["name", "Reference", link],
+      ["weight_category", "Band"],
+      ["workflow_state", "State", function (r) { return DELIVERY.statePill(r.workflow_state); }],
+      ["tariff_amount", "Tariff", function (r) { return DELIVERY.fmt(r.tariff_amount); }],
+      ["payment_status", "Payment"]], "No parcels yet.");
+  }).catch(function () {});
+
+  DELIVERY.call("delivery.api.customer.my_transport").then(function (rows) {
+    document.getElementById("transport").innerHTML = table(rows, [
+      ["name", "Reference", link],
+      ["workflow_state", "State", function (r) { return DELIVERY.statePill(r.workflow_state); }],
+      ["suggested_fare", "Reference fare", function (r) { return DELIVERY.fmt(r.suggested_fare); }],
+      ["agreed_price", "Agreed", function (r) { return r.agreed_price ? DELIVERY.fmt(r.agreed_price) : "&mdash;"; }],
+      ["name", "", function (r) {
+        return (r.agreed_price && r.workflow_state === "PRICE_AGREED")
+          ? '<button class="dl-btn" data-approve="' + r.name + '">Approve &amp; pay</button>'
+          : (r.payment_status !== "Paid" && r.agreed_price
+             ? '<button class="dl-btn sec" data-pay="' + r.name + '">Pay</button>' : "");
+      }]], "No trips yet.");
+
+    document.querySelectorAll("[data-approve]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        DELIVERY.call("delivery.api.customer.approve_transport_quote", { reference: b.dataset.approve })
+          .then(function () { return DELIVERY.call("delivery.api.customer.pay_transport",
+                { reference: b.dataset.approve, method: "M-Pesa" }); })
+          .then(function () { location.reload(); })
+          .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+      });
+    });
+    document.querySelectorAll("[data-pay]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        DELIVERY.call("delivery.api.customer.pay_transport",
+                      { reference: b.dataset.pay, method: "M-Pesa" })
+          .then(function () { location.reload(); })
+          .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+      });
+    });
+  }).catch(function () {});
+})();
+</script>
+</body></html>

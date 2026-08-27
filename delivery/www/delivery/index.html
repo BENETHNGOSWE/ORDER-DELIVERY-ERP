@@ -1,0 +1,73 @@
+{% set page_title = "Delivery & Logistics" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+
+  <div class="dl-hero">
+    <h1>Swift Logistics</h1>
+    <p>Food delivery, retail shopping, point-to-point parcels and negotiated
+       transport &mdash; one platform, live tracking.</p>
+  </div>
+
+  <div class="dl-grid">
+    <div class="dl-card">
+      <h3>Food &amp; Retail</h3>
+      <p class="dl-mut">Browse open merchants, order and track to the door.</p>
+      <a class="dl-btn" href="/delivery/menu">Browse merchants</a>
+    </div>
+    <div class="dl-card">
+      <h3>Parcel Delivery</h3>
+      <p class="dl-mut">Instant quote for standard weights; custom tariffs for
+         heavy or oversized items.</p>
+      <a class="dl-btn" href="/delivery/parcel">Send a parcel</a>
+    </div>
+    <div class="dl-card">
+      <h3>Negotiated Transport</h3>
+      <p class="dl-mut">Multi-stop itineraries with a fare agreed by phone
+         before you pay.</p>
+      <a class="dl-btn" href="/delivery/transport">Plan a trip</a>
+    </div>
+    <div class="dl-card">
+      <h3>Track</h3>
+      <p class="dl-mut">Enter any reference to see live status and history.</p>
+      <a class="dl-btn sec" href="/delivery/track">Track a shipment</a>
+    </div>
+  </div>
+
+  <h2 class="dl-section-title">Open now</h2>
+  <div id="merchants" class="dl-grid"><div class="dl-empty">Loading&hellip;</div></div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
+    DELIVERY.currency = c.currency;
+    DELIVERY.platform = c.platform_name;
+  }).catch(function () {});
+
+  DELIVERY.call("delivery.api.customer.list_merchants").then(function (rows) {
+    var host = document.getElementById("merchants");
+    if (!rows.length) { host.innerHTML = '<div class="dl-empty">No merchants are open right now.</div>'; return; }
+    host.innerHTML = rows.map(function (m) {
+      return '<div class="dl-card">' +
+        '<h3>' + DELIVERY.esc(m.merchant_name) + '</h3>' +
+        '<div class="dl-mut">' + DELIVERY.esc(m.service_type) + ' &middot; ' +
+          DELIVERY.esc(m.area || m.city || "") + '</div>' +
+        '<div class="dl-mut">Prep ~' + (m.avg_prep_minutes || 20) + ' min' +
+          (m.minimum_order_value ? ' &middot; min ' + DELIVERY.fmt(m.minimum_order_value) : '') +
+        '</div>' +
+        '<div style="margin-top:10px"><a class="dl-btn" href="/delivery/menu?merchant=' +
+          encodeURIComponent(m.name) + '">View menu</a></div></div>';
+    }).join("");
+  }).catch(function (e) {
+    document.getElementById("merchants").innerHTML =
+      '<div class="dl-empty">' + DELIVERY.esc(e.message) + '</div>';
+  });
+
+  DELIVERY.loadCart();
+})();
+</script>
+</body></html>

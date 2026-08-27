@@ -1,0 +1,73 @@
+{% set page_title = "Track" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <div class="dl-card">
+    <label class="dl-label">Reference</label>
+    <div class="dl-row">
+      <input id="ref" class="dl-input" style="flex:1"
+             placeholder="DL-ORD-2026-0001 / PR-2026-0001 / TR-2026-0001">
+      <button id="go" class="dl-btn">Track</button>
+    </div>
+  </div>
+  <div id="out" style="margin-top:14px"></div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  var input = document.getElementById("ref");
+  var params = new URLSearchParams(location.search);
+  if (params.get("ref")) { input.value = params.get("ref"); load(); }
+
+  function load() {
+    var ref = input.value.trim();
+    if (!ref) return;
+    DELIVERY.call("delivery.api.customer.track", { reference: ref }).then(render)
+      .catch(function (e) {
+        document.getElementById("out").innerHTML =
+          '<div class="dl-card dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+      });
+  }
+
+  function render(t) {
+    DELIVERY.currency = t.currency;
+    var order = ["PENDING", "ACCEPTED", "PREPARING", "DRIVER_ASSIGNED", "PICKED_UP", "COMPLETED"];
+    if (t.service === "Parcel") order = ["REQUESTED", "UNDER_REVIEW", "PRICE_AGREED"].concat(order.slice(1));
+    if (t.service === "Transport") order = ["UNDER_REVIEW", "PRICE_AGREED"].concat(order.slice(1));
+    var at = order.indexOf(t.state);
+
+    var steps = order.map(function (s, i) {
+      var cls = i < at ? "done" : (i === at ? "now" : "");
+      return '<span class="' + cls + '">' + s.replace(/_/g, " ") + "</span>";
+    }).join("");
+
+    var hist = (t.timeline || []).map(function (h) {
+      return "<tr><td>" + DELIVERY.esc(h.timestamp || "") + "</td><td>" +
+        DELIVERY.esc(h.label || h.state) + "</td><td>" + DELIVERY.esc(h.by || "") +
+        "</td><td>" + DELIVERY.esc(h.note || "") + "</td></tr>";
+    }).join("");
+
+    document.getElementById("out").innerHTML =
+      '<div class="dl-card"><div class="dl-between">' +
+        "<h3 style='margin:0'>" + DELIVERY.esc(t.reference) + " &middot; " + DELIVERY.esc(t.service) + "</h3>" +
+        DELIVERY.statePill(t.state) + "</div>" +
+        '<div class="dl-steps">' + steps + "</div>" +
+        '<div class="dl-mut">Amount ' + DELIVERY.fmt(t.amount) + " &middot; " +
+          DELIVERY.esc(t.payment_status || "") + " &middot; " + DELIVERY.esc(t.payment_method || "") +
+          (t.driver_name ? " &middot; driver " + DELIVERY.esc(t.driver_name) : "") +
+          (t.otp_code ? " &middot; handoff code <b>" + DELIVERY.esc(t.otp_code) + "</b>" : "") +
+        "</div></div>" +
+      '<div class="dl-card" style="margin-top:12px"><h3 style="margin-top:0">History</h3>' +
+        '<table class="dl-table"><thead><tr><th>When</th><th>State</th><th>By</th><th>Note</th>' +
+        "</tr></thead><tbody>" + (hist || '<tr><td colspan="4">No history yet.</td></tr>') +
+        "</tbody></table></div>";
+  }
+
+  document.getElementById("go").addEventListener("click", load);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") load(); });
+})();
+</script>
+</body></html>

@@ -1,0 +1,131 @@
+{% set page_title = "Operations" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+</head><body>
+<div class="dl-wrap">
+  {% include "delivery/templates/includes/delivery_nav.html" %}
+  <h2 class="dl-section-title" style="margin-top:0">Operations console</h2>
+  <div id="kpi" class="dl-kpi"></div>
+
+  <h2 class="dl-section-title">Review queue</h2>
+  <div class="dl-card">
+    <h3 style="margin-top:0">Parcels needing a manual tariff</h3>
+    <div id="pq"><div class="dl-empty">Loading&hellip;</div></div>
+    <h3>Transport awaiting review</h3>
+    <div id="tq"><div class="dl-empty">Loading&hellip;</div></div>
+  </div>
+
+  <h2 class="dl-section-title">Dispatch</h2>
+  <div class="dl-card">
+    <div class="dl-row">
+      <input id="ref" class="dl-input" style="flex:1" placeholder="Reference to assign">
+      <select id="drv" class="dl-select" style="max-width:260px"></select>
+      <button id="assign" class="dl-btn">Assign driver</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  function kpi(d) {
+    var row = function (label, obj) {
+      return '<div class="dl-card"><b>' + (obj.total || 0) + '</b>' +
+        '<span class="dl-mut">' + label + "</span></div>";
+    };
+    document.getElementById("kpi").innerHTML =
+      row("Orders", d.orders) + row("Parcels", d.parcels) + row("Transport", d.transport) +
+      '<div class="dl-card"><b>' + d.awaiting_review + '</b><span class="dl-mut">Awaiting review</span></div>' +
+      '<div class="dl-card"><b>' + d.unassigned + '</b><span class="dl-mut">Unassigned</span></div>' +
+      '<div class="dl-card"><b>' + d.drivers_available + '</b><span class="dl-mut">Drivers free</span></div>' +
+      '<div class="dl-card"><b>' + DELIVERY.fmt(d.orders.revenue + d.parcels.revenue + d.transport.revenue) +
+        '</b><span class="dl-mut">Revenue</span></div>';
+  }
+
+  function dash() {
+    DELIVERY.call("delivery.api.operations.dashboard").then(function (d) {
+      DELIVERY.currency = d.currency; kpi(d);
+    }).catch(function (e) {
+      document.getElementById("kpi").innerHTML =
+        '<div class="dl-card dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+    });
+  }
+
+  function queue() {
+    DELIVERY.call("delivery.api.operations.review_queue").then(function (q) {
+      document.getElementById("pq").innerHTML = q.parcels.length
+        ? '<table class="dl-table"><thead><tr><th>Parcel</th><th>Weight</th><th>Dims</th>' +
+          '<th>Why</th><th></th></tr></thead><tbody>' + q.parcels.map(function (p) {
+            var why = [p.is_heavy ? "heavy" : "", p.is_oversized ? "oversized" : "",
+                       p.weight_category ? "" : "no band"].filter(Boolean).join(", ") || "custom";
+            return "<tr><td>" + p.name + "<br><span class='dl-mut'>" +
+              DELIVERY.esc(p.customer_phone || "") + "</span></td>" +
+              "<td>" + p.weight_kg + " kg</td>" +
+              "<td>" + p.length_cm + "&times;" + p.width_cm + "&times;" + p.height_cm + "</td>" +
+              "<td>" + why + "</td>" +
+              '<td><button class="dl-btn" data-tariff="' + p.name + '">Set tariff</button></td></tr>';
+          }).join("") + "</tbody></table>"
+        : '<div class="dl-empty">Nothing waiting.</div>';
+
+      document.getElementById("tq").innerHTML = q.transport.length
+        ? '<table class="dl-table"><thead><tr><th>Reference</th><th>Customer</th>' +
+          '<th>Route</th><th>Suggested</th><th></th></tr></thead><tbody>' +
+          q.transport.map(function (t) {
+            return "<tr><td>" + t.name + "</td><td>" + DELIVERY.esc(t.customer_name || "") +
+              "<br><span class='dl-mut'>" + DELIVERY.esc(t.customer_phone || "") + "</span></td>" +
+              "<td>" + t.total_distance_km + " km &middot; " + DELIVERY.esc(t.vehicle_type) + "</td>" +
+              "<td>" + DELIVERY.fmt(t.suggested_fare) + "</td>" +
+              '<td><button class="dl-btn" data-fare="' + t.name + '" data-phone="' +
+                DELIVERY.esc(t.customer_phone || "") + '">Agree fare</button></td></tr>';
+          }).join("") + "</tbody></table>"
+        : '<div class="dl-empty">Nothing waiting.</div>';
+
+      document.querySelectorAll("[data-tariff]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var amt = prompt("Agreed tariff for " + b.dataset.tariff);
+          if (amt === null) return;
+          DELIVERY.call("delivery.api.operations.set_parcel_tariff",
+                        { parcel: b.dataset.tariff, amount: Number(amt),
+                          note: "Agreed by operations" })
+            .then(function (r) { DELIVERY.toast(r.parcel + " priced at " + DELIVERY.fmt(r.tariff_amount), "success");
+                                 queue(); dash(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+      document.querySelectorAll("[data-fare]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var amt = prompt("Agreed fare for " + b.dataset.fare + " (call " + b.dataset.phone + ")");
+          if (amt === null) return;
+          DELIVERY.call("delivery.api.operations.log_agreed_price",
+                        { reference: b.dataset.fare, amount: Number(amt),
+                          note: "Agreed by phone" })
+            .then(function (r) { DELIVERY.toast(r.request + " fare set to " + DELIVERY.fmt(r.agreed_price), "success");
+                                 queue(); dash(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+    }).catch(function () {});
+  }
+
+  function drivers() {
+    DELIVERY.call("delivery.api.operations.available_drivers").then(function (rows) {
+      document.getElementById("drv").innerHTML = rows.map(function (d) {
+        return '<option value="' + d.name + '">' + DELIVERY.esc(d.driver_name) +
+          " (" + DELIVERY.esc(d.vehicle_type) + ", " + d.max_load_kg + " kg)</option>";
+      }).join("");
+    }).catch(function () {});
+  }
+
+  document.getElementById("assign").addEventListener("click", function () {
+    DELIVERY.call("delivery.api.operations.assign_driver",
+                  { reference: document.getElementById("ref").value.trim(),
+                    driver: document.getElementById("drv").value })
+      .then(function (r) { DELIVERY.toast(r.reference + " assigned to " + r.driver +
+                                           " (OTP " + r.otp_code + ")", "success"); dash(); })
+      .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  dash(); queue(); drivers();
+})();
+</script>
+</body></html>

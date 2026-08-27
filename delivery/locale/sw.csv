@@ -1,0 +1,54 @@
+source_text,translated_text,context
+Order,Agizo,Delivery Order
+Order Item,Bidhaa ya Agizo,Delivery Order Item
+Parcel Request,Ombi la Kifurushi,Parcel Request
+Transport Request,Ombi la Usafiri,Transport Request
+Transport Stop,Kituo cha Usafiri,Transport Stop
+Merchant,Wachuuzi,Merchant
+Menu Item,Bidhaa ya Menyu,DL Menu Item
+Delivery Zone,Eneo la Uwasilishaji,Delivery Zone
+Parcel Weight Category,Kategoria ya Uzito wa Kifurushi,Parcel Weight Category
+Delivery Driver,Dereva wa Uwasilishaji,Delivery Driver
+Dispatch Trip,Safari ya Kusafirisha,Dispatch Trip
+Dispatch Trip Stop,Kituo cha Safari,Dispatch Trip Stop
+Payment Transaction,Muamala wa Malipo,Payment Transaction
+Logistics Settings,Mipangilio ya Usafirishaji,Logistics Settings
+Food Delivery,Uwasilishaji wa Chakula,Service
+Retail Shopping,Ununuzi wa Rejareja,Service
+Parcel Delivery,Uwasilishaji wa Vifurushi,Service
+Transport Routing,Uelekezaji wa Usafiri,Service
+Requested,Imeombwa,State
+Under Review,Inakaguliwa,State
+Price Agreed,Bei Imekubaliwa,State
+Pending,Inasubiri,State
+Accepted,Imekubaliwa,State
+Preparing,Inatayarishwa,State
+Driver Assigned,Dereva Amepangwa,State
+Picked Up,Imechukuliwa,State
+Completed,Imekamilika,State
+Cancelled,Imesitishwa,State
+Cash On Delivery,Malipo Wakati wa Kutoa,Payment
+M-Pesa,M-Pesa,Payment
+Tigo Pesa,Tigo Pesa,Payment
+Card,Kadi,Payment
+Paid,Imelipwa,Payment
+Unpaid,Haijalipwa,Payment
+Awaiting Merchant,Inasubiri Mchuuzi,State
+Order Confirmed,Agizo Limethibitishwa,State
+Kitchen/Packing,Jikoni/Upangaji,State
+In Transit,Iko Njiani,State
+Delivered,Imewasilishwa,State
+Details Submitted,Maelezo Yametumwa,State
+Manual Quote,Bei ya Mwongozo,State
+Quote Set,Bei Imewekwa,State
+Awaiting Payment,Inasubiri Malipo,State
+Package Prep,Matayarisho ya Kifurushi,State
+Route Submitted,Njia Imetumwa,State
+Staff Reviewing,Wafanyakazi Wanakagua,State
+Fare Negotiated,Nauli Imepatikana,State
+Job Confirmed,Kazi Imethibitishwa,State
+Vehicle Prep,Matayarisho ya Gari,State
+Route Active,Njia Inaendelea,State
+Trip Completed,Safari Imekamilika,State
+Incorrect handoff OTP. Ask the customer for the 4-digit code.,Kodi ya uthibitisho si sahihi. Omba mteja kodi ya tarakimu 4.,Validation
+A fare must be agreed before paying for this trip.,Lazima nauli ikubaliwe kabla ya kulipa safari hii.,Validation

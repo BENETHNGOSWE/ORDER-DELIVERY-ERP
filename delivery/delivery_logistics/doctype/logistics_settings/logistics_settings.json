@@ -1,0 +1,399 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-08-24 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "platform_1",
+  "platform_name",
+  "currency",
+  "column_break_1",
+  "enabled",
+  "language",
+  "country",
+  "commissions_2",
+  "default_commission_rate",
+  "transport_commission_rate",
+  "column_break_2",
+  "parcel_margin_rate",
+  "food_retail_delivery_fees_3",
+  "base_delivery_fee",
+  "per_km_fee",
+  "min_delivery_fee",
+  "column_break_3",
+  "small_order_fee",
+  "small_order_threshold",
+  "free_delivery_over",
+  "parcel_service_4",
+  "parcel_base_fee",
+  "parcel_per_km_fee",
+  "fragile_surcharge_pct",
+  "column_break_4",
+  "instant_weight_limit_kg",
+  "max_instant_dimension_cm",
+  "transport_service_5",
+  "transport_base_fare",
+  "transport_per_km",
+  "transport_per_stop",
+  "column_break_5",
+  "quote_validity_hours",
+  "payments_6",
+  "cod_enabled",
+  "cod_fee",
+  "mpesa_enabled",
+  "tigo_pesa_enabled",
+  "column_break_6",
+  "card_enabled",
+  "simulate_payment_gateways",
+  "operations_7",
+  "auto_assign_driver",
+  "default_prep_minutes",
+  "column_break_7",
+  "driver_max_active_jobs"
+ ],
+ "fields": [
+  {
+   "fieldname": "platform_1",
+   "fieldtype": "Section Break",
+   "idx": 1,
+   "label": "Platform"
+  },
+  {
+   "default": "Swift Logistics",
+   "fieldname": "platform_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "label": "Platform Name",
+   "reqd": 1
+  },
+  {
+   "default": "TZS",
+   "description": "Base currency for instant billing. Merchants/orders may override.",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "Currency",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "idx": 5,
+   "label": "Platform Enabled"
+  },
+  {
+   "default": "en",
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "idx": 6,
+   "label": "Default Language",
+   "options": "Language"
+  },
+  {
+   "default": "Tanzania",
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Country",
+   "options": "Country"
+  },
+  {
+   "fieldname": "commissions_2",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": "Commissions"
+  },
+  {
+   "default": "10",
+   "fieldname": "default_commission_rate",
+   "fieldtype": "Percent",
+   "idx": 9,
+   "label": "Default Merchant Commission (%)"
+  },
+  {
+   "default": "5",
+   "fieldname": "transport_commission_rate",
+   "fieldtype": "Percent",
+   "idx": 10,
+   "label": "Transport Commission (%)"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break",
+   "idx": 11
+  },
+  {
+   "default": "8",
+   "fieldname": "parcel_margin_rate",
+   "fieldtype": "Percent",
+   "idx": 12,
+   "label": "Parcel Margin (%)"
+  },
+  {
+   "fieldname": "food_retail_delivery_fees_3",
+   "fieldtype": "Section Break",
+   "idx": 13,
+   "label": "Food & Retail Delivery Fees"
+  },
+  {
+   "default": "2000",
+   "fieldname": "base_delivery_fee",
+   "fieldtype": "Currency",
+   "idx": 14,
+   "label": "Base Delivery Fee",
+   "options": "currency"
+  },
+  {
+   "default": "500",
+   "fieldname": "per_km_fee",
+   "fieldtype": "Currency",
+   "idx": 15,
+   "label": "Per KM Fee",
+   "options": "currency"
+  },
+  {
+   "default": "1500",
+   "fieldname": "min_delivery_fee",
+   "fieldtype": "Currency",
+   "idx": 16,
+   "label": "Minimum Delivery Fee",
+   "options": "currency"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break",
+   "idx": 17
+  },
+  {
+   "default": "1000",
+   "fieldname": "small_order_fee",
+   "fieldtype": "Currency",
+   "idx": 18,
+   "label": "Small Order Fee",
+   "options": "currency"
+  },
+  {
+   "default": "10000",
+   "fieldname": "small_order_threshold",
+   "fieldtype": "Currency",
+   "idx": 19,
+   "label": "Small Order Threshold",
+   "options": "currency"
+  },
+  {
+   "default": "50000",
+   "description": "0 = never free",
+   "fieldname": "free_delivery_over",
+   "fieldtype": "Currency",
+   "idx": 20,
+   "label": "Free Delivery Over",
+   "options": "currency"
+  },
+  {
+   "fieldname": "parcel_service_4",
+   "fieldtype": "Section Break",
+   "idx": 21,
+   "label": "Parcel Service"
+  },
+  {
+   "default": "3000",
+   "fieldname": "parcel_base_fee",
+   "fieldtype": "Currency",
+   "idx": 22,
+   "label": "Parcel Base Fee",
+   "options": "currency"
+  },
+  {
+   "default": "400",
+   "fieldname": "parcel_per_km_fee",
+   "fieldtype": "Currency",
+   "idx": 23,
+   "label": "Parcel Per KM Fee",
+   "options": "currency"
+  },
+  {
+   "default": "20",
+   "fieldname": "fragile_surcharge_pct",
+   "fieldtype": "Percent",
+   "idx": 24,
+   "label": "Fragile Surcharge (%)"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break",
+   "idx": 25
+  },
+  {
+   "default": "25",
+   "description": "Parcels above this weight are forced to UNDER_REVIEW for a manual tariff.",
+   "fieldname": "instant_weight_limit_kg",
+   "fieldtype": "Float",
+   "idx": 26,
+   "label": "Instant Billing Weight Limit (kg)"
+  },
+  {
+   "default": "100",
+   "description": "Any single dimension above this forces UNDER_REVIEW.",
+   "fieldname": "max_instant_dimension_cm",
+   "fieldtype": "Float",
+   "idx": 27,
+   "label": "Max Instant Dimension (cm)"
+  },
+  {
+   "fieldname": "transport_service_5",
+   "fieldtype": "Section Break",
+   "idx": 28,
+   "label": "Transport Service"
+  },
+  {
+   "default": "15000",
+   "fieldname": "transport_base_fare",
+   "fieldtype": "Currency",
+   "idx": 29,
+   "label": "Transport Base Fare",
+   "options": "currency"
+  },
+  {
+   "default": "1200",
+   "fieldname": "transport_per_km",
+   "fieldtype": "Currency",
+   "idx": 30,
+   "label": "Transport Per KM",
+   "options": "currency"
+  },
+  {
+   "default": "3000",
+   "fieldname": "transport_per_stop",
+   "fieldtype": "Currency",
+   "idx": 31,
+   "label": "Transport Per Extra Stop",
+   "options": "currency"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break",
+   "idx": 32
+  },
+  {
+   "default": "24",
+   "fieldname": "quote_validity_hours",
+   "fieldtype": "Int",
+   "idx": 33,
+   "label": "Quote Validity (Hours)"
+  },
+  {
+   "fieldname": "payments_6",
+   "fieldtype": "Section Break",
+   "idx": 34,
+   "label": "Payments"
+  },
+  {
+   "default": "1",
+   "fieldname": "cod_enabled",
+   "fieldtype": "Check",
+   "idx": 35,
+   "label": "Cash On Delivery Enabled"
+  },
+  {
+   "default": "500",
+   "fieldname": "cod_fee",
+   "fieldtype": "Currency",
+   "idx": 36,
+   "label": "COD Handling Fee",
+   "options": "currency"
+  },
+  {
+   "default": "1",
+   "fieldname": "mpesa_enabled",
+   "fieldtype": "Check",
+   "idx": 37,
+   "label": "M-Pesa Enabled"
+  },
+  {
+   "default": "1",
+   "fieldname": "tigo_pesa_enabled",
+   "fieldtype": "Check",
+   "idx": 38,
+   "label": "Tigo Pesa Enabled"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break",
+   "idx": 39
+  },
+  {
+   "default": "0",
+   "fieldname": "card_enabled",
+   "fieldtype": "Check",
+   "idx": 40,
+   "label": "Card / Stripe Enabled"
+  },
+  {
+   "default": "1",
+   "description": "Sandbox mode: gateway calls are stubbed and always succeed. Turn off in production.",
+   "fieldname": "simulate_payment_gateways",
+   "fieldtype": "Check",
+   "idx": 41,
+   "label": "Simulate Payment Gateways"
+  },
+  {
+   "fieldname": "operations_7",
+   "fieldtype": "Section Break",
+   "idx": 42,
+   "label": "Operations"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_assign_driver",
+   "fieldtype": "Check",
+   "idx": 43,
+   "label": "Auto-Assign Nearest Driver"
+  },
+  {
+   "default": "25",
+   "fieldname": "default_prep_minutes",
+   "fieldtype": "Int",
+   "idx": 44,
+   "label": "Default Prep Time (min)"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break",
+   "idx": 45
+  },
+  {
+   "default": "4",
+   "fieldname": "driver_max_active_jobs",
+   "fieldtype": "Int",
+   "idx": 46,
+   "label": "Max Active Jobs Per Driver"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Logistics Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
