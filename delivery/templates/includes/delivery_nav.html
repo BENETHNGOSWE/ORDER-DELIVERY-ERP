@@ -1,5 +1,10 @@
 {% set u = frappe.session.user %}
-{% set roles = frappe.get_roles(u) if (u and u != 'Guest') else [] %}
+{# get_roles() is NOT exposed to website Jinja sandbox; use Has Role lookups instead #}
+{% set is_logged_in = u and u != 'Guest' %}
+{% set is_merchant = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Merchant User'}) %}
+{% set is_ops = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Delivery Operations'}) %}
+{% set is_admin = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'System Manager'}) %}
+{% set is_driver = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Driver'}) %}
 {% set here = frappe.request.path if frappe.request else '' %}
 <nav class="dl-nav">
   <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}>Home</a>
@@ -8,12 +13,12 @@
   <a href="/delivery/parcel">Parcel</a>
   <a href="/delivery/transport">Transport</a>
   <a href="/delivery/track">Track</a>
-  {% if u and u != 'Guest' %}
+  {% if is_logged_in %}
     <a href="/delivery/me">My Orders</a>
-    {% if 'Merchant User' in roles %}<a href="/delivery/merchant">Merchant</a>{% endif %}
-    {% if 'Delivery Operations' in roles or 'System Manager' in roles %}
+    {% if is_merchant %}<a href="/delivery/merchant">Merchant</a>{% endif %}
+    {% if is_ops or is_admin %}
       <a href="/delivery/operations">Operations</a>{% endif %}
-    {% if 'Driver' in roles %}<a href="/delivery/driver">Driver</a>{% endif %}
+    {% if is_driver %}<a href="/delivery/driver">Driver</a>{% endif %}
     <a href="/api/method/logout">Log out</a>
   {% else %}
     <a href="/login?redirect-to=/delivery">Log in</a>

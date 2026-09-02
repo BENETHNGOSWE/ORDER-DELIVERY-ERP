@@ -14,6 +14,14 @@
 
   <div id="kpi" class="dl-kpi" style="margin-top:14px"></div>
 
+  <div class="dl-card" style="margin-top:12px">
+    <div class="dl-between">
+      <div><b>Live location sharing</b>
+        <div class="dl-mut" id="loc-status">Share your GPS so customers can follow you on the map.</div></div>
+      <button id="loc-toggle" class="dl-btn">Start sharing</button>
+    </div>
+  </div>
+
   <h2 class="dl-section-title">My jobs</h2>
   <div id="jobs" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
 </div>
@@ -94,6 +102,54 @@
     DELIVERY.call("delivery.api.driver.set_availability", { status: this.value })
       .then(function (r) { DELIVERY.toast("Status: " + r.status, "success"); })
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
+
+  // --- live location sharing (feeds the customer's Leaflet tracking map) ---
+  var locWatch = null, locToggle = document.getElementById("loc-toggle");
+  var activeRef = null;
+  function setLocStatus(msg) { document.getElementById("loc-status").innerHTML = msg; }
+
+  function refreshActiveRef() {
+    // tag pings with the driver's in-progress job so the customer map is exact
+    DELIVERY.call("delivery.api.driver.my_jobs").then(function (rows) {
+      var active = (rows || []).filter(function (j) {
+        return ["DRIVER_ASSIGNED", "ACCEPTED", "PREPARING", "PICKED_UP"].indexOf(j.state) >= 0;
+      })[0];
+      activeRef = active ? active.reference : null;
+    }).catch(function () {});
+  }
+
+  function ping(pos) {
+    var c = pos.coords;
+    DELIVERY.call("delivery.api.driver.report_location", {
+      latitude: c.latitude, longitude: c.longitude, accuracy: c.accuracy,
+      reference: activeRef || "", activity: "On Trip"
+    }).then(function () {
+      setLocStatus("Sharing live &middot; last ping " + new Date().toLocaleTimeString() +
+        " (" + Math.round(c.accuracy) + "m)");
+    }).catch(function (e) { setLocStatus("Ping failed: " + DELIVERY.esc(e.message)); });
+  }
+
+  locToggle.addEventListener("click", function () {
+    if (locWatch !== null) {
+      navigator.geolocation.clearWatch(locWatch); locWatch = null;
+      locToggle.textContent = "Start sharing";
+      setLocStatus("Location sharing stopped.");
+      return;
+    }
+    if (!navigator.geolocation) { DELIVERY.toast("Geolocation not supported on this device.", "error"); return; }
+    locToggle.textContent = "Stop sharing";
+    setLocStatus("Requesting GPS&hellip;");
+    refreshActiveRef();
+    setInterval(refreshActiveRef, 30000); // keep the tagged job fresh
+    // high accuracy; sends a ping on every significant move / roughly every few seconds
+    locWatch = navigator.geolocation.watchPosition(ping,
+      function (err) {
+        var m = { 1: "Permission denied", 2: "Position unavailable", 3: "Timed out" }[err.code] || "Error";
+        setLocStatus("GPS error: " + m);
+        DELIVERY.toast("GPS error: " + m, "error");
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
   });
 
   DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {

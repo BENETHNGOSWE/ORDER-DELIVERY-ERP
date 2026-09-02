@@ -7,7 +7,7 @@ app_description = (
 )
 app_email = "ops@swiftlogistics.test"
 app_license = "MIT"
-app_version = "1.0.0"
+app_version = "1.1.0"
 required_apps = ["frappe"]
 
 # ---------------------------------------------------------------------------

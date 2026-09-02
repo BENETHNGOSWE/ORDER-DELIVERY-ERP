@@ -1,6 +1,23 @@
 {% set page_title = "Cart" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+<!-- Leaflet for the delivery-location picker -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  #addr-map { height: 260px; width: 100%; border-radius: 10px; border: 2px solid #d5dbe4;
+              margin-top: 8px; z-index: 1; }
+  .dl-geo-wrap { position: relative; }
+  #geo-results { position: absolute; left:0; right:0; top: 100%; z-index: 5; background:#fff;
+                 border:1px solid #d5dbe4; border-top:none; border-radius:0 0 10px 10px;
+                 max-height: 230px; overflow:auto; box-shadow:0 8px 24px rgba(0,0,0,.12); }
+  .dl-geo-item { padding: 9px 12px; cursor:pointer; border-top:1px solid #f0f2f5; font-size:14px; }
+  .dl-geo-item:hover { background:#f3f8ff; }
+  .dl-geo-item small { color:#6b7684; display:block; }
+  .dl-geo-bar { display:flex; gap:8px; margin:8px 0; }
+  .dl-geo-bar button { flex: 0 0 auto; }
+  #geo-hint { font-size:12px; color:#43a047; margin-top:6px; font-weight:600; }
+</style>
 </head><body>
 <div class="dl-wrap">
   {% include "delivery/templates/includes/delivery_nav.html" %}
@@ -18,8 +35,21 @@
     <select id="zone" class="dl-select"></select>
     <label class="dl-label">Distance (km)</label>
     <input id="km" class="dl-input" type="number" step="0.1" value="0">
-    <label class="dl-label">Delivery address</label>
-    <textarea id="addr" class="dl-textarea" rows="2"></textarea>
+    <label class="dl-label">Delivery location</label>
+    <div class="dl-geo-wrap">
+      <input id="geo-search" class="dl-input" type="text" autocomplete="off"
+             placeholder="Search your hotel, apartment, street or area…">
+      <div id="geo-results" style="display:none"></div>
+    </div>
+    <div class="dl-geo-bar">
+      <button type="button" id="geo-myloc" class="dl-btn">📍 Use my location</button>
+      <button type="button" id="geo-clear" class="dl-btn danger">Clear</button>
+    </div>
+    <div id="addr-map"></div>
+    <div id="geo-hint"></div>
+    <label class="dl-label" style="margin-top:10px">Delivery address / notes for the driver</label>
+    <textarea id="addr" class="dl-textarea" rows="2"
+              placeholder="e.g. Slipway Villas, Block B, Apt 12 — or describe where to meet you"></textarea>
     <label class="dl-label">Phone</label>
     <input id="phone" class="dl-input">
     <label class="dl-label">Payment method</label>
@@ -39,6 +69,89 @@
 (function () {
   DELIVERY.loadCart();
   var orderType = "Food";
+
+  // ----- delivery-location picker (place search / GPS / draggable pin) -----
+  var DAR = [-6.7924, 39.2083];
+  var destLat = null, destLng = null;
+  var geoMap = null, geoMarker = null, searchTimer = null;
+
+  function destPinIcon() {
+    return L.divIcon({ className: "", iconSize: [32, 32], iconAnchor: [16, 30],
+      html: '<div style="font-size:28px;line-height:30px;text-align:center;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));">🏁</div>' });
+  }
+  function initGeoMap() {
+    if (geoMap) { geoMap.invalidateSize(); return; }
+    geoMap = L.map("addr-map").setView(DAR, 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { attribution: "&copy; OpenStreetMap", maxZoom: 19 }).addTo(geoMap);
+    geoMap.on("click", function (e) { setDestination(e.latlng.lat, e.latlng.lng); });
+  }
+  function setDestination(lat, lng, label) {
+    destLat = Number(lat); destLng = Number(lng);
+    var ll = [destLat, destLng];
+    if (!geoMarker) geoMarker = L.marker(ll, { icon: destPinIcon(), draggable: true }).addTo(geoMap);
+    geoMarker.setLatLng(ll);
+    geoMarker.on("dragend", function (ev) {
+      var p = ev.target.getLatLng(); setDestination(p.lat, p.lng);
+    });
+    geoMap.setView(ll, Math.max(geoMap.getZoom(), 15));
+    document.getElementById("geo-hint").textContent =
+      "📍 Exact delivery point set (" + Math.abs(destLat).toFixed(5) + ", " + Math.abs(destLng).toFixed(5) + ")" +
+      (label ? " — " + label : "") + ". Drag the pin to fine-tune.";
+  }
+  function clearDestination() {
+    destLat = destLng = null;
+    if (geoMarker) { geoMarker.remove(); geoMarker = null; }
+    document.getElementById("geo-hint").textContent = "";
+    geoMap.setView(DAR, 13);
+  }
+  function renderResults(list) {
+    var box = document.getElementById("geo-results");
+    if (!list.length) { box.style.display = "none"; return; }
+    box.innerHTML = list.map(function (p, i) {
+      return '<div class="dl-geo-item" data-i="' + i + '"><b>' + DELIVERY.esc(p.label) +
+        '</b><small>' + DELIVERY.esc(p.type || "place") + "</small></div>";
+    }).join("");
+    box.style.display = "block";
+    box.querySelectorAll(".dl-geo-item").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var p = list[Number(el.dataset.i)];
+        setDestination(p.lat, p.lng, p.label);
+        document.getElementById("geo-search").value = p.label;
+        box.style.display = "none";
+      });
+    });
+  }
+  document.getElementById("geo-search").addEventListener("input", function () {
+    var q = this.value.trim();
+    clearTimeout(searchTimer);
+    if (q.length < 2) { document.getElementById("geo-results").style.display = "none"; return; }
+    searchTimer = setTimeout(function () {
+      DELIVERY.call("delivery.api.customer.search_places", { query: q })
+        .then(renderResults).catch(function () { renderResults([]); });
+    }, 350);
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".dl-geo-wrap")) {
+      var box = document.getElementById("geo-results");
+      if (box) box.style.display = "none";
+    }
+  });
+  document.getElementById("geo-myloc").addEventListener("click", function () {
+    if (!navigator.geolocation) { DELIVERY.toast("Location not supported.", "error"); return; }
+    DELIVERY.toast("Finding your location…", "info");
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      setDestination(pos.coords.latitude, pos.coords.longitude, "My location");
+    }, function (err) {
+      DELIVERY.toast("Could not get location: " +
+        ({ 1: "permission denied", 2: "unavailable", 3: "timed out" }[err.code] || "error"), "error");
+    }, { enableHighAccuracy: true, timeout: 12000 });
+  });
+  document.getElementById("geo-clear").addEventListener("click", function () {
+    document.getElementById("geo-search").value = "";
+    clearDestination();
+  });
+  setTimeout(initGeoMap, 200);
 
   function money(n) { return DELIVERY.fmt(n); }
 
@@ -94,16 +207,20 @@
 
   document.getElementById("place").addEventListener("click", function () {
     var btn = this; btn.disabled = true;
+    var searchText = document.getElementById("geo-search").value.trim();
+    var addrText = document.getElementById("addr").value.trim() || searchText;
     DELIVERY.call("delivery.api.customer.place_order", {
       merchant: DELIVERY.cartMerchant,
       items: DELIVERY.cart.map(function (l) { return { item: l.item, qty: l.qty }; }),
-      delivery_address: document.getElementById("addr").value,
+      delivery_address: addrText,
       order_type: orderType,
       delivery_zone: document.getElementById("zone").value || null,
       delivery_distance_km: document.getElementById("km").value,
       payment_method: document.getElementById("pay").value,
       phone: document.getElementById("phone").value,
-      delivery_instructions: document.getElementById("notes").value
+      delivery_instructions: document.getElementById("notes").value,
+      delivery_latitude: destLat,
+      delivery_longitude: destLng
     }).then(function (r) {
       DELIVERY.cart = []; DELIVERY.cartMerchant = null; DELIVERY.saveCart();
       DELIVERY.toast("Order " + r.order + " placed", "success");

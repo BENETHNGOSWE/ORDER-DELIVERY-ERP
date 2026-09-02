@@ -1,58 +1,324 @@
-{% set page_title = "Parcel" %}
+{% set page_title = "Send a parcel" %}
+{% set u = frappe.session.user %}
+{% set is_logged_in = u and u != 'Guest' %}
+{% set full_name = frappe.db.get_value("User", u, "full_name") if is_logged_in else "" %}
+{% set initials = ((full_name or "Guest User").split(" ")|map("first")|list|join(""))[:2]|upper %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+<style>
+  :root{
+    --purple:#5B2BE0; --purple-dark:#3F1BA8; --purple-light:#F1ECFF; --lime:#D9FF5A;
+    --ink:#171717; --sec:#6B6B75; --muted:#9999A3; --bg:#F8F8FA; --card:#FFF; --line:#EAEAEF;
+  }
+  .pc-app{ display:grid; grid-template-columns:252px minmax(0,1fr); max-width:1460px; margin:0 auto; }
+  /* ---------- left sidebar ---------- */
+  .pc-side{ background:#fff; border-right:1px solid var(--line); padding:24px 16px;
+    position:sticky; top:0; height:100vh; overflow:auto; display:flex; flex-direction:column; gap:4px; }
+  .pc-logo{ display:flex; align-items:center; gap:11px; font-weight:800; font-size:21px;
+    color:var(--ink); letter-spacing:-.02em; padding:2px 8px 20px; text-decoration:none; }
+  .pc-logo .lg{ width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
+    color:#fff; display:grid; place-items:center; font-size:19px; box-shadow:0 8px 18px rgba(91,43,224,.35); }
+  .pc-nav{ display:flex; flex-direction:column; gap:3px; }
+  .pc-nav a{ display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:12px;
+    color:var(--sec); font-weight:500; font-size:14px; text-decoration:none; transition:all .15s; }
+  .pc-nav a .ni{ width:22px; text-align:center; font-size:16px; }
+  .pc-sidehelp a .fa{ width:16px; text-align:center; margin-right:2px; }
+  .pc-nav a:hover{ background:#F6F4FE; color:var(--purple-dark); }
+  .pc-nav a.active{ background:var(--purple-light); color:var(--purple-dark); font-weight:700; }
+  .pc-promo{ margin-top:22px; background:linear-gradient(160deg,#EDE6FF,#DCCFFF); border-radius:18px; padding:18px; }
+  .pc-promo h4{ margin:0 0 4px; font-size:15px; font-weight:800; color:var(--ink); }
+  .pc-promo p{ margin:0 0 10px; font-size:12.5px; color:var(--sec); line-height:1.45; }
+  .pc-promo .art{ margin:8px 0 14px; }
+  .pc-promo .art i{ font-size:54px; color:#4C1D95; filter:drop-shadow(0 8px 10px rgba(76,29,149,.25)); }
+  .pc-promo a{ display:block; text-align:center; background:#fff; color:var(--purple-dark); font-weight:700;
+    font-size:13px; padding:11px; border-radius:11px; text-decoration:none; }
+  .pc-sidehelp{ margin-top:14px; border:1px solid var(--line); border-radius:18px; padding:16px; background:#fff; }
+  .pc-sidehelp h5{ margin:0 0 6px; font-size:14px; font-weight:700; }
+  .pc-sidehelp p{ margin:0 0 10px; font-size:12.5px; color:var(--sec); }
+  .pc-sidehelp a{ display:flex; align-items:center; gap:8px; color:var(--sec); font-size:12.5px;
+    text-decoration:none; padding:3px 0; font-weight:500; }
+  /* ---------- main ---------- */
+  .pc-main{ padding:22px 30px 70px; min-width:0; }
+  .pc-topbar{ display:flex; justify-content:flex-end; align-items:center; gap:18px; margin-bottom:18px; }
+  .pc-bell{ position:relative; background:none; border:0; font-size:20px; cursor:pointer; line-height:1; }
+  .pc-bell .bdg{ position:absolute; top:-6px; right:-7px; background:#EF4444; color:#fff; font-size:10px;
+    font-weight:700; min-width:16px; height:16px; border-radius:999px; display:grid; place-items:center; padding:0 3px; }
+  .pc-user{ display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); }
+  .pc-user .av{ width:38px; height:38px; border-radius:50%; background:var(--purple); color:#fff;
+    display:grid; place-items:center; font-size:13px; font-weight:700; }
+  .pc-user .nm{ font-size:14px; font-weight:700; }
+  .pc-user .ch{ color:var(--muted); font-size:12px; }
+  .pc-login{ background:var(--purple); color:#fff; padding:10px 20px; border-radius:11px;
+    font-weight:700; font-size:14px; text-decoration:none; }
+  .pc-hero{ background:linear-gradient(135deg,#6D28D9,#4C1D95); border-radius:22px; padding:34px 38px;
+    color:#fff; display:flex; align-items:center; justify-content:space-between; gap:24px; position:relative;
+    overflow:hidden; box-shadow:0 18px 44px rgba(76,29,149,.35); }
+  .pc-hero::before{ content:""; position:absolute; right:-70px; top:-90px; width:280px; height:280px;
+    border-radius:50%; background:rgba(255,255,255,.07); }
+  .pc-hero::after{ content:""; position:absolute; right:120px; bottom:-120px; width:220px; height:220px;
+    border-radius:50%; background:rgba(217,255,90,.10); }
+  .pc-hero-l{ display:flex; align-items:center; gap:18px; position:relative; z-index:1; }
+  .pc-hero-l .hic{ width:60px; height:60px; border-radius:16px; background:rgba(255,255,255,.16);
+    display:grid; place-items:center; font-size:28px; flex:none; }
+  .pc-hero h1{ margin:0 0 8px; font-size:32px; font-weight:800; letter-spacing:-.02em; }
+  .pc-hero p{ margin:0; font-size:14.5px; line-height:1.6; opacity:.92; max-width:560px; }
+  .pc-hero-art{ position:relative; z-index:1; width:200px; height:120px; flex:none; }
+  .pc-hero-art i{ position:absolute; color:#fff; filter:drop-shadow(0 14px 14px rgba(0,0,0,.25)); }
+  .pc-hero-art i:nth-child(1){ left:6px; bottom:0; font-size:78px; opacity:.96; }
+  .pc-hero-art i:nth-child(2){ right:0; bottom:4px; font-size:58px; opacity:.9; }
+  .pc-hero-art i:nth-child(3){ left:84px; top:2px; font-size:50px; opacity:.95; }
+  .pc-layout{ display:grid; grid-template-columns:minmax(0,1fr) 296px; gap:26px; margin-top:26px; align-items:start; }
+  .pc-card{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:28px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04); }
+  .pc-row2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .pc-row4{ display:grid; grid-template-columns:repeat(4,1fr); gap:26px 18px; margin-top:26px; align-items:end; }
+  .pc-field{ min-width:0; }
+  .pc-field > label{ display:block; font-size:13px; font-weight:600; color:var(--ink);
+    margin:0 0 8px; white-space:nowrap; letter-spacing:-.01em; }
+  .pc-in{ width:100%; height:48px; padding:0 14px; border:1.5px solid var(--line); border-radius:12px;
+    font-size:14px; font-family:inherit; color:var(--ink); background:#fff; box-sizing:border-box; transition:.15s; }
+  .pc-in.ta{ height:auto; min-height:54px; padding:13px 14px; resize:vertical; }
+  .pc-in::placeholder{ color:var(--muted); }
+  .pc-in:focus{ outline:none; border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+  select.pc-in{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:38px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%236B6B75' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center; }
+  .pc-ic{ position:relative; }
+  .pc-ic .ic{ position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:15px;
+    pointer-events:none; color:var(--purple); opacity:.9; }
+  .pc-ic .ic.ta-ic{ top:17px; transform:none; }
+  .pc-ic .pc-in{ padding-right:42px; }
+  .pc-phone{ display:flex; align-items:center; height:48px; border:1.5px solid var(--line); border-radius:12px;
+    background:#fff; overflow:hidden; transition:.15s; }
+  .pc-phone:focus-within{ border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+  .pc-phone .pf{ display:flex; align-items:center; height:100%; padding:0 13px; border-right:1px solid var(--line);
+    background:#FAFAFC; color:var(--purple-dark); font-size:14px; font-weight:700; white-space:nowrap; }
+  .pc-phone input{ flex:1; min-width:0; width:100%; height:100%; border:0; outline:none; padding:0 12px;
+    font-size:14px; font-family:inherit; color:var(--ink); background:transparent; }
+  .pc-check{ display:flex; align-items:center; gap:9px; margin-top:26px; font-size:14px; color:var(--ink); cursor:pointer; }
+  .pc-check input{ width:17px; height:17px; accent-color:var(--purple); cursor:pointer; }
+  .pc-quote{ margin-top:18px; background:var(--purple-light); color:var(--purple-dark); border-radius:12px;
+    padding:13px 16px; font-size:14px; font-weight:600; }
+  .pc-quote:empty{ display:none; }
+  .pc-actions{ display:flex; gap:12px; margin-top:18px; }
+  .pc-btn{ height:48px; padding:0 26px; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer;
+    font-family:inherit; display:inline-flex; align-items:center; justify-content:center; gap:9px; transition:.15s; }
+  .pc-btn.ghost{ background:#fff; color:var(--purple); border:1.5px solid var(--purple); }
+  .pc-btn.ghost:hover{ background:var(--purple-light); }
+  .pc-btn.solid{ background:var(--purple); color:#fff; border:1.5px solid var(--purple); }
+  .pc-btn.solid:hover{ background:var(--purple-dark); border-color:var(--purple-dark); box-shadow:0 8px 20px rgba(91,43,224,.3); }
+  .pc-btn:disabled{ opacity:.55; cursor:not-allowed; }
+  .pc-sec-title{ font-size:19px; font-weight:800; letter-spacing:-.01em; margin:30px 0 14px; color:var(--ink); }
+  .pc-tablecard{ padding:6px 22px; }
+  .pc-table{ width:100%; border-collapse:collapse; }
+  .pc-table th{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    text-align:left; padding:14px 10px; font-weight:700; border-bottom:1px solid var(--line); }
+  .pc-table td{ padding:13px 10px; font-size:14px; color:var(--sec); border-bottom:1px solid var(--line); }
+  .pc-table tr:last-child td{ border-bottom:0; }
+  .pc-band{ display:flex; align-items:center; font-weight:600; color:var(--ink); }
+  .pc-band .bic{ width:36px; height:36px; border-radius:11px; background:var(--purple-light); display:grid;
+    place-items:center; font-size:16px; color:var(--purple); margin-right:13px; flex:none; }
+  .pc-safe{ margin-top:22px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px 22px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .pc-safe-l{ display:flex; align-items:center; gap:14px; }
+  .pc-safe-l .sh{ width:42px; height:42px; border-radius:12px; background:var(--purple-light); display:grid;
+    place-items:center; font-size:19px; color:var(--purple-dark); flex:none; }
+  .pc-safe-l b{ display:block; font-size:14px; font-weight:800; }
+  .pc-safe-l span{ font-size:12.5px; color:var(--sec); }
+  .pc-safe-r{ font-size:12px; color:var(--muted); text-align:right; line-height:1.6; }
+  /* right rail */
+  .pc-rail{ display:flex; flex-direction:column; gap:18px; }
+  .pc-rail h3{ margin:0 0 18px; font-size:16px; font-weight:800; color:var(--ink); }
+  .pc-step{ display:flex; gap:14px; position:relative; padding-bottom:24px; }
+  .pc-step:last-child{ padding-bottom:0; }
+  .pc-step:not(:last-child)::before{ content:""; position:absolute; left:20px; top:44px; bottom:4px;
+    width:2px; background:var(--line); }
+  .pc-step .sic{ width:42px; height:42px; border-radius:50%; background:var(--purple-light); display:grid;
+    place-items:center; font-size:17px; color:var(--purple-dark); flex:none; z-index:1; }
+  .pc-step b{ display:block; font-size:14px; font-weight:700; margin-bottom:3px; }
+  .pc-step span{ font-size:12.5px; color:var(--sec); line-height:1.45; }
+  .pc-help{ background:linear-gradient(160deg,#F6F3FF,#EFE9FF); border:1px solid #E4DBFF; }
+  .pc-help .hb{ display:flex; align-items:center; gap:12px; margin:6px 0 14px; }
+  .pc-help .hb .cb{ width:46px; height:46px; border-radius:50%; background:var(--purple); color:#fff;
+    display:grid; place-items:center; font-size:22px; flex:none; }
+  .pc-help p{ font-size:13px; color:var(--sec); line-height:1.55; margin:0 0 14px; }
+  .pc-help a{ display:flex; align-items:center; justify-content:center; gap:9px; background:#fff;
+    color:var(--purple-dark); font-weight:700; font-size:13.5px; padding:12px; border-radius:12px;
+    text-decoration:none; border:1.5px solid #E4DBFF; }
+  @media (max-width:1200px){ .pc-layout{ grid-template-columns:1fr; } .pc-rail{ display:grid; grid-template-columns:1fr 1fr; } }
+  @media (max-width:960px){
+    .pc-app{ grid-template-columns:1fr; }
+    .pc-side{ position:static; height:auto; flex-direction:row; flex-wrap:wrap; align-items:center;
+      border-right:0; border-bottom:1px solid var(--line); padding:14px 16px; }
+    .pc-logo{ padding:0 10px 0 0; }
+    .pc-nav{ flex-direction:row; flex-wrap:wrap; }
+    .pc-promo, .pc-sidehelp{ display:none; }
+    .pc-row4{ grid-template-columns:1fr 1fr; }
+    .pc-hero-art{ display:none; }
+  }
+  @media (max-width:600px){
+    .pc-main{ padding:16px 14px 50px; }
+    .pc-row2, .pc-row4, .pc-rail{ grid-template-columns:1fr; }
+    .pc-hero{ padding:24px 20px; } .pc-hero h1{ font-size:25px; }
+    .pc-card{ padding:18px; }
+  }
+</style>
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
-  <div class="dl-hero"><h1>Send a parcel</h1>
-    <p>Standard weights are billed instantly. Heavy, oversized or unusual items
-       go to operations for a custom tariff.</p></div>
+<div class="pc-app">
+  <!-- LEFT SIDEBAR -->
+  <aside class="pc-side">
+    <a class="pc-logo" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Delivery</a>
+    <nav class="pc-nav">
+      <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Dashboard</a>
+      <a href="/delivery/parcel" class="active"><span class="ni"><i class="fa-solid fa-box"></i></span> Send a Parcel</a>
+      <a href="/delivery/me"><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Parcels</a>
+      <a href="/delivery/transport"><span class="ni"><i class="fa-solid fa-truck"></i></span> Transport</a>
+      <a href="/delivery/track"><span class="ni"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
+      <a href="mailto:support@delivery.co.tz"><span class="ni"><i class="fa-solid fa-circle-question"></i></span> Support</a>
+    </nav>
+    <div class="pc-promo">
+      <h4>Get up to 20% off</h4>
+      <p>on your first 3 parcels</p>
+      <div class="art"><i class="fa-solid fa-cube"></i></div>
+      <a href="#pc-form">Ship Now</a>
+    </div>
+    <div class="pc-sidehelp">
+      <h5>Need help?</h5>
+      <p>Live chat with us</p>
+      <a href="tel:+255712345678"><i class="fa-solid fa-phone"></i> +255 712 345 678</a>
+      <a href="mailto:support@delivery.co.tz"><i class="fa-solid fa-envelope"></i> support@delivery.co.tz</a>
+    </div>
+  </aside>
 
-  <div class="dl-card">
-    <div class="dl-row">
-      <div style="flex:1"><label class="dl-label">Pickup address</label>
-        <textarea id="pickup" class="dl-textarea" rows="2"></textarea></div>
-      <div style="flex:1"><label class="dl-label">Drop-off address</label>
-        <textarea id="dropoff" class="dl-textarea" rows="2"></textarea></div>
+  <!-- MAIN -->
+  <main class="pc-main">
+    <div class="pc-topbar">
+      <button class="pc-bell" type="button"><i class="fa-regular fa-bell"></i><span class="bdg">3</span></button>
+      {% if is_logged_in %}
+      <a class="pc-user" href="/delivery/me">
+        <span class="av">{{ initials }}</span>
+        <span class="nm">{{ full_name }}</span>
+        <span class="ch">▾</span>
+      </a>
+      {% else %}
+      <a class="pc-login" href="/login?redirect-to=/delivery/parcel">Log in</a>
+      {% endif %}
     </div>
-    <label class="dl-label">Description</label>
-    <input id="desc" class="dl-input">
-    <div class="dl-row">
-      <div style="flex:1"><label class="dl-label">Weight (kg)</label>
-        <input id="w" class="dl-input" type="number" step="0.1" value="1"></div>
-      <div style="flex:1"><label class="dl-label">Length (cm)</label>
-        <input id="l" class="dl-input" type="number" value="0"></div>
-      <div style="flex:1"><label class="dl-label">Width (cm)</label>
-        <input id="wd" class="dl-input" type="number" value="0"></div>
-      <div style="flex:1"><label class="dl-label">Height (cm)</label>
-        <input id="h" class="dl-input" type="number" value="0"></div>
-    </div>
-    <div class="dl-row">
-      <div style="flex:1"><label class="dl-label">Distance (km)</label>
-        <input id="km" class="dl-input" type="number" step="0.1" value="0"></div>
-      <div style="flex:1"><label class="dl-label">Declared value</label>
-        <input id="val" class="dl-input" type="number" value="0"></div>
-      <div style="flex:1"><label class="dl-label">Phone</label>
-        <input id="phone" class="dl-input"></div>
-      <div style="flex:1"><label class="dl-label">Payment</label>
-        <select id="pay" class="dl-select"></select></div>
-    </div>
-    <label class="dl-row" style="margin-top:10px">
-      <input id="fragile" type="checkbox"> Fragile &mdash; handle with care
-    </label>
-    <div class="dl-between" style="margin-top:12px">
-      <div id="quote" class="dl-mut"></div>
-      <span>
-        <button id="q" class="dl-btn sec">Get quote</button>
-        <button id="go" class="dl-btn">Send parcel</button>
-      </span>
-    </div>
-  </div>
 
-  <h2 class="dl-section-title">Weight bands</h2>
-  <div class="dl-card"><table class="dl-table">
-    <thead><tr><th>Band</th><th>From</th><th>To</th><th>Base</th><th>Per extra kg</th></tr></thead>
-    <tbody id="bands"></tbody></table></div>
+    <section class="pc-hero">
+      <div class="pc-hero-l">
+        <div class="hic"><i class="fa-solid fa-box"></i></div>
+        <div>
+          <h1>Send a parcel</h1>
+          <p>Standard weights are billed instantly. Heavy, oversized or unusual items go to
+             operations for a custom tariff — you only pay once you approve the quote.</p>
+        </div>
+      </div>
+      <div class="pc-hero-art">
+        <i class="fa-solid fa-cube"></i><i class="fa-solid fa-box"></i><i class="fa-solid fa-boxes-stacked"></i>
+      </div>
+    </section>
+
+    <div class="pc-layout">
+      <div>
+        <div class="pc-card" id="pc-form">
+          <div class="pc-row2">
+            <div class="pc-field">
+              <label for="pickup">Pickup address</label>
+              <div class="pc-ic">
+                <textarea id="pickup" class="pc-in ta" rows="2" placeholder="Where do we collect it?"></textarea>
+                <span class="ic ta-ic"><i class="fa-solid fa-location-dot"></i></span>
+              </div>
+            </div>
+            <div class="pc-field">
+              <label for="dropoff">Drop-off address</label>
+              <div class="pc-ic">
+                <textarea id="dropoff" class="pc-in ta" rows="2" placeholder="Where is it going?"></textarea>
+                <span class="ic ta-ic"><i class="fa-solid fa-flag-checkered"></i></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pc-field" style="margin-top:22px">
+            <label for="desc">Description</label>
+            <div class="pc-ic">
+              <input id="desc" class="pc-in" placeholder="e.g. Documents, a laptop, kitchenware…">
+              <span class="ic"><i class="fa-regular fa-rectangle-list"></i></span>
+            </div>
+          </div>
+
+          <div class="pc-row4">
+            <div class="pc-field"><label for="w">Weight (kg)</label>
+              <input id="w" class="pc-in" type="number" step="0.1" value="1"></div>
+            <div class="pc-field"><label for="l">Length (cm)</label>
+              <input id="l" class="pc-in" type="number" value="0"></div>
+            <div class="pc-field"><label for="wd">Width (cm)</label>
+              <input id="wd" class="pc-in" type="number" value="0"></div>
+            <div class="pc-field"><label for="h">Height (cm)</label>
+              <input id="h" class="pc-in" type="number" value="0"></div>
+          </div>
+
+          <div class="pc-row4">
+            <div class="pc-field"><label for="km">Distance (km)</label>
+              <input id="km" class="pc-in" type="number" step="0.1" value="0"></div>
+            <div class="pc-field"><label for="val">Declared value</label>
+              <input id="val" class="pc-in" type="number" value="0" placeholder="TZS"></div>
+            <div class="pc-field"><label for="phone">Phone (optional)</label>
+              <div class="pc-phone">
+                <span class="pf"><i class="fa-solid fa-phone" style="font-size:13px;margin-right:6px"></i>+255</span>
+                <input id="phone" type="tel" placeholder="7XX XXX XXX">
+              </div>
+            </div>
+            <div class="pc-field"><label for="pay">Payment</label>
+              <select id="pay" class="pc-in"></select></div>
+          </div>
+
+          <label class="pc-check"><input id="fragile" type="checkbox"> Fragile — handle with care
+            <i class="fa-solid fa-wine-glass" style="color:#F59E0B;margin-left:2px"></i></label>
+
+          <div id="quote" class="pc-quote"></div>
+
+          <div class="pc-actions">
+            <button id="q" class="pc-btn ghost"><i class="fa-solid fa-calculator"></i> Get quote</button>
+            <button id="go" class="pc-btn solid">Send parcel <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <h2 class="pc-sec-title">Weight bands</h2>
+        <div class="pc-card pc-tablecard">
+          <table class="pc-table">
+            <thead><tr><th>Band</th><th>From</th><th>To</th><th>Base</th><th>Per extra kg</th></tr></thead>
+            <tbody id="bands"></tbody>
+          </table>
+        </div>
+
+        <div class="pc-safe">
+          <div class="pc-safe-l">
+            <div class="sh"><i class="fa-solid fa-shield-halved"></i></div>
+            <div><b>Safe. Secure. Reliable.</b><span>Your parcel is insured and protected every step of the way.</span></div>
+          </div>
+          <div class="pc-safe-r">All prices are in TZS<br>Effective from 01 May 2024</div>
+        </div>
+      </div>
+
+      <!-- RIGHT RAIL -->
+      <aside class="pc-rail">
+        <div class="pc-card">
+          <h3>How it works</h3>
+          <div class="pc-step"><div class="sic"><i class="fa-solid fa-file-invoice"></i></div><div><b>1. Get a quote</b><span>Tell us about your parcel</span></div></div>
+          <div class="pc-step"><div class="sic"><i class="fa-solid fa-magnifying-glass"></i></div><div><b>2. We review</b><span>We'll review and confirm the price</span></div></div>
+          <div class="pc-step"><div class="sic"><i class="fa-solid fa-truck-fast"></i></div><div><b>3. We pick up</b><span>We collect your parcel</span></div></div>
+          <div class="pc-step"><div class="sic"><i class="fa-solid fa-box-open"></i></div><div><b>4. We deliver</b><span>Safe and fast delivery</span></div></div>
+        </div>
+        <div class="pc-card pc-help">
+          <h3>Need help?</h3>
+          <p>Our support team is ready to help you.</p>
+          <div class="hb"><div class="cb"><i class="fa-solid fa-comment-dots"></i></div></div>
+          <a href="mailto:support@delivery.co.tz"><i class="fa-solid fa-headset"></i> Contact support</a>
+        </div>
+      </aside>
+    </div>
+  </main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -63,6 +329,12 @@
     return { weight_kg: v("w"), length_cm: v("l"), width_cm: v("wd"),
              height_cm: v("h"), distance_km: v("km"), is_fragile: document.getElementById("fragile").checked ? 1 : 0 };
   }
+  function bandIcon(name){
+    name = (name || "").toLowerCase();
+    return (name.indexOf("document") >= 0 || name.indexOf("envelope") >= 0)
+      ? '<i class="fa-regular fa-file-lines"></i>'
+      : '<i class="fa-solid fa-box"></i>';
+  }
 
   DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
     DELIVERY.currency = c.currency;
@@ -72,7 +344,8 @@
 
   DELIVERY.call("delivery.api.customer.parcel_weight_categories").then(function (rows) {
     document.getElementById("bands").innerHTML = rows.map(function (b) {
-      return "<tr><td>" + DELIVERY.esc(b.category_name) + "</td><td>" + b.min_weight_kg +
+      return '<tr><td><div class="pc-band"><span class="bic">' + bandIcon(b.category_name) + "</span>" +
+        DELIVERY.esc(b.category_name) + '</div></td><td>' + b.min_weight_kg +
         " kg</td><td>" + (b.max_weight_kg || "&infin;") + " kg</td><td>" +
         DELIVERY.fmt(b.base_charge) + "</td><td>" + DELIVERY.fmt(b.per_kg_charge) + "</td></tr>";
     }).join("");
@@ -81,8 +354,8 @@
   document.getElementById("q").addEventListener("click", function () {
     DELIVERY.call("delivery.api.customer.quote_parcel", payload()).then(function (r) {
       document.getElementById("quote").innerHTML = r.needs_review
-        ? "<b>Manual quote needed</b> &mdash; operations will price this parcel."
-        : "Tariff <b>" + DELIVERY.fmt(r.tariff_amount) + "</b>" +
+        ? '<i class="fa-solid fa-headset"></i> <b>Manual quote needed</b> &mdash; operations will price this parcel.'
+        : '<i class="fa-solid fa-tag"></i> Tariff <b>' + DELIVERY.fmt(r.tariff_amount) + "</b>" +
           (r.weight_category ? " (" + DELIVERY.esc(r.weight_category) + ")" : "");
     }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
   });
@@ -92,7 +365,9 @@
     var p = payload();
     p.pickup_address = v("pickup"); p.dropoff_address = v("dropoff");
     p.parcel_description = v("desc"); p.declared_value = v("val");
-    p.phone = v("phone"); p.payment_method = v("pay");
+    var phone = v("phone").replace(/\s+/g, "");
+    if (phone) { if (phone.indexOf("+") !== 0) { phone = "+255" + phone.replace(/^0+/, ""); } }
+    p.phone = phone; p.payment_method = v("pay");
     DELIVERY.call("delivery.api.customer.place_parcel_request", p).then(function (r) {
       DELIVERY.toast("Parcel " + r.parcel + " created", "success");
       setTimeout(function () { location.href = "/delivery/track?ref=" + r.parcel; }, 900);

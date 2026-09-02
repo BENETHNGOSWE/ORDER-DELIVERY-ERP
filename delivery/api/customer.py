@@ -79,6 +79,77 @@ def merchant_catalog(merchant, item_type=None, category=None, search=None):
 
 
 @frappe.whitelist(allow_guest=True)
+def browse_items(search=None, category=None, item_type=None, sort="featured", limit=200):
+    """
+    Marketplace-wide catalogue for the home page: every published, in-stock
+    item across all open merchants, with merchant info attached. Search,
+    category/type filter and sort are applied here (and can also be done
+    client-side for instant response).
+    """
+    filters = {"published": 1}
+    if category:
+        filters["category"] = category
+    if item_type:
+        filters["item_type"] = item_type
+
+    order_by = {
+        "featured": "is_featured desc, item_name asc",
+        "price_asc": "standard_rate asc",
+        "price_desc": "standard_rate desc",
+        "fast": "prep_minutes asc",
+        "name": "item_name asc",
+    }.get(sort, "is_featured desc, item_name asc")
+
+    rows = frappe.get_all("DL Menu Item", filters=filters,
+        fields=["name", "item_code", "item_name", "item_type", "category",
+                "description", "standard_rate", "discount_rate", "prep_minutes",
+                "item_image", "is_featured", "available_stock", "merchant"],
+        order_by=order_by, limit=limit)
+
+    # attach merchant info + only items from OPEN merchants
+    merchants = {m.name: m for m in frappe.get_all(
+        "Merchant", filters={"status": "Open"},
+        fields=["name", "merchant_name", "service_type", "area", "city",
+                "avg_prep_minutes", "logo"])}
+
+    items = []
+    for r in rows:
+        m = merchants.get(r.merchant)
+        if not m:
+            continue
+        if search:
+            q = search.lower()
+            if q not in (r.item_name or "").lower() \
+               and q not in (r.category or "").lower() \
+               and q not in (m.merchant_name or "").lower():
+                continue
+        rate = flt(r.standard_rate)
+        disc = flt(r.discount_rate or 0)
+        price = rate - (rate * disc / 100.0) if disc else rate
+        items.append({
+            "name": r.name,
+            "item_code": r.item_code,
+            "item_name": r.item_name,
+            "item_type": r.item_type,
+            "category": r.category or "Other",
+            "description": r.description or "",
+            "rate": flt(price, 2),
+            "standard_rate": rate,
+            "discount_rate": disc,
+            "prep_minutes": flt(r.prep_minutes or m.avg_prep_minutes or 20),
+            "image": r.item_image or "",
+            "featured": bool(r.is_featured),
+            "in_stock": flt(r.available_stock or 0),
+            "merchant": r.merchant,
+            "merchant_name": m.merchant_name,
+            "merchant_service": m.service_type,
+            "merchant_area": m.area or m.city or "",
+            "merchant_logo": m.logo or "",
+        })
+    return items
+
+
+@frappe.whitelist(allow_guest=True)
 def zones():
     return frappe.get_all("Delivery Zone", filters={"enabled": 1},
                           fields=["name", "zone_name", "city", "base_fee",
@@ -98,6 +169,30 @@ def parcel_weight_categories():
                           fields=["name", "category_name", "min_weight_kg", "max_weight_kg",
                                   "base_charge", "per_kg_charge"],
                           order_by="min_weight_kg asc")
+
+
+@frappe.whitelist(allow_guest=True)
+def home_banners():
+    """Published home-page hero carousel banners, ordered by sort order."""
+    try:
+        rows = frappe.get_all("Home Banner",
+                              filters={"enabled": 1, "image": ["!=", ""]},
+                              fields=["title", "subtitle", "image", "button_label", "button_link", "sort_order"],
+                              order_by="sort_order asc, creation asc")
+    except Exception:
+        return []
+    out = []
+    for b in rows:
+        if not b.image:
+            continue
+        out.append({
+            "title": b.title or "",
+            "subtitle": b.subtitle or "",
+            "image": b.image,
+            "button_label": b.button_label or "",
+            "button_link": b.button_link or "",
+        })
+    return out
 
 
 @frappe.whitelist(allow_guest=True)
@@ -147,11 +242,26 @@ def quote_transport(stops, vehicle_type="Car", passengers=1):
 # ---------------------------------------------------------------------------
 # food / retail orders
 # ---------------------------------------------------------------------------
+@frappe.whitelist(allow_guest=True)
+def search_places(query, lat=None, lng=None, limit=8):
+	"""
+	Public place autocomplete for the checkout location box.
+	Returns registered places (hotels, apartments, businesses, streets, areas)
+	near Dar es Salaam with coordinates, so the delivery destination is exact.
+	"""
+	from delivery.delivery_logistics import geocode
+	try:
+		return geocode.search_places(query, lat=lat, lng=lng, limit=limit)
+	except Exception:
+		return []
+
+
 @frappe.whitelist()
 def place_order(merchant, items, delivery_address, order_type="Food",
                 delivery_zone=None, delivery_distance_km=0,
                 payment_method="Cash On Delivery", phone=None,
-                delivery_instructions=None, customer_name=None):
+                delivery_instructions=None, customer_name=None,
+                delivery_latitude=None, delivery_longitude=None):
     """
     SRS 3.1 steps 1-2: cart -> checkout -> order submitted to the merchant.
 
@@ -183,10 +293,24 @@ def place_order(merchant, items, delivery_address, order_type="Food",
         "payment_method": payment_method,
         "order_items": [{"item": i["item"], "qty": flt(i.get("qty", 1))} for i in items],
     })
+    # exact destination coordinates captured at checkout (map pin / place search)
+    if delivery_latitude is not None and delivery_longitude is not None \
+            and flt(delivery_latitude) and flt(delivery_longitude):
+        order.delivery_latitude = flt(delivery_latitude, 6)
+        order.delivery_longitude = flt(delivery_longitude, 6)
     order.insert(ignore_permissions=True)
 
     # SRS 3.1 step 2 -> order lands in the Merchant portal as PENDING
     order.submit_for_merchant()
+
+    # geocode any missing address coords in the BACKGROUND (never blocks the
+    # customer or the tracking request)
+    try:
+        frappe.enqueue("delivery.delivery_logistics.geocode.backfill_coordinates",
+                       reference=order.name, doctype="Delivery Order",
+                       queue="short", timeout=120)
+    except Exception:
+        pass
 
     result = {"order": order.name, "state": order.workflow_state,
               "grand_total": flt(order.grand_total, 2), "currency": order.currency,
@@ -259,6 +383,100 @@ def track(reference):
             return data
     frappe.throw(_("No order or request found with reference {0}.").format(reference),
                  frappe.DoesNotExistError)
+
+
+@frappe.whitelist(allow_guest=True)
+def track_route(reference, limit=200):
+    """
+    Live driver route for the public tracking map.
+
+    Returns the driver's latest position plus the recent breadcrumb trail of
+    Driver Location Log pings for this order, so the /delivery/track page can
+    draw the driver moving with Leaflet.
+
+    Privacy: data is only revealed once an order has a driver assigned. The
+    endpoint is guest-accessible (the tracking page is public) but a valid
+    order reference is required, and only that order's pings are returned.
+    """
+    doc = None
+    dt = None
+    for cand in ("Delivery Order", "Parcel Request", "Transport Request"):
+        if frappe.db.exists(cand, reference):
+            doc = frappe.get_doc(cand, reference)
+            dt = cand
+            break
+    if not doc:
+        frappe.throw(_("No order or request found with reference {0}.").format(reference),
+                     frappe.DoesNotExistError)
+
+    driver = doc.get("assigned_driver")
+    state = doc.get("workflow_state")
+    driver_name = None
+    driver_phone = None
+    trail = []
+    latest = None
+    pickup = dropoff = None
+
+    if driver:
+        driver_name = frappe.db.get_value("Delivery Driver", driver, "driver_name")
+        driver_phone = frappe.db.get_value("Delivery Driver", driver, "phone")
+
+        rows = frappe.get_all(
+            "Driver Location Log",
+            filters={"driver": driver, "reference": reference},
+            fields=["latitude", "longitude", "accuracy", "activity", "timestamp"],
+            order_by="timestamp asc",
+            limit_page_length=limit,
+        )
+        # fall back to the driver's most recent pings even if not tagged to ref
+        if not rows:
+            rows = frappe.get_all(
+                "Driver Location Log",
+                filters={"driver": driver},
+                fields=["latitude", "longitude", "accuracy", "activity", "timestamp"],
+                order_by="timestamp asc",
+                limit_page_length=limit,
+            )
+        for r in rows:
+            lat, lng = flt(r.latitude, 6), flt(r.longitude, 6)
+            if lat and lng:
+                trail.append({"lat": lat, "lng": lng,
+                              "activity": r.activity or "",
+                              "accuracy": flt(r.accuracy or 0),
+                              "timestamp": str(r.timestamp or "")})
+        if trail:
+            latest = trail[-1]
+
+    # resolve pickup / destination coordinates (exact pins win, else geocode)
+    try:
+        from delivery.delivery_logistics import geocode
+        pickup, dropoff = geocode.order_points(doc, dt)
+    except Exception:
+        pass
+
+    return {
+        "reference": reference,
+        "doctype": dt,
+        "service": doc.service(),
+        "state": state,
+        "driver": driver,
+        "driver_name": driver_name,
+        "driver_phone": driver_phone,
+        "has_driver": bool(driver),
+        "latest": latest,
+        "trail": trail,
+        "pickup": pickup,
+        "dropoff": dropoff,
+        "currency": doc.get("currency") or _billing_currency(),
+    }
+
+
+def _billing_currency():
+    try:
+        from delivery.delivery_logistics import billing
+        return billing._currency()
+    except Exception:
+        return "TZS"
 
 
 # ---------------------------------------------------------------------------

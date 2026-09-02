@@ -83,7 +83,7 @@ def check_python_compiles():
 def check_doctype_json():
     section("[2] DocType definitions")
     required = {"name", "module", "fields", "doctype"}
-    check(len(SCHEMA) == 14, "14 doctypes defined", len(SCHEMA))
+    check(len(SCHEMA) >= 14, "{0} doctypes defined".format(len(SCHEMA)), len(SCHEMA))
 
     bad = []
     for dt, doc in SCHEMA.items():

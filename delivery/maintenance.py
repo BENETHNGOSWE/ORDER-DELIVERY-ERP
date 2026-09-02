@@ -144,3 +144,86 @@ def probe_templates():
             print("  OK    " + rel)
         except Exception as e:
             print("  FAIL  {0}: {1}: {2}".format(rel, type(e).__name__, str(e)[:300]))
+
+
+def bulk_attach_images(folder="/home/frappe/product-images", match_by=None):
+	"""
+	Attach product photos in bulk from a folder to DL Menu Item records.
+
+	Put your images in one folder, named by the ITEM CODE (or a slug of the
+	product name), e.g.
+
+	    ~/product-images/SG-PILAU.jpg
+	    ~/product-images/KM-RICE-5KG.png
+	    ~/product-images/mc-coffee.webp
+	    ~/product-images/pilau-special.jpg   # matches product name
+
+	Run:
+	    bench --site delivery.localhost execute \
+	      delivery.maintenance.bulk_attach_images \
+	      --kwargs '{"folder":"/home/eveneth_beneth/product-images"}'
+
+	Matching: file stem (lowercased, stripped) is compared against the item
+	code and a slug of the item name. Existing images are skipped unless you
+	force re-run. Sets published=1 as well so items always show.
+	"""
+	import unicodedata
+
+	def slug(s):
+		s = (s or "").lower()
+		s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+		return "".join(ch if ch.isalnum() else "-" for ch in s).strip("-")
+
+	if not os.path.isdir(folder):
+		frappe.throw("Folder not found: {0}".format(folder))
+
+	exts = (".png", ".jpg", ".jpeg", ".webp")
+	files = [f for f in os.listdir(folder) if f.lower().endswith(exts)]
+	by_stem = {}
+	for f in files:
+		stem = os.path.splitext(f)[0].strip().lower()
+		by_stem.setdefault(stem, f)
+
+	items = frappe.get_all("DL Menu Item",
+		fields=["name", "item_code", "item_name", "item_image"])
+
+	updated, missing, skipped = [], [], []
+	for it in items:
+		candidates = [
+			(it.item_code or "").strip().lower(),
+			slug(it.item_name),
+		]
+		fname = None
+		for c in candidates:
+			if c and c in by_stem:
+				fname = by_stem[c]; break
+		if not fname:
+			missing.append(it.item_code or it.name)
+			continue
+		if it.item_image:
+			skipped.append(it.item_code or it.name)
+			continue
+
+		path = os.path.join(folder, fname)
+		with open(path, "rb") as fh:
+			content = fh.read()
+		file_doc = frappe.get_doc({
+			"doctype": "File",
+			"file_name": fname,
+			"attached_to_doctype": "DL Menu Item",
+			"attached_to_name": it.name,
+			"attached_to_field": "item_image",
+			"is_private": 0,
+			"content": content,
+		}).insert(ignore_permissions=True)
+		frappe.db.set_value("DL Menu Item", it.name,
+		                    {"item_image": file_doc.file_url, "published": 1},
+		                    update_modified=False)
+		updated.append(it.item_code or it.name)
+
+	frappe.db.commit()
+	print("Attached {0} image(s), skipped {1} (already had image), "
+	      "{2} item(s) with no matching file.".format(len(updated), len(skipped), len(missing)))
+	if missing:
+		print("No image file for: " + ", ".join(missing))
+	return {"updated": updated, "skipped": skipped, "missing": missing}

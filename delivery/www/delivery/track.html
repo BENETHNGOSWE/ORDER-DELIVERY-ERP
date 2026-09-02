@@ -1,6 +1,22 @@
 {% set page_title = "Track" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+<!-- Leaflet (same library used by the Sales Team Tracker) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  #dl-map { height: 420px; width: 100%; border-radius: 12px; border: 2px solid #d5dbe4;
+            z-index: 1; margin-top: 12px; }
+  .dl-map-status { margin-top: 8px; font-weight: 600; color: #1976D2; font-size: 13px; }
+  .dl-pulse { width: 18px; height: 18px; background: #1976D2; border: 3px solid #fff;
+              border-radius: 50%; box-shadow: 0 0 0 0 rgba(25,118,210,.6);
+              animation: dl-pulse 1.6s infinite; }
+  @keyframes dl-pulse { 0%{box-shadow:0 0 0 0 rgba(25,118,210,.55);}
+                        70%{box-shadow:0 0 0 16px rgba(25,118,210,0);}
+                        100%{box-shadow:0 0 0 0 rgba(25,118,210,0);} }
+  .dl-driver-tag { display:inline-block; margin-top:6px; padding:4px 10px; border-radius:20px;
+                   background:#e3f2fd; color:#1565c0; font-size:12px; font-weight:600; }
+</style>
 </head><body>
 <div class="dl-wrap">
   {% include "delivery/templates/includes/delivery_nav.html" %}
@@ -13,6 +29,14 @@
     </div>
   </div>
   <div id="out" style="margin-top:14px"></div>
+  <div id="map-card" class="dl-card" style="display:none; margin-top:12px">
+    <div class="dl-between">
+      <h3 style="margin:0">Live location</h3>
+      <span id="map-live" class="dl-driver-tag">● Live</span>
+    </div>
+    <div id="dl-map"></div>
+    <div id="map-status" class="dl-map-status">Initializing map&hellip;</div>
+  </div>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -22,13 +46,21 @@
   var params = new URLSearchParams(location.search);
   if (params.get("ref")) { input.value = params.get("ref"); load(); }
 
+  // Dar es Salaam default centre (used until real points arrive)
+  var DAR = [-6.7924, 39.2083];
+  var map = null, layer = null, driverMarker = null, routeLine = null;
+  var pollTimer = null, currentRef = null;
+
   function load() {
     var ref = input.value.trim();
     if (!ref) return;
+    stopPolling();
+    currentRef = ref;
     DELIVERY.call("delivery.api.customer.track", { reference: ref }).then(render)
       .catch(function (e) {
         document.getElementById("out").innerHTML =
           '<div class="dl-card dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+        document.getElementById("map-card").style.display = "none";
       });
   }
 
@@ -57,13 +89,141 @@
         '<div class="dl-steps">' + steps + "</div>" +
         '<div class="dl-mut">Amount ' + DELIVERY.fmt(t.amount) + " &middot; " +
           DELIVERY.esc(t.payment_status || "") + " &middot; " + DELIVERY.esc(t.payment_method || "") +
-          (t.driver_name ? " &middot; driver " + DELIVERY.esc(t.driver_name) : "") +
+          (t.driver_name ? " &middot; driver <b>" + DELIVERY.esc(t.driver_name) + "</b>" : "") +
           (t.otp_code ? " &middot; handoff code <b>" + DELIVERY.esc(t.otp_code) + "</b>" : "") +
         "</div></div>" +
       '<div class="dl-card" style="margin-top:12px"><h3 style="margin-top:0">History</h3>' +
         '<table class="dl-table"><thead><tr><th>When</th><th>State</th><th>By</th><th>Note</th>' +
         "</tr></thead><tbody>" + (hist || '<tr><td colspan="4">No history yet.</td></tr>') +
         "</tbody></table></div>";
+
+    // --- map: only meaningful once a driver is attached to the order ---
+    var driverAssigned = ["DRIVER_ASSIGNED", "PICKED_UP", "COMPLETED"].indexOf(t.state) >= 0
+                         || !!t.driver;
+    if (driverAssigned) {
+      document.getElementById("map-card").style.display = "";
+      initMap();
+      fetchRoute(true);
+      startPolling();
+    } else {
+      document.getElementById("map-card").style.display = "none";
+      stopPolling();
+    }
+  }
+
+  function initMap() {
+    if (map) { map.invalidateSize(); return; }
+    map = L.map("dl-map").setView(DAR, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 }).addTo(map);
+    layer = L.featureGroup().addTo(map);
+  }
+
+  function driverIcon() {
+    return L.divIcon({ className: "", html: '<div class="dl-pulse"></div>',
+                       iconSize: [18, 18], iconAnchor: [9, 9] });
+  }
+
+  function fetchRoute(fit) {
+    if (!currentRef) return;
+    var statusEl = document.getElementById("map-status");
+    if (statusEl) statusEl.textContent = "Loading live location…";
+    // safety: never leave the page stuck on "Loading"
+    var done = false;
+    var guard = setTimeout(function () {
+      if (!done && statusEl) statusEl.textContent = "Still waiting for location… it will update automatically.";
+    }, 8000);
+    DELIVERY.call("delivery.api.customer.track_route", { reference: currentRef })
+      .then(function (r) {
+        done = true; clearTimeout(guard);
+        var trail = r.trail || [];
+        var status = document.getElementById("map-status");
+        layer.clearLayers();
+        routeLine = null; driverMarker = null;
+
+        if (!r.has_driver) {
+          status.textContent = "A driver has not been assigned to this order yet.";
+          map.setView(DAR, 12);
+          return;
+        }
+
+        var who = r.driver_name ? ("Driver: " + r.driver_name) : "Driver";
+        var pts = trail.map(function (p) { return [p.lat, p.lng]; });
+
+        // emoji pins avoid Leaflet's missing default-marker-image issues
+        function pin(emoji, bg) {
+          return L.divIcon({ className: "", iconSize: [32, 32], iconAnchor: [16, 28],
+            html: '<div style="font-size:26px;line-height:32px;text-align:center;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));">' + emoji + '</div>' });
+        }
+        function addPlace(pt, emoji, title) {
+          if (!pt || !pt.lat || !pt.lng) return null;
+          var m = L.marker([pt.lat, pt.lng], { icon: pin(emoji) }).addTo(layer);
+          m.bindPopup("<b>" + title + "</b><br>" + DELIVERY.esc(pt.label || ""));
+          return [pt.lat, pt.lng];
+        }
+
+        // driver's travelled breadcrumb trail
+        if (pts.length > 1) {
+          routeLine = L.polyline(pts, { color: "#1976D2", weight: 4, opacity: 0.75 }).addTo(layer);
+          pts.forEach(function (ll) {
+            L.circleMarker(ll, { radius: 3, color: "#0d47a1", fillColor: "#fff", fillOpacity: 1 }).addTo(layer);
+          });
+        }
+
+        var pos = r.latest ? [r.latest.lat, r.latest.lng] : null;
+        if (pos) {
+          driverMarker = L.marker(pos, { icon: driverIcon() }).addTo(layer);
+          driverMarker.bindPopup(
+            "<b>" + DELIVERY.esc(who) + "</b><br>" +
+            (r.latest.activity ? DELIVERY.esc(r.latest.activity) + "<br>" : "") +
+            "Updated: " + DELIVERY.esc(r.latest.timestamp || "")
+          );
+        }
+
+        // pickup (merchant) and destination (drop-off) pins
+        var pickupLL = addPlace(r.pickup, "🏪", "Pickup");
+        var dropLL = addPlace(r.dropoff, "🏁", "Destination");
+
+        // remaining route: driver -> destination (dashed)
+        if (pos && dropLL) {
+          L.polyline([pos, dropLL], { color: "#43A047", weight: 3,
+            dashArray: "8,8", opacity: 0.9 }).addTo(layer);
+        }
+
+        var havePoints = pos || dropLL || pickupLL || pts.length;
+        if (havePoints) {
+          var b = layer.getBounds();
+          if (b.isValid()) map.fitBounds(b, { padding: [50, 50], maxZoom: 15 });
+          else if (pos) map.panTo(pos);
+        }
+
+        if (pos) {
+          status.innerHTML = "<b>" + DELIVERY.esc(who) + "</b>" +
+            (r.driver_phone ? " &middot; " + DELIVERY.esc(r.driver_phone) : "") +
+            (dropLL ? " &mdash; en route to destination" : " &mdash; tracking live");
+        } else if (r.has_driver) {
+          status.textContent = who + " has not shared a location yet. The map updates automatically." +
+            (dropLL ? "" : "");
+          if (dropLL || pickupLL) map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 14 });
+          else map.setView(DAR, 12);
+        } else {
+          status.textContent = "A driver has not been assigned to this order yet.";
+          map.setView(DAR, 12);
+        }
+      })
+      .catch(function (e) {
+        done = true; clearTimeout(guard);
+        document.getElementById("map-status").textContent = "Map error: " + e.message;
+      });
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(function () { fetchRoute(false); }, 10000); // every 10s
+    document.getElementById("map-live").textContent = "● Live";
+  }
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   }
 
   document.getElementById("go").addEventListener("click", load);

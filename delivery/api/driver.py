@@ -242,3 +242,60 @@ def my_earnings(from_date=None, to_date=None):
     total = sum(flt(r.amount) for r in rows if r.payment_status == "Paid")
     return {"driver": code, "transactions": rows,
             "settled_total": flt(total, 2), "count": len(rows)}
+
+
+# ---------------------------------------------------------------------------
+# live location (driver GPS pings -> Driver Location Log)
+# ---------------------------------------------------------------------------
+@frappe.whitelist()
+def report_location(latitude, longitude, reference=None, activity=None, accuracy=None):
+	"""
+	Driver phone shares its GPS position.
+
+	Creates a ``Driver Location Log`` row (the route trail the customer map
+	draws) and stamps the latest lat/lng onto the Delivery Driver record.
+	Designed to be called every few seconds while the driver is on a trip.
+	"""
+	code = _driver_for()
+	try:
+		lat = float(latitude)
+		lng = float(longitude)
+	except (TypeError, ValueError):
+		frappe.throw(_("Latitude and longitude must be numbers."))
+	if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+		frappe.throw(_("Invalid coordinates."))
+
+	# default activity from the driver's current state
+	if not activity:
+		activity = frappe.db.get_value("Delivery Driver", code, "status") or "On Trip"
+
+	log = frappe.new_doc("Driver Location Log")
+	log.driver = code
+	log.reference = reference or ""
+	log.activity = activity
+	log.latitude = lat
+	log.longitude = lng
+	log.accuracy = flt(accuracy) if accuracy not in (None, "") else 0
+	log.timestamp = frappe.utils.now()
+	log.flags.ignore_mandatory = True
+	log.insert(ignore_permissions=True)
+
+	# keep the driver record's last-known position fresh
+	frappe.db.set_value("Delivery Driver", code, {
+		"latitude": lat,
+		"longitude": lng,
+	}, update_modified=False)
+
+	frappe.db.commit()
+	return {"status": "ok", "name": log.name, "lat": lat, "lng": lng,
+		"timestamp": str(log.timestamp)}
+
+
+@frappe.whitelist()
+def my_location():
+	"""Return this driver's own last-reported position (for the dashboard)."""
+	code = _driver_for()
+	d = frappe.db.get_value("Delivery Driver", code,
+	                        ["driver_name", "status", "latitude", "longitude"],
+	                        as_dict=True)
+	return {"driver": code, **d} if d else {"driver": code}

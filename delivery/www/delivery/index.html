@@ -1,73 +1,1067 @@
 {% set page_title = "Delivery & Logistics" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
-</head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  /* ============ Easu design tokens ============ */
+  :root{
+    --purple:#5B2BE0; --purple-dark:#3F1BA8; --purple-light:#F1ECFF;
+    --lime:#D9FF5A; --ink:#171717; --sec:#6B6B75; --muted:#9999A3;
+    --bg:#F8F8FA; --card:#FFFFFF; --line:#EAEAEF;
+    --success:#20B26B; --danger:#EF4444; --warning:#F59E0B;
+    --price:#4F24D8; --ph:#85858F; --nav:#222222; --cat:#202020;
+    --hero-desc:#F3F3F5;
+  }
+  *{ box-sizing:border-box; }
+  body.x-home{ background:var(--bg); color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    margin:0; -webkit-font-smoothing:antialiased; }
+  a{ text-decoration:none; color:inherit; }
+  .x-app{ max-width:1520px; margin:0 auto; padding:16px; display:flex; gap:18px; align-items:flex-start; }
 
-  <div class="dl-hero">
-    <h1>Swift Logistics</h1>
-    <p>Food delivery, retail shopping, point-to-point parcels and negotiated
-       transport &mdash; one platform, live tracking.</p>
+  /* ---------- left sidebar ---------- */
+  .x-side{ flex:0 0 232px; width:232px; position:sticky; top:16px; display:flex; flex-direction:column; gap:14px; }
+  .x-brand{ display:flex; align-items:center; gap:10px; padding:6px 8px; }
+  .x-brand .logo{ width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,var(--purple),var(--purple-dark));
+                  display:grid; place-items:center; color:#fff; font-size:22px; box-shadow:0 8px 18px rgba(91,43,224,.30); }
+  .x-brand b{ font-size:21px; font-weight:800; line-height:1; display:block; letter-spacing:-.5px; }
+  .x-brand small{ color:var(--sec); font-size:11px; font-weight:500; }
+  .x-nav{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:10px; }
+  .x-nav a{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:12px;
+            font-weight:500; font-size:14px; line-height:20px; color:var(--nav); cursor:pointer; }
+  .x-nav a .e{ font-size:19px; width:24px; text-align:center; }
+  .x-nav a:hover{ background:var(--purple-light); color:var(--purple); }
+  .x-nav a.active{ background:var(--purple-light); color:var(--purple); font-weight:600; }
+  .x-nav .grp{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted);
+               padding:12px 14px 4px; font-weight:700; }
+  .x-promo{ background:linear-gradient(150deg,var(--purple),var(--purple-dark)); color:#fff; border-radius:18px; padding:18px; }
+  .x-promo h4{ margin:0 0 4px; font-size:16px; font-weight:600; line-height:24px; }
+  .x-promo p{ margin:0 0 12px; font-size:13px; line-height:20px; font-weight:400; opacity:.92; }
+  .x-promo .art{ font-size:54px; text-align:center; margin:6px 0 10px; }
+  .x-promo a{ display:block; background:#fff; color:var(--purple); text-align:center; font-weight:700;
+              font-size:14px; line-height:20px; padding:10px; border-radius:11px; }
+  .x-box{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; }
+  .x-box .h{ font-weight:600; font-size:16px; line-height:24px; color:var(--ink); margin-bottom:4px; }
+  .x-box .t{ font-size:13px; line-height:20px; font-weight:400; color:var(--sec); }
+  .x-box .lnk{ color:var(--purple); font-weight:600; font-size:13px; line-height:20px; cursor:pointer; }
+  .x-box .row{ display:flex; align-items:center; gap:8px; font-size:13px; line-height:20px;
+               font-weight:400; color:var(--sec); margin-top:8px; }
+
+  /* ---------- center column ---------- */
+  .x-col{ flex:1; min-width:0; display:flex; flex-direction:column; gap:16px; }
+  .x-top{ background:rgba(255,255,255,.94); backdrop-filter:blur(10px); border:1px solid var(--line);
+          border-radius:14px; padding:9px 14px; display:flex; align-items:center; gap:14px; position:sticky; top:16px; z-index:30; }
+  .x-deliver{ display:flex; align-items:center; gap:9px; white-space:nowrap; cursor:pointer; font-size:13px; line-height:18px; }
+  .x-deliver .pin{ color:var(--purple); font-size:22px; }
+  .x-deliver b{ display:block; font-size:14px; font-weight:600; color:var(--ink); }
+  .x-deliver small{ color:var(--sec); font-size:12px; line-height:16px; }
+  .x-search{ flex:1; display:flex; align-items:center; gap:9px; background:#F2F2F5; border:1px solid transparent;
+             border-radius:12px; height:48px; padding:0 16px; }
+  .x-search:focus-within{ background:#fff; border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+  .x-search input{ flex:1; border:0; outline:0; background:transparent; font-family:inherit;
+                   font-size:14px; font-weight:400; color:var(--ink); }
+  .x-search input::placeholder{ color:var(--ph); }
+  .x-search .flt{ color:var(--muted); font-size:18px; cursor:pointer; }
+  .x-bell{ position:relative; font-size:20px; cursor:pointer; }
+  .x-bell .n{ position:absolute; top:-7px; right:-9px; background:var(--danger); color:#fff; font-size:10px;
+              font-weight:700; line-height:16px; border-radius:99px; padding:0 6px; min-width:16px; text-align:center; }
+  .x-acct{ display:flex; align-items:center; gap:8px; white-space:nowrap; font-weight:600; font-size:14px;
+           line-height:20px; color:var(--ink); cursor:pointer; }
+  .x-acct .av{ width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--warning),var(--danger));
+               color:#fff; display:grid; place-items:center; font-size:18px; }
+
+  .x-hero{ border-radius:22px; overflow:hidden; position:relative; color:#fff; padding:40px 38px;
+           background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%);
+           display:flex; align-items:center; gap:20px; }
+  .x-hero h1{ font-size:40px; font-weight:700; line-height:48px; letter-spacing:-1px; margin:0 0 12px; color:#fff; }
+  .x-hero h1 .y{ color:var(--lime); }
+  .x-hero p{ font-size:16px; font-weight:400; line-height:24px; color:var(--hero-desc); margin:0 0 22px; max-width:430px; }
+  .x-hero .cta{ display:inline-flex; align-items:center; height:44px; padding:0 24px; background:var(--lime);
+               color:#171717; font-weight:700; font-size:14px; line-height:20px; border-radius:999px;
+               box-shadow:0 10px 24px rgba(0,0,0,.25); }
+  .x-hero .dots{ margin-top:22px; display:flex; gap:7px; } .x-hero .dots i{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.4); }
+  .x-hero .dots i.on{ background:var(--lime); width:22px; border-radius:5px; }
+  .x-hero .art{ font-size:clamp(90px,12vw,150px); margin-left:auto; filter:drop-shadow(0 18px 24px rgba(0,0,0,.4)); }
+
+  /* ===== hero carousel (backend Home Banner images) ===== */
+  .x-hero.carousel{ padding:0; min-height:300px; }
+  .x-slide{ position:absolute; inset:0; opacity:0; transition:opacity .7s ease;
+            pointer-events:none; }
+  .x-slide.on{ opacity:1; pointer-events:auto; }
+  .x-slide.grad{ background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%); }
+  .x-slide.grad .slide-in{ position:absolute; inset:0; display:flex; align-items:center; gap:20px; padding:40px 38px; color:#fff; }
+  .x-slide .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .x-slide .shade{ position:absolute; inset:0;
+            background:linear-gradient(90deg, rgba(15,10,35,.72) 0%, rgba(15,10,35,.35) 45%, rgba(15,10,35,0) 70%); }
+  .x-slide .cap{ position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center;
+            padding:40px 48px; color:#fff; max-width:56%; }
+  .x-slide .cap h2{ margin:0 0 12px; font-size:38px; font-weight:800; line-height:44px; letter-spacing:-1px; }
+  .x-slide .cap p{ margin:0 0 22px; font-size:16px; line-height:24px; color:#F3F3F5; max-width:440px; }
+  .x-slide .cap .cta{ align-self:flex-start; }
+  .x-dots{ position:absolute; left:38px; bottom:20px; display:flex; gap:7px; z-index:5; }
+  .x-dots i{ width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.45); cursor:pointer; transition:.25s; }
+  .x-dots i.on{ background:var(--lime); width:22px; border-radius:5px; }
+  .x-arrow{ position:absolute; top:50%; transform:translateY(-50%); z-index:6; width:42px; height:42px;
+            border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.18); color:#fff;
+            font-size:16px; display:grid; place-items:center; backdrop-filter:blur(4px); transition:.2s; }
+  .x-arrow:hover{ background:rgba(255,255,255,.32); }
+  .x-arrow.prev{ left:16px; } .x-arrow.next{ right:16px; }
+  @media (max-width:860px){
+    .x-hero.carousel{ min-height:230px; }
+    .x-slide .cap{ max-width:90%; padding:26px 24px; }
+    .x-slide .cap h2{ font-size:24px; line-height:30px; }
+    .x-slide .cap p{ font-size:14px; line-height:20px; }
+    .x-slide.grad .slide-in{ padding:26px 22px; }
+    .x-dots{ left:24px; } .x-arrow{ display:none; }
+  }
+
+  .x-sec-head{ display:flex; align-items:center; justify-content:space-between; margin:6px 2px -4px; }
+  .x-sec-head h2{ font-size:20px; font-weight:700; line-height:28px; letter-spacing:-.3px; color:var(--ink); margin:0; }
+  .x-sec-head a{ color:var(--purple); font-weight:600; font-size:13px; line-height:20px; cursor:pointer; }
+  .x-chips{ display:flex; gap:9px; overflow-x:auto; padding:4px 2px; scrollbar-width:none; } .x-chips::-webkit-scrollbar{ display:none; }
+  .x-chip{ flex:0 0 auto; border:1px solid var(--line); background:#fff; border-radius:999px; padding:9px 16px;
+           font-family:inherit; font-weight:600; font-size:14px; line-height:20px; color:var(--ink); cursor:pointer; }
+  .x-chip:hover{ border-color:var(--purple); color:var(--purple); }
+  .x-chip.active{ background:var(--purple); color:#fff; border-color:var(--purple); }
+  .x-cats{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:12px; }
+  .x-cat{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 8px; text-align:center;
+          cursor:pointer; transition:.15s; }
+  .x-cat:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(0,0,0,.06); border-color:transparent; }
+  .x-cat .ic{ font-size:32px; }
+  .x-cat .lb{ margin-top:7px; font-weight:600; font-size:13px; line-height:18px; color:var(--cat); }
+
+  .x-scroll{ display:grid; grid-auto-flow:column; grid-auto-columns:minmax(190px,1fr); gap:14px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
+  .x-mcard{ background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; cursor:pointer; transition:.15s; }
+  .x-mcard:hover{ transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.08); }
+  .x-mthumb{ height:104px; display:grid; place-items:center; font-size:48px; color:#fff; position:relative; overflow:hidden; }
+  .x-mtag{ position:absolute; top:9px; left:9px; background:rgba(0,0,0,.55); color:#fff; font-size:11px;
+           font-weight:600; line-height:16px; padding:2px 9px; border-radius:8px; }
+  .x-moff{ position:absolute; top:9px; left:9px; background:var(--purple); }
+  .x-mbody{ padding:11px 12px; }
+  .x-mbody .nm{ font-weight:700; font-size:14px; line-height:20px; text-transform:uppercase; color:var(--ink); }
+  .x-meta{ color:var(--sec); font-size:13px; font-weight:400; line-height:20px; margin-top:3px; }
+  .x-mfree{ color:var(--success); font-weight:600; font-size:11px; line-height:16px; margin-top:6px; display:inline-block; }
+
+  .x-banners{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .x-banner{ border-radius:16px; padding:20px; color:#fff; min-height:150px; position:relative; overflow:hidden; }
+  .x-banner h4{ margin:0 0 6px; font-size:17px; font-weight:700; line-height:24px; }
+  .x-banner p{ margin:0 0 14px; font-size:13px; font-weight:400; line-height:20px; opacity:.94; max-width:58%; }
+  .x-banner .b{ background:#fff; color:#222; font-weight:700; font-size:14px; line-height:20px; padding:9px 18px;
+    border-radius:10px; text-decoration:none; display:inline-block; }
+  .x-banner .em{ position:absolute; right:14px; bottom:14px; width:104px; height:104px; border-radius:50%;
+    overflow:hidden; border:3px solid rgba(255,255,255,.9); box-shadow:0 12px 24px rgba(0,0,0,.28); background:#fff; }
+  .x-banner .em img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  .x-sort{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; color:var(--sec); }
+  .x-sort select{ border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:#fff;
+                  font-family:inherit; font-weight:600; font-size:13px; color:var(--ink); }
+  .x-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; }
+  .x-item{ background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+           display:flex; flex-direction:column; transition:.15s; }
+  .x-item:hover{ transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.07); }
+  .x-ithumb{ height:140px; min-height:140px; max-height:140px; display:grid; place-items:center;
+             position:relative; overflow:hidden; background:#fff; }
+  .x-iimg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .x-off{ position:absolute; top:9px; left:9px; background:var(--purple); color:#fff; font-size:11px;
+          font-weight:700; line-height:16px; padding:2px 8px; border-radius:8px; }
+  .x-pop{ position:absolute; top:9px; right:9px; background:var(--purple-light); color:var(--purple);
+          font-size:11px; font-weight:600; line-height:16px; padding:2px 8px; border-radius:8px; }
+  .x-ibody{ padding:11px 12px 13px; display:flex; flex-direction:column; flex:1; }
+  .x-iname{ font-weight:600; font-size:14px; line-height:20px; color:var(--ink); }
+  .x-isub{ color:var(--sec); font-size:13px; font-weight:400; line-height:20px; margin-top:2px;
+           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .x-ifoot{ display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px; gap:6px; }
+  .x-price{ font-weight:700; font-size:14px; line-height:20px; color:var(--price); }
+  .x-price .old{ color:var(--muted); font-size:11px; text-decoration:line-through; font-weight:500; margin-left:5px; }
+  .x-add{ border:0; background:linear-gradient(135deg,var(--purple),var(--purple-dark)); color:#fff; font-family:inherit;
+          font-weight:600; font-size:14px; line-height:20px; border-radius:10px; padding:8px 14px; cursor:pointer; }
+  .x-add:disabled{ opacity:.5; cursor:default; }
+  .x-empty{ text-align:center; color:var(--muted); font-size:13px; font-weight:400; padding:36px; grid-column:1/-1; }
+
+  /* ---------- right rail ---------- */
+  .x-rail{ flex:0 0 324px; width:324px; position:sticky; top:16px; display:flex; flex-direction:column; gap:14px; }
+  .x-cart{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; }
+  .x-cart .ch{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .x-cart .ch b{ font-size:18px; font-weight:700; line-height:24px; color:var(--ink); }
+  .x-cart .ch span{ color:var(--sec); font-size:13px; font-weight:400; }
+  .x-cline{ display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+  .x-cline .thumb{ width:42px; height:42px; border-radius:10px; display:grid; place-items:center; font-size:24px; flex:0 0 42px; }
+  .x-cline .ci{ flex:1; min-width:0; }
+  .x-cline .cn{ font-weight:600; font-size:13px; line-height:18px; color:var(--ink);
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .x-cline .cp{ font-size:13px; font-weight:400; line-height:18px; color:var(--sec); }
+  .x-qty{ display:flex; align-items:center; gap:8px; }
+  .x-qty button{ width:24px; height:24px; border-radius:7px; border:1px solid var(--line); background:#fff;
+                 font-family:inherit; font-weight:600; cursor:pointer; color:var(--ink); }
+  .x-qty .q{ min-width:16px; text-align:center; font-weight:500; font-size:13px; }
+  .x-rm{ border:0; background:none; color:var(--danger); cursor:pointer; font-size:14px; }
+  .x-tot{ border-top:1px solid var(--line); margin-top:8px; padding-top:10px; }
+  .x-tot .r{ display:flex; justify-content:space-between; margin:6px 0; font-size:13px; font-weight:400;
+             line-height:20px; color:var(--sec); }
+  .x-tot .r span:last-child{ color:var(--ink); font-weight:500; }
+  .x-tot .gr{ display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; }
+  .x-tot .gr span:first-child{ font-weight:600; font-size:14px; line-height:20px; color:var(--ink); }
+  .x-tot .gr span:last-child{ font-weight:700; font-size:18px; line-height:24px; color:var(--purple); }
+  .x-checkout{ display:block; text-align:center; background:linear-gradient(135deg,var(--purple),var(--purple-dark));
+               color:#fff; font-family:inherit; font-weight:700; font-size:14px; line-height:20px;
+               padding:14px; border-radius:12px; margin-top:12px; }
+  .x-fast{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+  .x-fast .z{ font-size:26px; }
+  .x-fast b{ font-size:14px; font-weight:600; line-height:20px; color:var(--ink); }
+  .x-fast small{ color:var(--sec); display:block; font-size:13px; font-weight:400; line-height:18px; }
+  .x-offers{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; }
+  .x-offers .oh{ display:flex; justify-content:space-between; align-items:baseline; font-weight:600;
+                 font-size:16px; line-height:24px; color:var(--ink); margin-bottom:8px; }
+  .x-offers .oh a{ color:var(--purple); font-size:12px; font-weight:600; cursor:pointer; }
+  .x-offer{ display:flex; gap:10px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+  .x-offer .ot{ flex:1; }
+  .x-offer .ot .pct{ color:var(--danger); font-weight:700; font-size:13px; line-height:18px; }
+  .x-offer .ot small{ color:var(--sec); display:block; font-size:11px; font-weight:400; line-height:16px; }
+  .x-offer .code{ background:var(--purple-light); color:var(--purple); font-weight:700; font-size:11px;
+                  line-height:16px; padding:3px 8px; border-radius:7px; }
+  .x-offer .oe{ font-size:30px; }
+  .x-cart-empty{ text-align:center; color:var(--muted); font-size:13px; font-weight:400; padding:26px 6px; line-height:20px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:1200px){ .x-rail{ display:none; } }
+  @media (max-width:880px){
+    .x-side{ display:none; }
+    .x-top{ flex-wrap:wrap; } .x-search{ order:5; flex-basis:100%; }
+    .x-deliver{ display:none; }
+    .x-hero{ padding:28px 22px; } .x-hero .art{ display:none; }
+    .x-hero h1{ font-size:28px; line-height:34px; }
+    .x-hero p{ font-size:15px; line-height:22px; }
+  }
+  @media (min-width:881px) and (max-width:1200px){
+    .x-hero h1{ font-size:32px; line-height:40px; }
+  }
+  .x-mbar{ position:fixed; left:12px; right:12px; bottom:12px; z-index:60; background:var(--ink); color:#fff;
+           border-radius:14px; padding:12px 16px; display:none; align-items:center; justify-content:space-between;
+           box-shadow:0 12px 30px rgba(0,0,0,.3); font-size:14px; font-weight:500; }
+  .x-mbar b{ color:var(--lime); font-weight:700; }
+  @media (max-width:1200px){ .x-mbar{ display:flex; } }
+
+  /* ============ checkout modal ============ */
+  .ck-overlay{ position:fixed; inset:0; z-index:100; background:rgba(17,17,32,.55); backdrop-filter:blur(3px);
+               display:none; align-items:flex-start; justify-content:center; padding:26px 16px; overflow-y:auto; }
+  .ck-overlay.show{ display:flex; }
+  .ck-modal{ background:var(--card); width:100%; max-width:980px; border-radius:20px; box-shadow:0 30px 80px rgba(0,0,0,.35);
+             overflow:hidden; animation:ckpop .22s ease; }
+  @keyframes ckpop{ from{ transform:translateY(14px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  .ck-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 22px;
+            border-bottom:1px solid var(--line); position:sticky; top:0; background:#fff; z-index:2; }
+  .ck-head h3{ margin:0; font-size:18px; font-weight:700; line-height:24px; color:var(--ink); }
+  .ck-head h3 small{ display:block; font-size:12px; font-weight:400; color:var(--sec); }
+  .ck-close{ width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:#fff;
+             font-size:18px; cursor:pointer; color:var(--sec); line-height:1; }
+  .ck-close:hover{ background:var(--purple-light); color:var(--purple); border-color:transparent; }
+  .ck-body{ display:grid; grid-template-columns:1.05fr .95fr; gap:0; }
+  .ck-col{ padding:22px; }
+  .ck-col.left{ border-right:1px solid var(--line); background:#fbfbfd; max-height:74vh; overflow-y:auto; }
+  .ck-col.right{ max-height:74vh; overflow-y:auto; }
+  .ck-label{ font-size:12px; font-weight:600; color:var(--sec); text-transform:uppercase; letter-spacing:.4px; margin:14px 0 6px; }
+  .ck-label:first-child{ margin-top:0; }
+  .ck-input{ width:100%; height:44px; border:1px solid var(--line); border-radius:12px; padding:0 14px;
+             font-family:inherit; font-size:14px; color:var(--ink); background:#fff; }
+  textarea.ck-input{ height:auto; padding:11px 14px; resize:vertical; }
+  select.ck-input{ background:#fff; }
+  .ck-input:focus{ outline:none; border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+  .ck-geowrap{ position:relative; }
+  .ck-geo-res{ position:absolute; left:0; right:0; top:48px; z-index:6; background:#fff; border:1px solid var(--line);
+               border-top:none; border-radius:0 0 12px 12px; max-height:200px; overflow:auto; box-shadow:0 10px 26px rgba(0,0,0,.12); }
+  .ck-geo-item{ padding:9px 13px; cursor:pointer; font-size:13px; border-top:1px solid #f3f3f6; }
+  .ck-geo-item:hover{ background:var(--purple-light); }
+  .ck-geo-item small{ color:var(--sec); display:block; }
+  .ck-geobtns{ display:flex; gap:8px; margin:8px 0; }
+  .ck-btn{ font-family:inherit; font-weight:600; font-size:13px; border-radius:10px; padding:9px 14px;
+           cursor:pointer; border:1px solid var(--line); background:#fff; color:var(--ink); }
+  .ck-btn.primary{ background:linear-gradient(135deg,var(--purple),var(--purple-dark)); color:#fff; border-color:transparent; }
+  .ck-btn.ghost{ background:var(--purple-light); color:var(--purple); border-color:transparent; }
+  #ck-map{ height:210px; width:100%; border-radius:12px; border:2px solid var(--line); margin-top:6px; z-index:1; }
+  .ck-geohint{ font-size:12px; color:var(--success); font-weight:600; margin-top:6px; min-height:16px; }
+  .ck-line{ display:flex; gap:11px; align-items:center; padding:11px 0; border-top:1px solid var(--line); }
+  .ck-line .t{ width:46px; height:46px; border-radius:11px; display:grid; place-items:center; font-size:24px;
+               overflow:hidden; flex:0 0 46px; background:#fff; }
+  .ck-line .t img{ width:100%; height:100%; object-fit:cover; }
+  .ck-line .ci{ flex:1; min-width:0; }
+  .ck-line .cn{ font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ck-line .cm{ font-size:12px; color:var(--sec); }
+  .ck-qty{ display:flex; align-items:center; gap:8px; }
+  .ck-qty button{ width:26px; height:26px; border-radius:8px; border:1px solid var(--line); background:#fff;
+                  font-weight:700; cursor:pointer; color:var(--ink); font-family:inherit; }
+  .ck-qty .q{ min-width:16px; text-align:center; font-weight:600; font-size:13px; }
+  .ck-rm{ border:0; background:none; color:var(--danger); cursor:pointer; font-size:15px; }
+  .ck-empty{ text-align:center; color:var(--muted); padding:34px 10px; font-size:14px; }
+  .ck-tot{ border-top:2px solid var(--line); margin-top:10px; padding-top:12px; }
+  .ck-tot .r{ display:flex; justify-content:space-between; font-size:13px; color:var(--sec); margin:6px 0; }
+  .ck-tot .r b{ color:var(--ink); font-weight:600; }
+  .ck-tot .gr{ display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; }
+  .ck-tot .gr span:first-child{ font-weight:700; font-size:15px; color:var(--ink); }
+  .ck-tot .gr span:last-child{ font-weight:700; font-size:20px; color:var(--purple); }
+  .ck-place{ width:100%; margin-top:14px; height:48px; border:0; border-radius:12px;
+             background:linear-gradient(135deg,var(--purple),var(--purple-dark)); color:#fff;
+             font-family:inherit; font-weight:700; font-size:15px; cursor:pointer; }
+  .ck-place:disabled{ opacity:.5; cursor:not-allowed; }
+  @media (max-width:760px){
+    .ck-body{ grid-template-columns:1fr; }
+    .ck-col.left{ border-right:none; border-bottom:1px solid var(--line); max-height:none; order:2; }
+    .ck-col.right{ max-height:none; order:1; }
+  }
+
+  /* ============ track modal ============ */
+  .tk-modal{ max-width:900px; }
+  .tk-body{ padding:22px; max-height:78vh; overflow-y:auto; }
+  .tk-searchrow{ display:flex; gap:10px; }
+  .tk-searchrow .ck-input{ flex:1; }
+  .tk-steps{ display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 10px; }
+  .tk-step{ font-size:11px; font-weight:700; padding:6px 11px; border-radius:999px; background:#f1f1f5; color:#9a9aa5; letter-spacing:.2px; }
+  .tk-step.done{ background:var(--purple-light); color:var(--purple); }
+  .tk-step.now{ background:var(--purple); color:#fff; }
+  .tk-info{ font-size:13px; color:var(--sec); line-height:20px; }
+  .tk-info b{ color:var(--ink); }
+  #tk-map{ height:340px; width:100%; border-radius:12px; border:2px solid var(--line); margin-top:10px; z-index:1; }
+  .tk-status{ font-size:13px; font-weight:600; color:var(--purple); margin-top:9px; min-height:18px; }
+  .tk-hist{ width:100%; font-size:12px; border-collapse:collapse; margin-top:12px; }
+  .tk-hist th,.tk-hist td{ text-align:left; padding:8px; border-bottom:1px solid var(--line); color:var(--sec); }
+  .tk-hist th{ color:var(--muted); font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:.4px; }
+  .tk-empty{ color:var(--muted); font-size:14px; padding:26px 10px; text-align:center; }
+
+  /* ===== Font Awesome icon treatment (matches parcel/transport pages) ===== */
+  /* generic alignment */
+  .x-nav .e i, .x-cat .ic i, .x-ithumb i.fa-solid, .x-mthumb i.fa-solid,
+  .x-offer .oe i, .x-banner .em i, .x-promo .art i, .x-hero .art i,
+  .x-fast .z i, .x-search i, .x-deliver .pin i, .x-bell i, .x-acct .av i,
+  .logo i, .x-chip i { line-height:1; }
+
+  /* category tiles: purple glyph in a soft purple container */
+  .x-cat .ic{ width:56px; height:56px; margin:0 auto 4px; border-radius:16px;
+    background:var(--purple-light); color:var(--purple-dark);
+    display:grid; place-items:center; font-size:24px; transition:.18s; }
+  .x-cat:hover .ic{ background:var(--purple); color:#fff; transform:scale(1.06); }
+
+  /* chips: small purple icon */
+  .x-chip i{ color:var(--purple); margin-right:6px; font-size:13px; }
+  .x-chip.active i{ color:var(--lime); }
+
+  /* sidebar nav icons */
+  .x-nav a .e{ display:inline-grid; place-items:center; width:28px; height:28px; border-radius:9px;
+    background:var(--purple-light); color:var(--purple-dark); font-size:14px; }
+  .x-nav a .e i{ font-size:14px; }
+  .x-nav a:hover .e, .x-nav a.active .e{ background:var(--purple); color:#fff; }
+  .x-nav a.active .e i, .x-nav a:hover .e i{ color:#fff; }
+
+  /* item / merchant thumbnail fallback (on gradient tile) */
+  .x-ithumb i.fa-solid{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-size:52px; color:rgba(255,255,255,.94); }
+  .x-mthumb i.fa-solid{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:40px; }
+
+  /* right-rail offer icons in purple containers */
+  .x-offer .oe{ width:44px; height:44px; flex:none; border-radius:12px; background:var(--purple-light);
+    color:var(--purple-dark); display:grid; place-items:center; font-size:20px; }
+  .x-offer .oe i{ font-size:19px; }
+
+  /* fast-delivery bolt container */
+  .x-fast .z{ width:44px; height:44px; flex:none; border-radius:12px; background:var(--purple-light);
+    color:var(--purple-dark); display:grid; place-items:center; }
+  .x-fast .z i{ font-size:20px; }
+
+  /* header icons */
+  .x-search > span:first-child i{ color:var(--purple); }
+  .x-deliver .pin i{ color:var(--purple); }
+  .x-bell i{ font-size:18px; color:var(--ink); }
+  .x-acct .av i{ font-size:17px; color:#fff; }
+  .logo i{ font-size:20px; }
+
+  /* promo / hero big art stays white-on-purple */
+  .x-promo .art i, .x-hero .art i{ color:#fff; font-size:64px; }
+
+  /* merchant meta + misc inline icons */
+  .x-meta i{ color:var(--purple); margin-right:2px; }
+  .x-mbox .h i, .x-box .h i, .x-box .row i{ color:var(--purple); }
+</style>
+</head><body class="x-home">
+
+<div class="x-app">
+  <!-- LEFT SIDEBAR -->
+  <aside class="x-side">
+    <a class="x-brand" href="/delivery">
+      <span class="logo"><i class="fa-solid fa-bolt"></i></span>
+      <span><b>Delivery</b><small>Everything, delivered</small></span>
+    </a>
+    <nav class="x-nav">
+      <a class="active" data-cat="all"><span class="e"><i class="fa-solid fa-house"></i></span> Home</a>
+      <a data-cat="food"><span class="e"><i class="fa-solid fa-burger"></i></span> Food</a>
+      <a data-cat="retail"><span class="e"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
+      <a data-cat="drinks"><span class="e"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
+      <a data-cat="snacks"><span class="e"><i class="fa-solid fa-cookie"></i></span> Snacks</a>
+      <a data-cat="bakery"><span class="e"><i class="fa-solid fa-bread-slice"></i></span> Bakery</a>
+      <a data-cat="offers"><span class="e"><i class="fa-solid fa-tag"></i></span> Offers</a>
+      <a id="nav-shops"><span class="e"><i class="fa-solid fa-store"></i></span> Shops</a>
+      <div class="grp">Services</div>
+      <a href="/delivery/parcel"><span class="e"><i class="fa-solid fa-box"></i></span> Send Parcel</a>
+      <a href="/delivery/transport"><span class="e"><i class="fa-solid fa-truck"></i></span> Transport</a>
+      <a href="/delivery/track"><span class="e"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
+    </nav>
+    <div class="x-promo">
+      <h4>Free delivery</h4><p>On your first orders!</p>
+      <div class="art"><i class="fa-solid fa-motorcycle"></i></div>
+      <a href="#items" data-cat="all">Order Now</a>
+    </div>
+    <div class="x-box">
+      <div class="h"><i class="fa-solid fa-location-dot"></i> Deliver to</div>
+      <div class="t">Dar es Salaam</div>
+      <div class="lnk" id="loc-change">Change</div>
+    </div>
+    <div class="x-box">
+      <div class="h">Need help?</div>
+      <div class="row"><i class="fa-solid fa-phone"></i> <span id="help-phone">+255 712 345 678</span></div>
+      <div class="row"><i class="fa-solid fa-envelope"></i> support@delivery.co.tz</div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <div class="x-col">
+    <header class="x-top">
+      <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
+      <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
+      <div class="x-bell"><i class="fa-regular fa-bell"></i><span class="n" data-cart-count>0</span></div>
+      <a class="x-acct" href="/delivery/me"><span class="av"><i class="fa-regular fa-user"></i></span><span id="acct-name">Hi, Guest</span> <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></a>
+    </header>
+
+    <section class="x-hero carousel" id="hero-carousel" aria-label="Featured"></section>
+
+    <div class="x-chips" id="chips"></div>
+
+    <div class="x-sec-head"><h2>Shop by category</h2><a href="#items">View all</a></div>
+    <div class="x-cats" id="cats"></div>
+
+    <div class="x-sec-head" id="shops"><h2>Popular merchants</h2></div>
+    <div class="x-scroll" id="merchants"><div class="x-empty">Loading…</div></div>
+
+    <div class="x-sec-head" id="items">
+      <h2 id="items-title">Available now</h2>
+      <div class="x-sort">Sort
+        <select id="sort">
+          <option value="featured">Featured</option>
+          <option value="fast">Fastest delivery</option>
+          <option value="price_asc">Price: low to high</option>
+          <option value="price_desc">Price: high to low</option>
+          <option value="name">Name (A–Z)</option>
+        </select>
+      </div>
+    </div>
+    <div class="x-grid" id="grid"><div class="x-empty">Loading items…</div></div>
+
+    <div class="x-banners" style="margin-top:22px">
+      <div class="x-banner" style="background:linear-gradient(135deg,#6d28d9,#4c1d95)"><h4>Mega Offers</h4><p>Up to 50% OFF on top brands every day!</p><a class="b" href="javascript:void(0)" data-cat="offers">Shop Now</a><span class="em"><img src="/assets/delivery/img/banner-offers.jpg" alt="Shopping bags"></span></div>
+      <div class="x-banner" style="background:linear-gradient(135deg,#0ea5e9,#15803d)"><h4>Groceries in a tap</h4><p>Everyday essentials delivered fast.</p><a class="b" data-cat="retail" href="javascript:void(0)">Order Now</a><span class="em"><img src="/assets/delivery/img/banner-groceries.jpg" alt="Fresh groceries"></span></div>
+      <div class="x-banner" style="background:linear-gradient(135deg,#fb923c,#ea580c)"><h4>Send a parcel</h4><p>Point-to-point, instant quote.</p><a class="b" href="/delivery/parcel">Send Now</a><span class="em"><img src="/assets/delivery/img/banner-parcel.jpg" alt="Delivery parcel"></span></div>
+    </div>
   </div>
 
-  <div class="dl-grid">
-    <div class="dl-card">
-      <h3>Food &amp; Retail</h3>
-      <p class="dl-mut">Browse open merchants, order and track to the door.</p>
-      <a class="dl-btn" href="/delivery/menu">Browse merchants</a>
+  <!-- RIGHT RAIL -->
+  <aside class="x-rail">
+    <div class="x-cart">
+      <div class="ch"><b><i class="fa-solid fa-cart-shopping"></i> Your cart</b><span id="cart-count-label">0 items</span></div>
+      <div id="cart-lines"></div>
+      <div class="x-tot" id="cart-tot" style="display:none">
+        <div class="r"><span>Subtotal</span><span id="c-sub">0</span></div>
+        <div class="r"><span>Delivery fee</span><span id="c-fee">—</span></div>
+        <div class="gr"><span>Total</span><span id="c-total">0</span></div>
+        <a class="x-checkout" href="/delivery/cart">Checkout</a>
+      </div>
+      <div class="x-cart-empty" id="cart-empty">Your cart is empty.<br>Add items to get started.</div>
     </div>
-    <div class="dl-card">
-      <h3>Parcel Delivery</h3>
-      <p class="dl-mut">Instant quote for standard weights; custom tariffs for
-         heavy or oversized items.</p>
-      <a class="dl-btn" href="/delivery/parcel">Send a parcel</a>
+
+    <div class="x-fast"><span class="z"><i class="fa-solid fa-bolt"></i></span><div><b>Fast Delivery</b><small>15–30 minutes</small></div></div>
+
+    <div class="x-offers">
+      <div class="oh">Best offers for you <a href="#items" data-cat="offers">View all</a></div>
+      <div id="offer-list"><div class="x-empty">Loading offers…</div></div>
     </div>
-    <div class="dl-card">
-      <h3>Negotiated Transport</h3>
-      <p class="dl-mut">Multi-stop itineraries with a fare agreed by phone
-         before you pay.</p>
-      <a class="dl-btn" href="/delivery/transport">Plan a trip</a>
+  </aside>
+</div>
+
+<!-- mobile cart bar -->
+<a class="x-mbar" id="x-mbar-link" href="javascript:void(0)"><span><i class="fa-solid fa-cart-shopping"></i> <b data-cart-count>0</b> items · <b id="mbar-total">0</b></span><span>Checkout <i class="fa-solid fa-arrow-right"></i></span></a>
+
+<!-- CHECKOUT MODAL -->
+<div class="ck-overlay" id="ck-overlay">
+  <div class="ck-modal">
+    <div class="ck-head">
+      <h3>Checkout<small>Review your order and set your delivery location</small></h3>
+      <button class="ck-close" id="ck-close"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="dl-card">
-      <h3>Track</h3>
-      <p class="dl-mut">Enter any reference to see live status and history.</p>
-      <a class="dl-btn sec" href="/delivery/track">Track a shipment</a>
+    <div class="ck-body">
+      <!-- LEFT: delivery details -->
+      <div class="ck-col left">
+        <div class="ck-label">Delivery location</div>
+        <div class="ck-geowrap">
+          <input class="ck-input" id="ck-search" placeholder="Search your hotel, apartment, street or area…" autocomplete="off">
+          <div class="ck-geo-res" id="ck-geo-res" style="display:none"></div>
+        </div>
+        <div class="ck-geobtns">
+          <button class="ck-btn ghost" id="ck-myloc"><i class="fa-solid fa-crosshairs"></i> Use my location</button>
+          <button class="ck-btn" id="ck-clear">Clear</button>
+        </div>
+        <div id="ck-map"></div>
+        <div class="ck-geohint" id="ck-hint"></div>
+
+        <div class="ck-label">Delivery address / notes for the driver</div>
+        <textarea class="ck-input" id="ck-addr" rows="2" placeholder="e.g. Slipway Villas, Block B, Apt 12 — or describe where to meet you"></textarea>
+
+        <div class="ck-label">Phone</div>
+        <input class="ck-input" id="ck-phone" placeholder="+255 …">
+
+        <div class="ck-label">Payment method</div>
+        <select class="ck-input" id="ck-pay"></select>
+
+        <div class="ck-label">Delivery zone (optional)</div>
+        <select class="ck-input" id="ck-zone"><option value="">Auto</option></select>
+
+        <div class="ck-label">Instructions (optional)</div>
+        <input class="ck-input" id="ck-notes" placeholder="e.g. leave at reception">
+      </div>
+
+      <!-- RIGHT: cart + totals -->
+      <div class="ck-col right">
+        <div id="ck-lines"></div>
+        <div class="ck-tot">
+          <div class="r"><span>Subtotal</span><b id="ck-sub">0</b></div>
+          <div class="r"><span>Delivery fee</span><b id="ck-fee">—</b></div>
+          <div class="gr"><span>Total</span><span id="ck-total">0</span></div>
+          <button class="ck-place" id="ck-place">Place order</button>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <h2 class="dl-section-title">Open now</h2>
-  <div id="merchants" class="dl-grid"><div class="dl-empty">Loading&hellip;</div></div>
+<!-- TRACK MODAL -->
+<div class="ck-overlay" id="tk-overlay">
+  <div class="ck-modal tk-modal">
+    <div class="ck-head">
+      <h3>Track your order<small>Enter your reference to follow your delivery live</small></h3>
+      <button class="ck-close" id="tk-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="tk-body">
+      <div class="tk-searchrow">
+        <input class="ck-input" id="tk-ref" placeholder="DL-ORD-2026-0001 / PR-2026-0001 / TR-2026-0001">
+        <button class="ck-btn primary" id="tk-go" style="height:44px;padding:0 22px">Track</button>
+      </div>
+      <div id="tk-out"></div>
+    </div>
+  </div>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
 <script>
 (function () {
-  DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
-    DELIVERY.currency = c.currency;
-    DELIVERY.platform = c.platform_name;
-  }).catch(function () {});
+  var ALL = [], MERCH = [], cat = "all";
+  var GRADS = ["linear-gradient(135deg,#f97316,#ef4444)","linear-gradient(135deg,#7c3aed,#a855f7)",
+               "linear-gradient(135deg,#0ea5e9,#2563eb)","linear-gradient(135deg,#16a34a,#059669)",
+               "linear-gradient(135deg,#db2777,#9333ea)","linear-gradient(135deg,#ca8a04,#d97706)"];
+  var ITEM_ICON = {"Grill":"fa-drumstick-bite","Main":"fa-bowl-food","Snacks":"fa-cookie",
+                    "Drinks":"fa-glass-water","Drink":"fa-glass-water","Bakery":"fa-bread-slice","Groceries":"fa-cart-shopping",
+                    "Household":"fa-soap","Dessert":"fa-cake-candles","Pharmacy":"fa-pills","Other":"fa-utensils"};
+  var CATEGORY_ICON = {food:"fa-burger",retail:"fa-cart-shopping",drinks:"fa-glass-water",
+                       snacks:"fa-cookie",bakery:"fa-bread-slice",offers:"fa-tag",all:"fa-grip"};
+  function fa(name, extra){ return '<i class="fa-solid '+name+(extra?" "+extra:"")+'"></i>'; }
+  function catIcon(cat){ return fa(CATEGORY_ICON[cat] || "fa-utensils"); }
+  var CATS = [
+    {k:"all",label:fa("fa-grip")+" All"},{k:"food",label:fa("fa-burger")+" Food"},{k:"retail",label:fa("fa-cart-shopping")+" Groceries"},
+    {k:"drinks",label:fa("fa-glass-water")+" Drinks"},{k:"snacks",label:fa("fa-cookie")+" Snacks"},{k:"bakery",label:fa("fa-bread-slice")+" Bakery"},
+    {k:"offers",label:fa("fa-tag")+" Offers"}
+  ];
+  var grad = function(i){ return GRADS[i % GRADS.length]; };
+  var iconFor = function(it){ return ITEM_ICON[it.category] || (it.item_type==="Retail"?"fa-cart-shopping":"fa-utensils"); };
+  var emojiFor = function(it){ return fa(iconFor(it)); };
+  var money = function(n){ return DELIVERY.fmt(n); };
+  var itemById = {};
 
-  DELIVERY.call("delivery.api.customer.list_merchants").then(function (rows) {
-    var host = document.getElementById("merchants");
-    if (!rows.length) { host.innerHTML = '<div class="dl-empty">No merchants are open right now.</div>'; return; }
-    host.innerHTML = rows.map(function (m) {
-      return '<div class="dl-card">' +
-        '<h3>' + DELIVERY.esc(m.merchant_name) + '</h3>' +
-        '<div class="dl-mut">' + DELIVERY.esc(m.service_type) + ' &middot; ' +
-          DELIVERY.esc(m.area || m.city || "") + '</div>' +
-        '<div class="dl-mut">Prep ~' + (m.avg_prep_minutes || 20) + ' min' +
-          (m.minimum_order_value ? ' &middot; min ' + DELIVERY.fmt(m.minimum_order_value) : '') +
-        '</div>' +
-        '<div style="margin-top:10px"><a class="dl-btn" href="/delivery/menu?merchant=' +
-          encodeURIComponent(m.name) + '">View menu</a></div></div>';
-    }).join("");
-  }).catch(function (e) {
-    document.getElementById("merchants").innerHTML =
-      '<div class="dl-empty">' + DELIVERY.esc(e.message) + '</div>';
+  // ---------- category chips + tiles ----------
+  document.getElementById("chips").innerHTML = CATS.map(function(c){
+    return '<button class="x-chip'+(c.k==="all"?" active":"")+'" data-cat="'+c.k+'">'+c.label+'</button>';
+  }).join("");
+  var TILES = [["food","fa-burger","Food"],["retail","fa-cart-shopping","Groceries"],["drinks","fa-glass-water","Drinks"],["bakery","fa-bread-slice","Bakery"],
+               ["snacks","fa-cookie","Snacks"],["offers","fa-tag","Offers"]];
+  document.getElementById("cats").innerHTML = TILES.map(function(t){
+    return '<div class="x-cat" data-cat="'+t[0]+'"><div class="ic">'+fa(t[1])+'</div><div class="lb">'+t[2]+'</div></div>';
+  }).join("");
+
+  function setCat(k){
+    cat = k;
+    document.querySelectorAll(".x-chip").forEach(function(x){ x.classList.toggle("active", x.dataset.cat===k); });
+    document.querySelectorAll(".x-nav a").forEach(function(x){ x.classList.toggle("active", x.dataset.cat===k); });
+    renderItems();
+    document.getElementById("items").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+  document.getElementById("chips").addEventListener("click", function(e){
+    var b=e.target.closest(".x-chip"); if(b) setCat(b.dataset.cat);
+  });
+  document.getElementById("cats").addEventListener("click", function(e){
+    var t=e.target.closest(".x-cat[data-cat]"); if(t) setCat(t.dataset.cat);
+  });
+  document.querySelectorAll(".x-nav a[data-cat], a[data-cat]").forEach(function(a){
+    a.addEventListener("click", function(e){ if(a.dataset.cat){ e.preventDefault(); setCat(a.dataset.cat); } });
+  });
+  document.getElementById("nav-shops").addEventListener("click", function(){
+    document.getElementById("shops").scrollIntoView({behavior:"smooth"});
   });
 
-  DELIVERY.loadCart();
+  function matchCat(it){
+    var c=(it.category||"").toLowerCase();
+    switch(cat){
+      case "all": return true;
+      case "food":   return it.item_type==="Food";
+      case "retail": return it.item_type==="Retail" || c.indexOf("grocer")>=0 || c.indexOf("household")>=0;
+      case "drinks": return c.indexOf("drink")>=0;
+      case "snacks": return c.indexOf("snack")>=0;
+      case "bakery": return c.indexOf("baker")>=0 || c.indexOf("bread")>=0;
+      case "offers": return it.discount_rate>0;
+      default: return true;
+    }
+  }
+
+  // ---------- items ----------
+  function renderItems(){
+    var q=(document.getElementById("q").value||"").trim().toLowerCase();
+    var sort=document.getElementById("sort").value;
+    var list=ALL.filter(function(it){
+      if(!matchCat(it)) return false;
+      if(!q) return true;
+      return (it.item_name||"").toLowerCase().indexOf(q)>=0
+          || (it.category||"").toLowerCase().indexOf(q)>=0
+          || (it.merchant_name||"").toLowerCase().indexOf(q)>=0;
+    });
+    list.sort(function(a,b){
+      if(sort==="price_asc") return a.rate-b.rate;
+      if(sort==="price_desc") return b.rate-a.rate;
+      if(sort==="fast") return a.prep_minutes-b.prep_minutes;
+      if(sort==="name") return (a.item_name||"").localeCompare(b.item_name||"");
+      return (b.featured?1:0)-(a.featured?1:0) || a.rate-b.rate;
+    });
+    var labelMap={all:"Available now",food:"Food",retail:"Groceries",drinks:"Drinks",snacks:"Snacks",bakery:"Bakery",offers:"Offers"};
+    document.getElementById("items-title").textContent=(labelMap[cat]||"Available now")+" ("+list.length+")";
+    var host=document.getElementById("grid");
+    if(!list.length){ host.innerHTML='<div class="x-empty">No items match. Try another search or category.</div>'; return; }
+    host.innerHTML=list.map(function(it,i){
+      itemById[it.name]=it;
+      var old=it.discount_rate?'<span class="old">'+money(it.standard_rate)+'</span>':"";
+      var off=it.discount_rate?'<span class="x-off">-'+Math.round(it.discount_rate)+'%</span>':"";
+      var pop=it.featured?'<span class="x-pop"><i class="fa-solid fa-star"></i> Popular</span>':"";
+      var soldOut=(it.in_stock!==undefined && it.in_stock<=0);
+      var thumb = it.image
+        ? '<img src="'+DELIVERY.esc(it.image)+'" alt="'+DELIVERY.esc(it.item_name)+'" class="x-iimg">'
+        : emojiFor(it);
+      var thumbBg = it.image ? 'background:#fff' : ('background:'+grad(i));
+      return '<div class="x-item"><div class="x-ithumb" style="'+thumbBg+'">'+off+pop+thumb+'</div>'+
+        '<div class="x-ibody"><div class="x-iname">'+DELIVERY.esc(it.item_name)+'</div>'+
+        '<div class="x-isub">'+DELIVERY.esc(it.merchant_name)+' · '+DELIVERY.esc(it.category||"")+'</div>'+
+        '<div class="x-ifoot"><span class="x-price">'+money(it.rate)+old+'</span>'+
+        '<button class="x-add" '+(soldOut?"disabled":"")+' data-i="'+i+'">'+(soldOut?"Sold out":"Add +")+'</button></div></div></div>';
+    }).join("");
+    host.querySelectorAll(".x-add[data-i]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var it=list[Number(b.dataset.i)];
+        DELIVERY.addToCart(it.merchant, it.name, it.item_name, it.rate, 1);
+        DELIVERY.saveCart(); renderCart();
+      });
+    });
+  }
+
+  // ---------- merchants ----------
+  function renderMerchants(rows){
+    MERCH=rows||[];
+    var host=document.getElementById("merchants");
+    if(!MERCH.length){ host.innerHTML='<div class="x-empty">No merchants open right now.</div>'; return; }
+    host.innerHTML=MERCH.map(function(m,i){
+      var svc=(m.service_type||"").replace(" & ","/");
+      var mlogo = m.logo
+        ? '<img src="'+DELIVERY.esc(m.logo)+'" alt="" class="x-iimg">'
+        : '<i class="fa-solid fa-store" style="font-size:44px;color:rgba(255,255,255,.92)"></i>';
+      return '<a class="x-mcard" href="/delivery/menu?merchant='+encodeURIComponent(m.name)+'">'+
+        '<div class="x-mthumb" style="'+(m.logo?'background:#fff':('background:'+grad(i)))+'"><span class="x-mtag">'+DELIVERY.esc(svc)+'</span>'+mlogo+'</div>'+
+        '<div class="x-mbody"><div class="nm">'+DELIVERY.esc(m.merchant_name)+'</div>'+
+        '<div class="x-meta"><i class="fa-solid fa-location-dot"></i> '+DELIVERY.esc(m.area||m.city||"Dar es Salaam")+' · <i class="fa-regular fa-clock"></i> ~'+Math.round(m.avg_prep_minutes||20)+' min</div>'+
+        '<span class="x-mfree">Free delivery · min '+money(m.minimum_order_value||0)+'</span></div></a>';
+    }).join("");
+  }
+
+  // ---------- cart ----------
+  function thumbEmoji(line){ var it=itemById[line.item]; return it?emojiFor(it):fa("fa-utensils"); }
+  function thumbGrad(i){ return grad(i); }
+  function renderCart(){
+    var lines=DELIVERY.cart||[];
+    var count=lines.reduce(function(s,l){return s+l.qty;},0);
+    document.querySelectorAll("[data-cart-count]").forEach(function(b){ b.textContent=count; });
+    document.getElementById("cart-count-label").textContent=count+" item"+(count===1?"":"s");
+    var box=document.getElementById("cart-lines"), tot=document.getElementById("cart-tot"),
+        emp=document.getElementById("cart-empty");
+    if(!lines.length){ box.innerHTML=""; tot.style.display="none"; emp.style.display="block";
+      document.getElementById("mbar-total").textContent=money(0); return; }
+    emp.style.display="none"; tot.style.display="block";
+    box.innerHTML=lines.map(function(l,i){
+      return '<div class="x-cline"><div class="thumb" style="background:'+grad(i)+'">'+thumbEmoji(l)+'</div>'+
+        '<div class="ci"><div class="cn">'+DELIVERY.esc(l.item_name)+'</div><div class="cp">'+money(l.rate*l.qty)+'</div></div>'+
+        '<div class="x-qty"><button data-dec="'+i+'">−</button><span class="q">'+l.qty+'</span><button data-inc="'+i+'">+</button></div>'+
+        '<button class="x-rm" data-rm="'+i+'">×</button></div>';
+    }).join("");
+    var sub=DELIVERY.cartTotal();
+    document.getElementById("c-sub").textContent=money(sub);
+    document.getElementById("mbar-total").textContent=money(sub);
+    document.getElementById("c-fee").textContent="…";
+    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:null, distance_km:0, items_total:sub})
+      .then(function(f){
+        var fee=f.delivery_fee||0;
+        document.getElementById("c-fee").textContent=fee?money(fee):"FREE";
+        document.getElementById("c-total").textContent=money(sub+fee);
+      }).catch(function(){ document.getElementById("c-fee").textContent="—"; document.getElementById("c-total").textContent=money(sub); });
+    box.querySelectorAll("[data-inc]").forEach(function(b){ b.onclick=function(){ var l=lines[+b.dataset.inc]; l.qty++; DELIVERY.saveCart(); renderCart(); }; });
+    box.querySelectorAll("[data-dec]").forEach(function(b){ b.onclick=function(){ var l=lines[+b.dataset.dec]; if(l.qty>1) l.qty--; else lines.splice(+b.dataset.dec,1); DELIVERY.saveCart(); renderCart(); }; });
+    box.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ lines.splice(+b.dataset.rm,1); if(!lines.length) DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); }; });
+  }
+
+  // ---------- offers ----------
+  function renderOffers(){
+    var deals=ALL.filter(function(it){return it.discount_rate>0;}).slice(0,3);
+    var staticO=[
+      {pct:"Free Delivery", sub:"On orders above 15,000", code:"FREEDEL", em:'<i class="fa-solid fa-motorcycle"></i>'},
+      {pct:"10% OFF", sub:"On grocery orders", code:"GROCERY10", em:'<i class="fa-solid fa-basket-shopping"></i>'}
+    ];
+    var html=deals.map(function(it){
+      return '<div class="x-offer"><span class="oe">'+emojiFor(it)+'</span><div class="ot"><span class="pct">'+Math.round(it.discount_rate)+'% OFF</span>'+
+        '<small>'+DELIVERY.esc(it.item_name)+'</small></div><span class="code">SAVE'+Math.round(it.discount_rate)+'</span></div>';
+    }).join("") + staticO.map(function(o){
+      return '<div class="x-offer"><span class="oe">'+o.em+'</span><div class="ot"><span class="pct">'+o.pct+'</span><small>'+o.sub+'</small></div><span class="code">'+o.code+'</span></div>';
+    }).join("");
+    document.getElementById("offer-list").innerHTML=html;
+  }
+
+  // ---------- hero carousel (backend Home Banners) ----------
+  var HERO_TIMER = null, HERO_IDX = 0, HERO_SLIDES = [];
+  function defaultHeroSlides(){
+    return [
+      { grad:true, title:'Everything you need,<br>delivered fast <span class="y"><i class="fa-solid fa-bolt"></i></span>',
+        sub:"Food, groceries, drinks and more from your favourite local merchants — with live driver tracking.",
+        cta_label:"Order Now", cta_link:"#items",
+        art:'<i class="fa-solid fa-motorcycle"></i>' },
+      { grad:true, title:"Groceries in a tap",
+        sub:"Everyday essentials delivered fast from local shops.",
+        cta_label:"Order Now", cta_link:"javascript:void(0)", cta_cat:"retail",
+        art:'<i class="fa-solid fa-basket-shopping"></i>' },
+      { grad:true, title:"Send a parcel",
+        sub:"Point-to-point delivery with an instant quote.",
+        cta_label:"Send Now", cta_link:"/delivery/parcel",
+        art:'<i class="fa-solid fa-box"></i>' },
+      { grad:true, title:"Need transport?",
+        sub:"Cars, vans and trucks — agree the fare before you pay.",
+        cta_label:"Get started", cta_link:"/delivery/transport",
+        art:'<i class="fa-solid fa-truck-fast"></i>' }
+    ];
+  }
+  function buildHero(slides){
+    HERO_SLIDES = slides; HERO_IDX = 0;
+    var host = document.getElementById("hero-carousel");
+    if(!slides.length){ host.classList.remove("carousel"); return; }
+    host.innerHTML = slides.map(function(s, i){
+      if(s.grad){
+        return '<div class="x-slide grad'+(i===0?" on":"")+'" data-i="'+i+'"><div class="slide-in">' +
+          '<div><h1>'+s.title+'</h1><p>'+s.sub+'</p>' +
+          '<a class="cta" href="'+(s.cta_link||"#items")+'"'+(s.cta_cat?' data-cat="'+s.cta_cat+'"':'')+'>' +
+            s.cta_label+' &nbsp;<i class="fa-solid fa-arrow-right"></i></a></div>' +
+          (s.art?'<div class="art">'+s.art+'</div>':"") +
+        '</div></div>';
+      }
+      var cap = '<div class="cap">' +
+        (s.title?'<h2>'+DELIVERY.esc(s.title)+"</h2>":"") +
+        (s.subtitle?'<p>'+DELIVERY.esc(s.subtitle)+"</p>":"") +
+        (s.button_label && s.button_link
+          ? '<a class="cta" href="'+DELIVERY.esc(s.button_link)+'">'+DELIVERY.esc(s.button_label)+' &nbsp;<i class="fa-solid fa-arrow-right"></i></a>':"") +
+      '</div>';
+      return '<div class="x-slide'+(i===0?" on":"")+'" data-i="'+i+'">' +
+        '<img class="bg" src="'+DELIVERY.esc(s.image)+'" alt="'+DELIVERY.esc(s.title||"Banner")+'">' +
+        '<div class="shade"></div>'+cap+'</div>';
+    }).join("") +
+      '<button class="x-arrow prev" type="button" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>' +
+      '<button class="x-arrow next" type="button" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>' +
+      '<div class="x-dots">'+slides.map(function(s,i){ return '<i'+(i===0?' class="on"':'')+' data-i="'+i+'"></i>'; }).join("")+'</div>';
+    function show(n){
+      HERO_IDX = (n + slides.length) % slides.length;
+      host.querySelectorAll(".x-slide").forEach(function(el){ el.classList.toggle("on", +el.dataset.i===HERO_IDX); });
+      host.querySelectorAll(".x-dots i").forEach(function(el){ el.classList.toggle("on", +el.dataset.i===HERO_IDX); });
+    }
+    host.querySelector(".x-arrow.next").addEventListener("click", function(){ show(HERO_IDX+1); });
+    host.querySelector(".x-arrow.prev").addEventListener("click", function(){ show(HERO_IDX-1); });
+    host.querySelectorAll(".x-dots i").forEach(function(el){ el.addEventListener("click", function(){ show(+el.dataset.i); }); });
+    if(HERO_TIMER) clearInterval(HERO_TIMER);
+    if(slides.length > 1) HERO_TIMER = setInterval(function(){ show(HERO_IDX+1); }, 5000);
+    // re-bind category CTAs inside default slides
+    host.querySelectorAll("a[data-cat]").forEach(function(a){
+      a.setAttribute("href","javascript:void(0)");
+      a.addEventListener("click", function(){ setCat(a.dataset.cat); });
+    });
+  }
+  DELIVERY.call("delivery.api.customer.home_banners").then(function(rows){
+    var custom = (rows||[]).filter(function(b){ return b.image; });
+    buildHero(custom.length ? custom : defaultHeroSlides());
+  }).catch(function(){ buildHero(defaultHeroSlides()); });
+
+  // ---------- boot ----------
+  DELIVERY.loadCart(); renderCart();
+  DELIVERY.call("delivery.api.customer.platform_config").then(function(c){ DELIVERY.currency=c.currency; renderCart(); }).catch(function(){});
+  DELIVERY.call("delivery.api.customer.list_merchants").then(renderMerchants)
+    .catch(function(){ document.getElementById("merchants").innerHTML='<div class="x-empty">Could not load merchants.</div>'; });
+  DELIVERY.call("delivery.api.customer.browse_items",{sort:"featured",limit:300}).then(function(rows){
+    ALL=rows||[]; renderItems(); renderOffers(); renderCart();
+  }).catch(function(){ document.getElementById("grid").innerHTML='<div class="x-empty">Could not load items.</div>'; });
+
+  // account name
+  fetch("/api/method/frappe.auth.get_logged_user",{credentials:"same-origin"})
+    .then(function(r){return r.json();}).then(function(d){
+      var u=(d&&d.message)||"Guest";
+      document.getElementById("acct-name").textContent = u==="Guest" ? "Sign in" : ("Hi, "+String(u).split("@")[0]);
+    }).catch(function(){});
+
+  var t;
+  document.getElementById("q").addEventListener("input", function(){ clearTimeout(t); t=setTimeout(renderItems,220); });
+  document.getElementById("sort").addEventListener("change", renderItems);
+  document.getElementById("loc-change").addEventListener("click", function(){ openCheckout(); });
+
+  // ================= CHECKOUT MODAL =================
+  var overlay=document.getElementById("ck-overlay");
+  var destLat=null, destLng=null, ckMap=null, ckMarker=null, ckInit=false, ckTimer=null, ckPayLoaded=false;
+
+  function openCheckout(){
+    if(!DELIVERY.cart.length){ DELIVERY.toast("Your cart is empty.","info"); return; }
+    overlay.classList.add("show");
+    document.body.style.overflow="hidden";
+    renderCheckout();
+    if(!ckPayLoaded){
+      DELIVERY.call("delivery.api.customer.platform_config").then(function(c){
+        DELIVERY.currency=c.currency;
+        document.getElementById("ck-pay").innerHTML=(c.payment_methods||["Cash On Delivery"])
+          .map(function(m){ return "<option>"+DELIVERY.esc(m)+"</option>"; }).join("");
+      }).catch(function(){});
+      DELIVERY.call("delivery.api.customer.zones").then(function(rows){
+        var z=document.getElementById("ck-zone");
+        (rows||[]).forEach(function(r){ var o=document.createElement("option"); o.value=r.name; o.textContent=r.zone_name; z.appendChild(o); });
+      }).catch(function(){});
+      ckPayLoaded=true;
+    }
+    setTimeout(function(){ if(!ckInit){ initCkMap(); ckInit=true; } else if(ckMap){ ckMap.invalidateSize(); } }, 260);
+  }
+  function closeCheckout(){ overlay.classList.remove("show"); document.body.style.overflow=""; }
+
+  function renderCheckout(){
+    var lines=DELIVERY.cart||[], host=document.getElementById("ck-lines");
+    if(!lines.length){ host.innerHTML='<div class="ck-empty">Your cart is empty.</div>';
+      document.getElementById("ck-sub").textContent=money(0); document.getElementById("ck-total").textContent=money(0);
+      document.getElementById("ck-fee").textContent="—"; return; }
+    host.innerHTML=lines.map(function(l,i){
+      var it=itemById[l.item];
+      var thumb = it && it.image
+        ? '<img src="'+DELIVERY.esc(it.image)+'" alt="">' : emojiFor(it||{category:"",item_type:"Food"});
+      return '<div class="ck-line"><div class="t">'+thumb+'</div>'+
+        '<div class="ci"><div class="cn">'+DELIVERY.esc(l.item_name)+'</div>'+
+        '<div class="cm">'+money(l.rate*l.qty)+'</div></div>'+
+        '<div class="ck-qty"><button data-dec="'+i+'">−</button><span class="q">'+l.qty+'</span><button data-inc="'+i+'">+</button></div>'+
+        '<button class="ck-rm" data-rm="'+i+'">×</button></div>';
+    }).join("");
+    host.querySelectorAll("[data-inc]").forEach(function(b){ b.onclick=function(){ lines[+b.dataset.inc].qty++; DELIVERY.saveCart(); renderCart(); renderCheckout(); }; });
+    host.querySelectorAll("[data-dec]").forEach(function(b){ b.onclick=function(){ var l=lines[+b.dataset.dec]; if(l.qty>1)l.qty--; else lines.splice(+b.dataset.dec,1); if(!lines.length)DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); renderCheckout(); }; });
+    host.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ lines.splice(+b.dataset.rm,1); if(!lines.length)DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); renderCheckout(); }; });
+
+    var sub=DELIVERY.cartTotal();
+    document.getElementById("ck-sub").textContent=money(sub);
+    document.getElementById("ck-fee").textContent="…";
+    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:document.getElementById("ck-zone").value, distance_km:0, items_total:sub})
+      .then(function(f){ var fee=f.delivery_fee||0;
+        document.getElementById("ck-fee").textContent=fee?money(fee):"FREE";
+        document.getElementById("ck-total").textContent=money(sub+fee);
+      }).catch(function(){ document.getElementById("ck-fee").textContent="—"; document.getElementById("ck-total").textContent=money(sub); });
+  }
+
+  function ckIcon(){ return L.divIcon({className:"", iconSize:[32,32], iconAnchor:[16,30],
+    html:'<i class="fa-solid fa-flag-checkered" style="font-size:26px;color:#fff;background:var(--purple);width:38px;height:38px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.35)"></i>'}); }
+  function initCkMap(){
+    ckMap=L.map("ck-map").setView([-6.7924,39.2083],12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap", maxZoom:19}).addTo(ckMap);
+    ckMap.on("click",function(e){ ckSetDest(e.latlng.lat,e.latlng.lng); });
+  }
+  function ckSetDest(lat,lng,label){
+    destLat=Number(lat); destLng=Number(lng); var ll=[destLat,destLng];
+    if(!ckMarker) ckMarker=L.marker(ll,{icon:ckIcon(),draggable:true}).addTo(ckMap);
+    ckMarker.setLatLng(ll);
+    ckMarker.off("dragend"); ckMarker.on("dragend",function(ev){ var p=ev.target.getLatLng(); ckSetDest(p.lat,p.lng); });
+    ckMap.setView(ll,Math.max(ckMap.getZoom(),15));
+    document.getElementById("ck-hint").innerHTML='<i class="fa-solid fa-location-dot" style="color:var(--purple)"></i> Delivery point set'+(label?" — "+label:"")+". Drag the pin to fine-tune.";
+  }
+  function ckClearDest(){ destLat=destLng=null; if(ckMarker){ckMarker.remove();ckMarker=null;} document.getElementById("ck-hint").textContent=""; ckMap.setView([-6.7924,39.2083],12); }
+
+  document.getElementById("ck-search").addEventListener("input",function(){
+    var q=this.value.trim(); clearTimeout(ckTimer); var box=document.getElementById("ck-geo-res");
+    if(q.length<2){ box.style.display="none"; return; }
+    ckTimer=setTimeout(function(){
+      DELIVERY.call("delivery.api.customer.search_places",{query:q}).then(function(list){
+        if(!list.length){ box.style.display="none"; return; }
+        box.innerHTML=list.map(function(p,i){ return '<div class="ck-geo-item" data-i="'+i+'"><b>'+DELIVERY.esc(p.label)+'</b><small>'+DELIVERY.esc(p.type||"place")+'</small></div>'; }).join("");
+        box.style.display="block";
+        box.querySelectorAll(".ck-geo-item").forEach(function(el){
+          el.onclick=function(){ var p=list[+el.dataset.i]; ckSetDest(p.lat,p.lng,p.label);
+            document.getElementById("ck-search").value=p.label; box.style.display="none"; };
+        });
+      }).catch(function(){ box.style.display="none"; });
+    },320);
+  });
+  document.addEventListener("click",function(e){ if(!e.target.closest(".ck-geowrap")) document.getElementById("ck-geo-res").style.display="none"; });
+  document.getElementById("ck-myloc").addEventListener("click",function(){
+    if(!navigator.geolocation){ DELIVERY.toast("Location not supported.","error"); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){ ckSetDest(pos.coords.latitude,pos.coords.longitude,"My location"); },
+      function(err){ DELIVERY.toast("Could not get location ("+({1:"denied",2:"unavailable",3:"timed out"}[err.code]||"error")+")","error"); },
+      {enableHighAccuracy:true,timeout:12000});
+  });
+  document.getElementById("ck-clear").addEventListener("click",function(){ document.getElementById("ck-search").value=""; ckClearDest(); });
+  document.getElementById("ck-close").addEventListener("click",closeCheckout);
+  overlay.addEventListener("click",function(e){ if(e.target===overlay) closeCheckout(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape" && overlay.classList.contains("show")) closeCheckout(); });
+
+  document.getElementById("ck-place").addEventListener("click",function(){
+    var btn=this;
+    if(!DELIVERY.cart.length){ DELIVERY.toast("Cart is empty.","error"); return; }
+    var search=document.getElementById("ck-search").value.trim();
+    var addr=document.getElementById("ck-addr").value.trim() || search;
+    btn.disabled=true; btn.textContent="Placing order…";
+    DELIVERY.call("delivery.api.customer.place_order",{
+      merchant:DELIVERY.cartMerchant,
+      items:DELIVERY.cart.map(function(l){ return {item:l.item, qty:l.qty}; }),
+      delivery_address:addr,
+      order_type:"Food",
+      delivery_zone:document.getElementById("ck-zone").value||null,
+      delivery_distance_km:0,
+      payment_method:document.getElementById("ck-pay").value||"Cash On Delivery",
+      phone:document.getElementById("ck-phone").value,
+      delivery_instructions:document.getElementById("ck-notes").value,
+      delivery_latitude:destLat, delivery_longitude:destLng
+    }).then(function(r){
+      DELIVERY.cart=[]; DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart();
+      closeCheckout(); btn.disabled=false; btn.textContent="Place order";
+      DELIVERY.toast("Order "+r.order+" placed!","success");
+      setTimeout(function(){ openTrack(r.order); }, 400);
+    }).catch(function(e){ DELIVERY.toast(e.message,"error"); btn.disabled=false; btn.textContent="Place order"; });
+  });
+
+  // open modal from cart panel + mobile bar (stay on home)
+  document.querySelectorAll(".x-checkout").forEach(function(a){ a.setAttribute("href","javascript:void(0)"); a.addEventListener("click",openCheckout); });
+  document.getElementById("x-mbar-link").addEventListener("click",openCheckout);
+
+  // ================= TRACK MODAL =================
+  var tkOverlay=document.getElementById("tk-overlay");
+  var tkRef=null, tkMap=null, tkLayer=null, tkDriver=null, tkPoll=null, tkInit=false;
+  function openTrack(ref){
+    tkOverlay.classList.add("show"); document.body.style.overflow="hidden";
+    if(ref){ document.getElementById("tk-ref").value=ref; }
+    // map is created after the result (which contains #tk-map) renders
+    setTimeout(function(){ tkLoad(true); }, 200);
+  }
+  function closeTrack(){ tkOverlay.classList.remove("show"); document.body.style.overflow=""; if(tkPoll){ clearInterval(tkPoll); tkPoll=null; } }
+  function initTkMap(){
+    tkMap=L.map("tk-map").setView([-6.7924,39.2083],12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap", maxZoom:19}).addTo(tkMap);
+    tkLayer=L.featureGroup().addTo(tkMap);
+  }
+  function tkDriverIcon(){ return L.divIcon({className:"", iconSize:[20,20], iconAnchor:[10,10],
+    html:'<div style="width:20px;height:20px;background:#1976D2;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 6px rgba(25,118,210,.25),0 2px 4px rgba(0,0,0,.4)"></div>'}); }
+  function tkSteps(t){
+    var order=["PENDING","ACCEPTED","PREPARING","DRIVER_ASSIGNED","PICKED_UP","COMPLETED"];
+    if(t.service==="Parcel") order=["REQUESTED","UNDER_REVIEW","PRICE_AGREED"].concat(order.slice(1));
+    if(t.service==="Transport") order=["UNDER_REVIEW","PRICE_AGREED"].concat(order.slice(1));
+    var at=order.indexOf(t.state);
+    return '<div class="tk-steps">'+order.map(function(s,i){
+      var cls=i<at?"done":(i===at?"now":"");
+      return '<span class="tk-step '+cls+'">'+s.replace(/_/g," ")+"</span>";
+    }).join("")+"</div>";
+  }
+  function tkRender(t){
+    document.getElementById("tk-out").innerHTML=
+      '<div style="margin-top:16px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<h3 style="margin:0;font-size:17px">'+DELIVERY.esc(t.reference)+' · '+DELIVERY.esc(t.service)+"</h3>"+
+          DELIVERY.statePill(t.state)+
+        "</div>"+
+        tkSteps(t)+
+        '<div class="tk-info">Amount <b>'+DELIVERY.fmt(t.amount)+"</b> · "+DELIVERY.esc(t.payment_status||"")+" · "+
+          DELIVERY.esc(t.payment_method||"")+
+          (t.driver_name?(" · driver <b>"+DELIVERY.esc(t.driver_name)+"</b>"):"")+
+          (t.otp_code?(" · handoff code <b>"+DELIVERY.esc(t.otp_code)+"</b>"):"")+
+      "</div>"+
+    '<div id="tk-status" class="tk-status">Loading live location…</div>'+
+    '<div id="tk-map-wrap"><div id="tk-map"></div></div>'+
+    '<table class="tk-hist"><thead><tr><th>When</th><th>State</th><th>By</th></tr></thead><tbody>'+
+      ((t.timeline&&t.timeline.length)
+        ? t.timeline.map(function(h){
+            return "<tr><td>"+DELIVERY.esc(h.timestamp||"")+"</td><td>"+DELIVERY.esc(h.label||h.state)+"</td><td>"+DELIVERY.esc(h.by||"")+"</td></tr>";
+          }).join("")
+        : '<tr><td colspan="3" style="color:#999">No history yet.</td></tr>')+
+    "</tbody></table></div>";
+  }
+  function tkLoad(fit){
+    var ref=(document.getElementById("tk-ref").value||"").trim();
+    if(!ref) return; tkRef=ref;
+    DELIVERY.call("delivery.api.customer.track",{reference:ref}).then(function(t){
+      DELIVERY.currency=t.currency; tkRender(t);
+      setTimeout(function(){
+        if(!tkInit){ initTkMap(); tkInit=true; }
+        if(tkMap){ tkMap.invalidateSize(); }
+        tkFetch(true);
+      }, 80);
+      if(tkPoll) clearInterval(tkPoll);
+      tkPoll=setInterval(function(){ tkFetch(false); }, 10000);
+    }).catch(function(e){
+      document.getElementById("tk-out").innerHTML='<div class="tk-empty">'+DELIVERY.esc(e.message)+"</div>";
+    });
+  }
+  function tkFetch(fit){
+    if(!tkRef || !tkMap) return;
+    DELIVERY.call("delivery.api.customer.track_route",{reference:tkRef}).then(function(r){
+      tkLayer.clearLayers();
+      var status=document.getElementById("tk-status");
+      if(!r.has_driver){ if(status) status.textContent="A driver has not been assigned yet — this updates automatically."; return; }
+      var who=r.driver_name?("Driver: "+r.driver_name):"Driver";
+      var pts=(r.trail||[]).map(function(p){ return [p.lat,p.lng]; });
+      if(pts.length>1){
+        L.polyline(pts,{color:"#1976D2",weight:4,opacity:.75}).addTo(tkLayer);
+      }
+      var pos=r.latest?[r.latest.lat,r.latest.lng]:null;
+      if(pos){ tkDriver=L.marker(pos,{icon:tkDriverIcon()}).addTo(tkLayer)
+        .bindPopup("<b>"+DELIVERY.esc(who)+"</b><br>"+DELIVERY.esc(r.latest.activity||"On Trip")); }
+      function pin(em){ return L.divIcon({className:"",iconSize:[32,32],iconAnchor:[16,16],html:'<div style="width:32px;height:32px;border-radius:50%;background:var(--purple);color:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 3px 8px rgba(0,0,0,.35)">'+em+"</div>"}); }
+      function place(p,em,title){ if(!p||!p.lat||!p.lng) return null; L.marker([p.lat,p.lng],{icon:pin(em)}).addTo(tkLayer).bindPopup("<b>"+title+"</b>"); return [p.lat,p.lng]; }
+      var pickupLL=place(r.pickup,'<i class="fa-solid fa-store"></i>',"Pickup");
+      var dropLL=place(r.dropoff,'<i class="fa-solid fa-flag-checkered"></i>',"Destination");
+      if(pos&&dropLL) L.polyline([pos,dropLL],{color:"#43A047",weight:3,dashArray:"8,8",opacity:.9}).addTo(tkLayer);
+      var any=pos||dropLL||pickupLL||pts.length;
+      if(any){ var b=tkLayer.getBounds(); if(b.isValid()) tkMap.fitBounds(b,{padding:[40,40],maxZoom:15}); }
+      if(status) status.innerHTML=(pos?('<i class="fa-solid fa-satellite-dish"></i> '+who+(r.driver_phone?" · "+r.driver_phone:"")+" — en route"):("Waiting for "+who+" to share location…"));
+    }).catch(function(e){ var s=document.getElementById("tk-status"); if(s) s.textContent="Map error: "+e.message; });
+  }
+  document.getElementById("tk-go").addEventListener("click",function(){ tkLoad(true); });
+  document.getElementById("tk-ref").addEventListener("keydown",function(e){ if(e.key==="Enter") tkLoad(true); });
+  document.getElementById("tk-close").addEventListener("click",closeTrack);
+  tkOverlay.addEventListener("click",function(e){ if(e.target===tkOverlay) closeTrack(); });
+
+  // wire all "Track" links/buttons to open the modal instead of navigating
+  document.querySelectorAll('a[href="/delivery/track"], a[href="/delivery/track?"]').forEach(function(a){
+    a.setAttribute("href","javascript:void(0)"); a.addEventListener("click",openTrack);
+  });
+
+  // auto-open track when returning from an order (?ref=...)
+  var hp=new URLSearchParams(location.search).get("ref");
+  if(hp){ setTimeout(function(){ openTrack(hp); }, 300); }
 })();
 </script>
 </body></html>

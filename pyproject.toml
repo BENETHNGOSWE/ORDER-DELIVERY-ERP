@@ -1,6 +1,6 @@
 [project]
 name = "delivery"
-version = "1.0.0"
+version = "1.1.0"
 description = "Multi-Service Delivery & Logistics Platform for ERPNext 16"
 requires-python = ">=3.14"
 authors = [{ name = "Swift Logistics", email = "ops@swiftlogistics.test" }]

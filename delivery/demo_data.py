@@ -34,6 +34,7 @@ MERCHANTS = [
         "phone": "+255700000001",
         "city": "Dar es Salaam", "area": "Masaki",
         "full_address": "Masaki Seafront, Dar es Salaam",
+        "latitude": -6.7440, "longitude": 39.2780,
         "avg_prep_minutes": 25, "minimum_order_value": 10000,
         "delivery_radius_km": 8, "commission_rate": 15,
         "items": [
@@ -56,6 +57,7 @@ MERCHANTS = [
         "phone": "+255700000002",
         "city": "Dar es Salaam", "area": "Kariakoo",
         "full_address": "Mbezi Street, Kariakoo, Dar es Salaam",
+        "latitude": -6.8210, "longitude": 39.2700,
         "avg_prep_minutes": 15, "minimum_order_value": 5000,
         "delivery_radius_km": 12, "commission_rate": 12,
         "items": [
@@ -77,6 +79,7 @@ MERCHANTS = [
         "phone": "+255700000003",
         "city": "Dar es Salaam", "area": "Masaki",
         "full_address": "Masaki Shopping Strip, Dar es Salaam",
+        "latitude": -6.7460, "longitude": 39.2760,
         "avg_prep_minutes": 18, "minimum_order_value": 8000,
         "delivery_radius_km": 6, "commission_rate": 14,
         "items": [
@@ -205,3 +208,100 @@ def reset():
     frappe.db.commit()
     print("Demo data cleared.")
     return True
+
+
+# ---------------------------------------------------------------------------
+# Live-tracking demo: fake driver movement on the /delivery/track Leaflet map
+# ---------------------------------------------------------------------------
+# A demo route across Dar es Salaam: pickup near Kariakoo (-6.821, 39.270)
+# heading toward Masaki peninsula (-6.742, 39.275).
+_ORIGIN = (-6.8210, 39.2700)
+_DEST = (-6.7420, 39.2750)
+_HOPS = 25
+
+
+def _ping(reference, driver, lat, lng, activity="On Trip"):
+	import datetime
+	log = frappe.new_doc("Driver Location Log")
+	log.driver = driver
+	log.reference = reference or ""
+	log.activity = activity
+	log.latitude = lat
+	log.longitude = lng
+	log.accuracy = 12.0
+	log.timestamp = frappe.utils.now()
+	log.flags.ignore_mandatory = True
+	log.insert(ignore_permissions=True)
+	frappe.db.set_value("Delivery Driver", driver,
+	                    {"latitude": lat, "longitude": lng}, update_modified=False)
+	return log
+
+
+@frappe.whitelist()
+def simulate_move(reference=None, hops=_HOPS, activity="On Trip"):
+	"""
+	Generate GPS pings so the customer's tracking map shows driver movement.
+
+	- ``simulate_move(reference="DL-ORD-2026-0001")`` draws the WHOLE route at
+	  once (for an instant demo / screenshot).
+	- call it repeatedly (bench console loop) to advance the driver one hop at
+	  a time so the live map visibly moves.
+
+	Requires System Manager / administrator (it is demo tooling, not a public API).
+	"""
+	# guard: only back-office admins may fabricate GPS pings
+	roles = set(frappe.get_roles(frappe.session.user))
+	if frappe.session.user != "Administrator" and "System Manager" not in roles:
+		frappe.throw("Not allowed.", frappe.PermissionError)
+
+	# resolve driver: from the order, else the first demo driver (Baraka)
+	driver = None
+	if reference:
+		for dt in ("Delivery Order", "Parcel Request", "Transport Request"):
+			if frappe.db.exists(dt, reference):
+				driver = frappe.db.get_value(dt, reference, "assigned_driver")
+				break
+	if not driver:
+		driver = frappe.db.get_value("Delivery Driver",
+		                             {"driver_code": "DRV-001"}, "name") \
+		         or frappe.db.get_value("Delivery Driver",
+		                               {"name": ("!=", "")}, "name",
+		                               order_by="creation asc")
+	if not driver:
+		frappe.throw("No driver found to simulate.")
+
+	# how far along the route this driver already is
+	done = frappe.db.count("Driver Location Log", {"driver": driver})
+	import random
+	lat0, lng0 = _ORIGIN
+	lat1, lng1 = _DEST
+	step = max(done, 0)
+	made = []
+	for _ in range(int(hops)):
+		if step >= _HOPS:
+			break
+		frac = step / float(_HOPS)
+		lat = lat0 + (lat1 - lat0) * frac + random.uniform(-0.0006, 0.0006)
+		lng = lng0 + (lng1 - lng0) * frac + random.uniform(-0.0006, 0.0006)
+		made.append(_ping(reference, driver, round(lat, 6), round(lng, 6), activity).name)
+		step += 1
+
+	frappe.db.commit()
+	progress = min(step, _HOPS)
+	print("Driver {0}: {1}/{2} route points ({3} new) for {4}".format(
+		driver, progress, _HOPS, len(made), reference or "(no ref)"))
+	return {"driver": driver, "progress": progress, "total": _HOPS,
+	        "created": len(made), "arrived": progress >= _HOPS}
+
+
+@frappe.whitelist()
+def simulate_reset(driver=None):
+	"""Delete demo Driver Location Log rows (fresh re-run of the route)."""
+	roles = set(frappe.get_roles(frappe.session.user))
+	if frappe.session.user != "Administrator" and "System Manager" not in roles:
+		frappe.throw("Not allowed.", frappe.PermissionError)
+	for name in frappe.get_all("Driver Location Log", pluck="name", limit=100000):
+		frappe.delete_doc("Driver Location Log", name, ignore_permissions=True, force=True)
+	frappe.db.commit()
+	print("Driver Location Log cleared.")
+	return True

@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-01 09:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "enabled",
+  "sort_order",
+  "column_break_1",
+  "image",
+  "section_overlay",
+  "subtitle",
+  "button_label",
+  "button_link"
+ ],
+ "fields": [
+  {
+   "description": "Internal label for this banner (shown in the list).",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Banner Title",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "default": "0",
+   "description": "Lower numbers show first.",
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sort Order"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Recommended 1600x520 px (roughly 3:1). It fills the hero area and is cropped to fit.",
+   "fieldname": "image",
+   "fieldtype": "Attach Image",
+   "in_list_view": 1,
+   "label": "Banner Image",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_overlay",
+   "fieldtype": "Section Break",
+   "label": "Optional overlay text"
+  },
+  {
+   "description": "Short line shown over the image (leave blank to show the image only).",
+   "fieldname": "subtitle",
+   "fieldtype": "Small Text",
+   "label": "Subtitle"
+  },
+  {
+   "fieldname": "button_label",
+   "fieldtype": "Data",
+   "label": "Button Label"
+  },
+  {
+   "description": "e.g. /delivery/parcel or an external URL.",
+   "fieldname": "button_link",
+   "fieldtype": "Data",
+   "label": "Button Link"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-01 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Delivery Logistics",
+ "name": "Home Banner",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Delivery Operations",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "sort_field": "sort_order",
+ "sort_order": "ASC",
+ "states": []
+}
