@@ -1,44 +1,23 @@
-# ERPNext v16 + Delivery Logistics — production stack for Coolify.
-# Follows the official frappe_docker v16 layout: ONE image (frappe/erpnext + our
-# custom "delivery" app) is used for every role; a one-shot "configurator" writes
-# the common site config (DB host, Redis, socketio) before the other services start.
+# ============================================================================
+# Clean ERPNext / Frappe v16 production stack for Coolify.
 #
-# Only the `frontend` service is public. In Coolify point your domain at the
+# Uses OFFICIAL images only — nothing custom is built or baked in.
+# The custom "delivery" app is installed later at runtime from the backend
+# terminal (see DEPLOY-COOLIFY.md). This keeps the foundation simple and stable.
+#
+# Only `frontend` is public. In Coolify point your domain at the
 # `frontend` service on container port **8080**.
-#
-# Reference: https://github.com/frappe/frappe_docker/blob/main/compose.yaml
+# ============================================================================
 
-# The custom image = official frappe/erpnext:v16.34.1 + this repo's delivery app
-# (installed at build time by the Dockerfile).
-x-custom-image: &custom_image
-  build:
-    context: .
-    dockerfile: Dockerfile
-    args:
-      FRAPPE_TAG: v16.34.1
-      APP_REPO: https://github.com/BENETHNGOSWE/ORDER-DELIVERY-ERP.git
-      APP_BRANCH: main
-      # Set GIT_TOKEN in Coolify "Build Variables" only if the repo is private.
-      GIT_TOKEN: ${GIT_TOKEN:-}
-  image: delivery-erpnext:v16.34.1
-  pull_policy: build
+x-backend-defaults: &backend_defaults
+  image: &frappe_image frappe/erpnext:v16.34.1
   restart: unless-stopped
   volumes:
     - sites:/home/frappe/frappe-bench/sites
 
-x-depends-on-configurator: &depends_on_configurator
-  depends_on:
-    configurator:
-      condition: service_completed_successfully
-
-x-backend-defaults: &backend_defaults
-  <<: [*depends_on_configurator, *custom_image]
-  volumes:
-    - sites:/home/frappe/frappe-bench/sites
-
 services:
-  # One-shot init: lists installed apps into apps.txt and writes the shared
-  # site config (db_host, redis_*, socketio_port). Exits 0 when done.
+  # One-shot init: writes the shared bench config (db host, redis, socketio),
+  # then exits. Other services wait for it to finish.
   configurator:
     <<: *backend_defaults
     restart: on-failure
@@ -54,7 +33,6 @@ services:
         bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
         bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
-        bench set-config -g chromium_path /usr/bin/chromium-headless-shell;
     environment:
       DB_HOST: db
       DB_PORT: "3306"
@@ -71,6 +49,9 @@ services:
 
   backend:
     <<: *backend_defaults
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
     environment:
       GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
@@ -78,14 +59,13 @@ services:
 
   # Public nginx. Coolify domain -> THIS service, container port 8080.
   frontend:
-    <<: *custom_image
-    platform: linux/amd64
+    image: *frappe_image
+    restart: unless-stopped
     command:
       - nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
-      FRAPPE_SITE_NAME_HEADER: $$host
       UPSTREAM_REAL_IP_ADDRESS: 172.17.0.1
       UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
       UPSTREAM_REAL_IP_RECURSIVE: "off"
@@ -100,24 +80,34 @@ services:
       - "8080"
 
   websocket:
-    <<: [*depends_on_configurator, *custom_image]
+    <<: *backend_defaults
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
     command:
       - node
       - /home/frappe/frappe-bench/apps/frappe/socketio.js
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
 
   queue-short:
     <<: *backend_defaults
-    command: bench worker --queue short,default
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["bench", "worker", "--queue", "short,default"]
 
   queue-long:
     <<: *backend_defaults
-    command: bench worker --queue long,default,short
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["bench", "worker", "--queue", "long,default,short"]
 
   scheduler:
     <<: *backend_defaults
-    command: bench schedule
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    command: ["bench", "schedule"]
 
   db:
     image: mariadb:11.8
@@ -133,7 +123,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --skip-character-set-client-handshake
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in Coolify env vars}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in Coolify environment variables}
       MARIADB_AUTO_UPGRADE: "1"
     volumes:
       - db-data:/var/lib/mysql
