@@ -2,8 +2,8 @@
 # Built automatically by Coolify from this repo. All long-running Frappe services
 # (backend, workers, scheduler) use this same image.
 #
-# Pin FRAPPE_TAG to the newest v16 tag from https://hub.docker.com/r/frappe/erpnext/tags
-ARG FRAPPE_TAG=v16.x
+# Pin FRAPPE_TAG to a real v16 tag from https://hub.docker.com/r/frappe/erpnext/tags
+ARG FRAPPE_TAG=v16.34.1
 FROM frappe/erpnext:${FRAPPE_TAG}
 
 # Optional: if your GitHub repo is PRIVATE, pass a GitHub token as a build secret/arg

@@ -1,211 +1,151 @@
 # Deploying to Coolify — delivery.kodatechnologies.co.tz
 
-This project is an **ERPNext / Frappe v16 application** (not a single-process web
-app). It runs as a **Docker Compose stack** with: nginx (frontend), websocket,
-backend + 3 background workers + scheduler, MariaDB, and three Redis servers.
+ERPNext/Frappe v16 runs as a **Docker Compose stack** (not a single Dockerfile
+app). The repo ships:
 
-The files in this repo make that one-click deployable in Coolify:
+- `Dockerfile` — builds the `delivery` app on top of the official **frappe/erpnext:v16.34.1**
+  image. The SAME image runs every role (frontend/backend/workers/scheduler/websocket).
+- `docker-compose.yml` — the full stack: frontend (nginx), websocket, backend,
+  queue-short, queue-long, scheduler, a one-shot **configurator**, MariaDB 11.8,
+  and two Redis containers.
 
-- `Dockerfile` — builds the `delivery` app on top of the official ERPNext image
-  (used by backend/workers/scheduler).
-- `docker-compose.yml` — the full stack.
-- `.env.production.example` — variables you set in Coolify.
-
-> ⚠️ **Before the first deploy:** open `docker-compose.yml` and `Dockerfile` and
-> replace every `v16.x` image tag with the exact newest **v16** tag from
-> <https://hub.docker.com/r/frappe/erpnext/tags> (e.g. `v16.x.y`). All services
-> must use the **same** tag. Commit the change.
+> The image tag is already pinned to **v16.34.1**. You do not need to change it.
 
 ---
 
-## 1. DNS (do this first)
+## 0. Why the first build failed
 
-At your domain registrar / DNS provider for `kodatechnologies.co.tz`, create:
+You created the resource with **Build Pack = Dockerfile**. That builds ONE
+container, but ERPNext needs the whole Compose stack, and a single-container
+build cannot serve on its own. You must deploy the resource as a
+**Docker Compose** application (see step 3).
+
+---
+
+## 1. DNS
+
+At your DNS provider for `kodatechnologies.co.tz`, create:
 
 ```
-A   delivery   ->   <your Coolify server public IP>
+A   delivery   ->   <Coolify server public IP>
 ```
 
-Wait until it resolves (check from your laptop):
+Verify before deploying TLS:
 
 ```bash
 dig +short delivery.kodatechnologies.co.tz
-# or: nslookup delivery.kodatechnologies.co.tz
 ```
 
-It must return the Coolify server IP before Coolify can issue the HTTPS cert.
-
----
+It must return the Coolify server IP.
 
 ## 2. Server resources
 
-Frappe needs room. On the Coolify **server** ensure roughly:
+≥ **4 GB RAM** (8 GB recommended), 2 vCPU, 20 GB+ disk.
 
-- **4 GB RAM minimum** (8 GB recommended), 2+ vCPU
-- 20+ GB free disk
+## 3. Create the resource as Docker Compose (not Dockerfile)
 
-In Coolify: **Server → Settings**, confirm Docker is healthy and there is free
-memory/disk.
+In Coolify:
 
----
+1. **New Resource** → your GitHub repo `BENETHNGOSWE/ORDER-DELIVERY-ERP` (branch `main`).
+2. When asked for the build/resource type, choose **Docker Compose** (Coolify
+   auto-detects `docker-compose.yml` in the repo root).
+   - If you already created it with **Build Pack = Dockerfile**, open the
+     resource → **Configuration → General → Build Pack** and switch it to
+     **Docker Compose**, then Save. (Deleting and re-adding the resource as a
+     Compose app is the safest route.)
+3. Coolify will detect the services. Only **frontend** will be public.
 
-## 3. Add the GitHub repository to Coolify
+## 4. Environment variables (Production)
 
-1. Coolify dashboard → **New Resource** → **Private Repository (with GitHub App)**
-   or **Public Repository**.
-2. Your GitHub App is already connected — select the repo
-   `BENETHNGOSWE/ORDER-DELIVERY-ERP`.
-3. **Important — choose the resource type as “Docker Compose”** (Coolify normally
-   auto-detects `docker-compose.yml`). Do **not** use “Dockerfile” / buildpack —
-   this stack is multi-service.
-4. Branch: `main`. Base directory: repo root (where `docker-compose.yml` is).
-
-Coolify will detect services: `frontend`, `websocket`, `backend`,
-`queue-default/short/long`, `scheduler`, `mariadb`, `redis-*`.
-
----
-
-## 4. Environment variables
-
-Open the resource → **Environment Variables**, add (Production):
+On the resource → **Environment Variables**, add:
 
 ```
-MYSQL_ROOT_PASSWORD=<a long random secret>
+DB_PASSWORD=<a long random secret>
 ```
 
-(Only this is required for the first boot. `SITE_NAME` / `ADMIN_PASSWORD` are set
-in step 6.)
-
-If the GitHub repo is **private**, add a **Build Variable** (not runtime):
+If the repo is **private**, also add a **Build Variable**:
 
 ```
 GIT_TOKEN=<a GitHub PAT with repo read>
 ```
-
-so the `Dockerfile` can `bench get-app` the private repo. If the repo is public
-you can skip this.
-
----
+(Public repo → skip. The Dockerfile uses it for `bench get-app`.)
 
 ## 5. First deploy
 
-Click **Deploy**. Coolify builds the custom image and starts every service.
-Watch the logs — wait until `mariadb` reports healthy and `backend` is running.
+Click **Deploy**. The image builds on top of `frappe/erpnext:v16.34.1` (this
+takes several minutes the first time), then `configurator` runs once, MariaDB
+becomes healthy, and the services start. No site exists yet — the app won’t
+answer properly until step 6.
 
-No site exists yet, so the web app won’t answer properly — that’s expected.
+## 6. Create the site + install the app (one time)
 
----
-
-## 6. Create the site + install the delivery app (one time)
-
-In Coolify, open the **backend** service → **Terminal** (or “Execute Command”),
-and run:
+Open the **backend** service → **Terminal** (Execute Command) and run:
 
 ```bash
-# create the site (uses the domain as the site name)
 bench new-site delivery.kodatechnologies.co.tz \
-  --mariadb-root-password "$MYSQL_ROOT_PASSWORD" \
+  --mariadb-root-password "$DB_PASSWORD" \
   --admin-password "YOUR_STRONG_ADMIN_PASSWORD"
 
-# install the custom Delivery Logistics app into the site
 bench --site delivery.kodatechnologies.co.tz install-app delivery
-
-# confirm settings + clear caches
-bench --site delivery.kodatechnologies.co.tz set-config -p hosted_user Administrator
 bench --site delivery.kodatechnologies.co.tz clear-cache
 bench --site delivery.kodatechnologies.co.tz clear-website-cache
 ```
 
-Notes:
+The `delivery` app is already inside the image; `install-app` installs it into
+this site and runs migrations (creates the **Home Banner** doctype, etc.).
+Data/files live on persistent volumes and survive redeploys.
 
-- The `delivery` app is already **in the image** (fetched at build), so
-  `install-app` just installs it into this site and runs migrations (this creates
-  the **Home Banner** doctype etc.).
-- Files/DB are on persistent volumes, so this survives redeploys.
+## 7. Point the domain at the FRONTEND service
 
-Then, back in Coolify **Environment Variables**, add for the workers/scheduler:
-
-```
-SITE_NAME=delivery.kodatechnologies.co.tz
-```
-
-and **Redeploy** (or restart the backend/worker/scheduler services) so background
-jobs know which site to run.
-
----
-
-## 7. Connect the domain (HTTPS)
-
-1. Coolify resource → the **frontend** service → **Domains**.
-2. Add:
+1. In Coolify open the **frontend** service (or the app → Domains).
+2. Add the domain and make sure it routes to the **frontend** service on
+   container port **8080** (the Frappe nginx entrypoint listens on 8080).
    ```
    https://delivery.kodatechnologies.co.tz
    ```
-   Coolify generates the reverse-proxy config and requests a **Let’s Encrypt**
-   certificate automatically.
-3. Make sure the service **port is `80`** (the frappe-nginx container listens on
-   port 80). Do **not** expose mariadb/redis/workers publicly.
-4. Redeploy once so the proxy picks up the domain.
+3. Coolify requests a Let’s Encrypt certificate automatically (DNS must resolve
+   first). Redeploy once after saving.
+4. Leave db/redis/workers/scheduler **unexposed** (internal only).
 
-Visit **https://delivery.kodatechnologies.co.tz** → you should get the ERPNext
-login and the customer portal at **/delivery**.
+Visit **https://delivery.kodatechnologies.co.tz** → login; customer portal at
+**/delivery**.
 
----
+## 8. After setup
 
-## 8. Post-setup checklist
+- Log in as `Administrator`, set currency/timezone.
+- Create Merchants, Menu Items, Zones, Payment Methods.
+- Upload banners: Desk → **Home Banner** → New → image (~1600×520), Sort Order,
+  Enabled, Save → they appear in the home carousel.
 
-- Log in as `Administrator` with the admin password you set.
-- Set system currency/timezone (Setup).
-- Create your **Merchants**, **Menu Items**, **Zones**, **Payment Methods**,
-  and **Home Banners** (Desk → search the doctype names).
-- Add banner images: Desk → **Home Banner** → New → upload (recommended
-  ~1600×520 px), set Sort Order, enable, Save. They appear in the home carousel.
+## Backups
 
----
-
-## Backups (important)
-
-Back up the two things that matter (Coolify → Backups, or cron + restic/rsync):
-
-- the **MariaDB** volume (`db-data`)
-- the **sites** volume (`sites-vol`) — uploaded images/files live here
-
-A minimal logical backup you can run from the backend container:
+Back up the **db-data** and **sites** volumes (Coolify → Backups). Logical
+backup from the **backend** terminal:
 
 ```bash
 bench --site delivery.kodatechnologies.co.tz backup --with-files
 ```
 
-Store the generated files off-server.
+## Updating after pushing code
 
----
-
-## Updating after you push new code
-
-The custom app is built into the image, so:
-
-1. Push changes to GitHub (`main`).
-2. In Coolify click **Redeploy** (it rebuilds the image with the latest code).
-3. After the deploy, in the **backend** terminal run:
+1. Push to `main`.
+2. Coolify → **Redeploy** (rebuilds the image with the new code).
+3. After deploy, in the **backend** terminal:
    ```bash
    bench --site delivery.kodatechnologies.co.tz migrate
    bench --site delivery.kodatechnologies.co.tz clear-cache
    bench --site delivery.kodatechnologies.co.tz clear-website-cache
    ```
-   (Only needed when doctypes/schema changed. Portal HTML/CSS/JS changes just
-   need the caches cleared.)
-
----
 
 ## Troubleshooting
 
-- **No site / “Site not found”** → you skipped step 6, or `SITE_NAME` doesn’t
-  match the domain. Site name must equal the public host
-  (`delivery.kodatechnologies.co.tz`).
-- **TLS cert fails** → DNS A record not pointing at the server yet, or port
-  80/443 not open. Verify `dig` and the server firewall / security group.
-- **Workers do nothing / scheduled jobs stuck** → set `SITE_NAME` env and restart
-  backend/worker/scheduler.
-- **Image pull fails on `v16.x`** → replace the placeholder tags with a real v16
-  tag (see the note at the top).
+- **frappe/erpnext:v16.x: not found** → you’re on an older build; the tag is now
+  pinned to v16.34.1. Pull the latest `main` and make sure the resource uses
+  **Docker Compose**.
+- **Site not found** → run step 6; the site name must equal the host
+  `delivery.kodatechnologies.co.tz`.
+- **TLS fails** → DNS not pointed yet, or ports 80/443 blocked. Verify `dig`.
+- **Workers/scheduler idle** → they share the `sites` volume and resolve the
+  site by host; ensure the domain hits the frontend and, if needed, set
+  `FRAPPE_SITE_NAME_HEADER=delivery.kodatechnologies.co.tz`.
 - **Private repo build fails** → add the `GIT_TOKEN` build variable.
