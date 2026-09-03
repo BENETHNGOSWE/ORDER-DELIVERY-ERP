@@ -68,7 +68,11 @@ role_home_page = {
 
 # Returns "" for anyone without a delivery role, so normal website logins on
 # this site are completely unaffected.
-website_user_home_page = "delivery.portal.get_website_user_home_page"
+# v16 calls this hook as a function (user -> home route). The old name
+# ``website_user_home_page`` is treated as a *static path string* in v16, which
+# 404s; use the callable hook name. Returns "" for non-delivery users so ERPNext
+# falls back to its normal home/desk.
+get_website_user_home_page = "delivery.portal.get_website_user_home_page"
 
 # ---------------------------------------------------------------------------
 # Permissions: portal users may only touch their own service documents
