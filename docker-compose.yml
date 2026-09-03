@@ -1,0 +1,131 @@
+# ERPNext v16 + Delivery Logistics — production stack for Coolify.
+# Only `frontend` is public (served by Coolify's Traefik on the domain you set).
+# MariaDB / Redis / workers are internal and expose no ports.
+#
+# NOTE: image tags (v16.x) are placeholders — replace with the exact newest v16
+# tag from https://hub.docker.com/r/frappe/erpnext/tags BEFORE the first deploy.
+x-default-backend: &default-backend
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      APP_REPO: https://github.com/BENETHNGOSWE/ORDER-DELIVERY-ERP.git
+      APP_BRANCH: main
+      # GIT_TOKEN: set in Coolify "Build Variables" if the repo is private
+  restart: unless-stopped
+  volumes:
+    - sites-vol:/home/frappe/frappe-bench/sites
+    - assets-vol:/home/frappe/frappe-bench/sites/assets
+    - logs-vol:/home/frappe/frappe-bench/logs
+  environment:
+    DB_HOST: mariadb
+    DB_PORT: "3306"
+    REDIS_CACHE: redis-cache:6379
+    REDIS_QUEUE: redis-queue:6379
+    REDIS_SOCKETIO: redis-socketio:6379
+    SOCKETIO_PORT: "9000"
+    AUTO_MIGRATE: "1"
+  depends_on:
+    mariadb:
+      condition: service_healthy
+    redis-cache:
+      condition: service_started
+    redis-queue:
+      condition: service_started
+    redis-socketio:
+      condition: service_started
+
+services:
+  # Public web server (nginx) — point your Coolify domain HERE (container port 80).
+  frontend:
+    image: frappe/frappe-nginx:v16.x
+    restart: unless-stopped
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: $$host
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 172.17.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: "600"
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - sites-vol:/usr/share/nginx/html/sites
+      - assets-vol:/usr/share/nginx/html/assets
+    depends_on:
+      - backend
+      - websocket
+    expose:
+      - "80"
+
+  websocket:
+    image: frappe/frappe-socketio:v16.x
+    restart: unless-stopped
+    volumes:
+      - sites-vol:/home/frappe/frappe-bench/sites
+      - logs-vol:/home/frappe/frappe-bench/logs
+    depends_on:
+      - redis-socketio
+
+  backend:
+    <<: *default-backend
+    command: ["backend","serve"]
+
+  queue-default:
+    <<: *default-backend
+    command: ["worker","--queue","default"]
+  queue-short:
+    <<: *default-backend
+    command: ["worker","--queue","short"]
+  queue-long:
+    <<: *default-backend
+    command: ["worker","--queue","long"]
+
+  scheduler:
+    <<: *default-backend
+    command: ["schedule"]
+
+  mariadb:
+    image: mariadb:10.11
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-name-resolve
+      - --skip-host-cache
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 6s
+      retries: 30
+
+  redis-cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-cache-data:/data
+  redis-queue:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-queue-data:/data
+  redis-socketio:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-socketio-data:/data
+
+volumes:
+  db-data:
+  sites-vol:
+  assets-vol:
+  logs-vol:
+  redis-cache-data:
+  redis-queue-data:
+  redis-socketio-data:
+
+networks:
+  default:

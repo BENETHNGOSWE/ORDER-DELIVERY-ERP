@@ -7,3 +7,6 @@ dist/
 .vscode/
 .idea/
 *.log
+.env
+.env.production
+.env.*.local
