@@ -96,6 +96,22 @@ Add a few (Masaki, Kariakoo, Mwenge, Kinondoni, etc.).
 
 ## 3. Home slider / hero banners (the rotating banner)
 
+> ⚠️ **All portal images must be PUBLIC.** In Desk, when you upload an image the
+> dialog has a **"Make file private"** checkbox (it can be ticked by default).
+> **Untick it** for banner images, merchant logos and product photos. Private
+> files live under `/private/files/...` and are only sent to a *logged-in*
+> browser — so images look fine on your computer (you're signed in as admin) but
+> are **broken for guests on mobile**. If any image is already private, fix them
+> all at once from the server (safe, idempotent):
+>
+> ```bash
+> docker exec "$B" bench --site delivery.kodatechnologies.co.tz \
+>   execute delivery.maintenance.make_portal_images_public
+> ```
+> It moves merchant logos, home-banner images and menu-item photos from
+> `private/files` to public `files`, flips the File record, and rewrites the
+> stored URL. Add `--kwargs '{"dry_run": true}'` first to preview.
+
 Search **Home Banner** → **New**. One record = one slide.
 
 | Field | What to enter |
@@ -175,7 +191,10 @@ docker exec "$B" bench --site delivery.kodatechnologies.co.tz \
   --kwargs '{"folder":"/home/frappe/product-images"}'
 ```
 (Upload files into that path inside the backend container first; .jpg/.jpeg/.png/
-.webp supported.)
+.webp supported. The bulk importer saves images as **public**, so they show to
+guests.) If you instead attach photos one-by-one in Desk, untick **"Make file
+private"** in the upload dialog — or run `make_portal_images_public` afterwards
+(see section 3).
 
 ---
 
@@ -285,6 +304,10 @@ docker logs --tail 50 "$B"
 
 # set admin password
 docker exec "$B" bench --site delivery.kodatechnologies.co.tz set-admin-password 'NewStrongPass'
+
+# make all portal images public (fixes images showing on desktop but not mobile)
+docker exec "$B" bench --site delivery.kodatechnologies.co.tz \
+  execute delivery.maintenance.make_portal_images_public
 
 # if a redis "server error" ever appears:
 docker exec "$B" bench set-config -g redis_cache  "redis://redis-cache:6379"

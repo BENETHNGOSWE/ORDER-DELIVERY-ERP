@@ -146,6 +146,108 @@ def probe_templates():
             print("  FAIL  {0}: {1}: {2}".format(rel, type(e).__name__, str(e)[:300]))
 
 
+def make_portal_images_public(dry_run=False):
+	"""
+	Move every portal-facing image from private to public storage.
+
+	Symptom this fixes: photos show when you are logged in on your computer but
+	are broken for guests on mobile. Files uploaded through Desk default to
+	PRIVATE (/private/files/...), which Frappe only serves with a valid session.
+	The public portal must use /files/... so anonymous visitors can load them.
+
+	Covers Merchant.logo, Home Banner.image and DL Menu Item.item_image. For each
+	private file it moves the bytes from sites/<site>/private/files to
+	sites/<site>/public/files, flips the File record is_private=0, and rewrites
+	the stored URL. Idempotent - already-public images are reported and skipped.
+
+	    bench --site <site> execute delivery.maintenance.make_portal_images_public
+	    bench --site <site> execute delivery.maintenance.make_portal_images_public \
+	      --kwargs '{"dry_run": true}'
+	"""
+	import shutil
+
+	# (DocType, image field, label)
+	targets = [
+		("Merchant", "logo", "merchant logo"),
+		("Home Banner", "image", "home banner"),
+		("DL Menu Item", "item_image", "menu item image"),
+	]
+
+	site_path = frappe.get_site_path()
+	public_files_dir = os.path.join(site_path, "public", "files")
+	private_files_dir = os.path.join(site_path, "private", "files")
+
+	made_public, already_public, missing, no_file = [], [], [], []
+
+	for doctype, field, label in targets:
+		rows = frappe.get_all(doctype, fields=["name", field])
+		for r in rows:
+			url = (r.get(field) or "").strip()
+			if not url:
+				continue
+
+			if "/private/files/" not in url:
+				already_public.append("{0} {1}".format(label, r.name))
+				continue
+
+			# find the File record by its stored URL
+			file_name = frappe.db.get_value("File", {"file_url": url},
+			                                ["name", "file_name", "is_private"],
+			                                as_dict=True)
+			if not file_name:
+				no_file.append("{0} {1}: {2}".format(label, r.name, url))
+				continue
+
+			old_rel = url.split("/private/files/", 1)[1]
+			new_url = "/files/" + old_rel
+			src = os.path.join(private_files_dir, old_rel)
+			dst = os.path.join(public_files_dir, old_rel)
+
+			if dry_run:
+				print("[dry-run] would make public: {0} {1} -> {2}".format(
+					label, r.name, new_url))
+				made_public.append(r.name)
+				continue
+
+			if not os.path.isfile(src):
+				missing.append("{0} {1}: file missing on disk {2}".format(label, r.name, src))
+				continue
+
+			os.makedirs(public_files_dir, exist_ok=True)
+			shutil.move(src, dst)
+
+			# rewrite File record + the referencing DocType field
+			frappe.db.set_value("File", file_name.name,
+			                    {"is_private": 0, "file_url": new_url},
+			                    update_modified=False)
+			frappe.db.set_value(doctype, r.name, field, new_url,
+			                    update_modified=False)
+			made_public.append("{0} {1}".format(label, r.name))
+
+	if not dry_run:
+		frappe.db.commit()
+
+	print()
+	print("Portal image visibility results:")
+	print("  made public : {0}".format(len(made_public)))
+	for m in made_public:
+		print("      + " + m)
+	print("  already public (skipped): {0}".format(len(already_public)))
+	if missing:
+		print("  MISSING ON DISK ({0}):".format(len(missing)))
+		for m in missing:
+			print("      ! " + m)
+	if no_file:
+		print("  no File record ({0}):".format(len(no_file)))
+		for m in no_file:
+			print("      ? " + m)
+	if not dry_run and made_public:
+		print()
+		print("Done. Guests (mobile, not logged in) can now load these images.")
+	return {"made_public": made_public, "already_public": already_public,
+	        "missing": missing, "no_file_record": no_file}
+
+
 def bulk_attach_images(folder="/home/frappe/product-images", match_by=None):
 	"""
 	Attach product photos in bulk from a folder to DL Menu Item records.
