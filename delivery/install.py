@@ -40,9 +40,20 @@ def after_install():
     create_settings()
     create_weight_categories()
     create_zones()
+    set_root_to_portal()
     frappe.db.commit()
     frappe.clear_cache()
     print("Delivery & Logistics: roles, settings, weight categories and zones created.")
+
+
+def set_root_to_portal():
+    """Make the site root (/) open the customer portal instead of ERPNext's
+    default landing page. Wrapped so a path mismatch never blocks install."""
+    try:
+        from delivery.portal import fix_home_page
+        fix_home_page("delivery")
+    except Exception as e:
+        print("Could not set home page automatically: {0}".format(e))
 
 
 def create_roles():
