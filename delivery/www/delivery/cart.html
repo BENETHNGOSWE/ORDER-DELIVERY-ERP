@@ -1,67 +1,84 @@
 {% set page_title = "Cart" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+{% include "delivery/templates/includes/delivery_shell_css.html" %}
 <!-- Leaflet for the delivery-location picker -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  #addr-map { height: 260px; width: 100%; border-radius: 10px; border: 2px solid #d5dbe4;
+  #addr-map { height: 260px; width: 100%; border-radius: 12px; border: 1.5px solid var(--line);
               margin-top: 8px; z-index: 1; }
   .dl-geo-wrap { position: relative; }
   #geo-results { position: absolute; left:0; right:0; top: 100%; z-index: 5; background:#fff;
-                 border:1px solid #d5dbe4; border-top:none; border-radius:0 0 10px 10px;
+                 border:1px solid var(--line); border-top:none; border-radius:0 0 12px 12px;
                  max-height: 230px; overflow:auto; box-shadow:0 8px 24px rgba(0,0,0,.12); }
-  .dl-geo-item { padding: 9px 12px; cursor:pointer; border-top:1px solid #f0f2f5; font-size:14px; }
-  .dl-geo-item:hover { background:#f3f8ff; }
-  .dl-geo-item small { color:#6b7684; display:block; }
+  .dl-geo-item { padding: 9px 12px; cursor:pointer; border-top:1px solid #F3F3F7; font-size:14px; }
+  .dl-geo-item:hover { background:#F6F4FE; }
+  .dl-geo-item small { color:var(--muted); display:block; }
   .dl-geo-bar { display:flex; gap:8px; margin:8px 0; }
   .dl-geo-bar button { flex: 0 0 auto; }
-  #geo-hint { font-size:12px; color:#43a047; margin-top:6px; font-weight:600; }
+  #geo-hint { font-size:12.5px; color:var(--success); margin-top:6px; font-weight:600; }
+  #geo-hint i { margin-right:4px; }
 </style>
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
-  <h2 class="dl-section-title" style="margin-top:0">Your cart</h2>
+<div class="pc-app">
+{% include "delivery/templates/includes/delivery_side.html" %}
+<main class="pc-main">
+{% include "delivery/templates/includes/delivery_topbar.html" %}
 
-  <div class="dl-card">
-    <table class="dl-table"><thead><tr>
-      <th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th><th></th>
-    </tr></thead><tbody id="lines"></tbody></table>
-    <div id="empty" class="dl-empty">Your cart is empty.</div>
-  </div>
-
-  <div class="dl-card" style="margin-top:14px">
-    <label class="dl-label">Delivery zone</label>
-    <select id="zone" class="dl-select"></select>
-    <label class="dl-label">Distance (km)</label>
-    <input id="km" class="dl-input" type="number" step="0.1" value="0">
-    <label class="dl-label">Delivery location</label>
-    <div class="dl-geo-wrap">
-      <input id="geo-search" class="dl-input" type="text" autocomplete="off"
-             placeholder="Search your hotel, apartment, street or area…">
-      <div id="geo-results" style="display:none"></div>
-    </div>
-    <div class="dl-geo-bar">
-      <button type="button" id="geo-myloc" class="dl-btn">📍 Use my location</button>
-      <button type="button" id="geo-clear" class="dl-btn danger">Clear</button>
-    </div>
-    <div id="addr-map"></div>
-    <div id="geo-hint"></div>
-    <label class="dl-label" style="margin-top:10px">Delivery address / notes for the driver</label>
-    <textarea id="addr" class="dl-textarea" rows="2"
-              placeholder="e.g. Slipway Villas, Block B, Apt 12 — or describe where to meet you"></textarea>
-    <label class="dl-label">Phone</label>
-    <input id="phone" class="dl-input">
-    <label class="dl-label">Payment method</label>
-    <select id="pay" class="dl-select"></select>
-    <label class="dl-label">Instructions</label>
-    <input id="notes" class="dl-input">
-
-    <div class="dl-between" style="margin-top:12px">
-      <div id="summary" class="dl-mut"></div>
-      <button id="place" class="dl-btn" disabled>Place order</button>
+<section class="pc-hero">
+  <div class="pc-hero-l">
+    <span class="hic"><i class="fa-solid fa-cart-shopping"></i></span>
+    <div>
+      <h1>Your cart</h1>
+      <p>Review your items, set the delivery point and place your order.</p>
     </div>
   </div>
+</section>
+
+<div class="pc-card" style="margin-top:18px">
+  <table class="dl-table"><thead><tr>
+    <th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th><th></th>
+  </tr></thead><tbody id="lines"></tbody></table>
+  <div id="empty" class="dl-empty"><i class="fa-solid fa-cart-shopping"></i>Your cart is empty.</div>
+</div>
+
+<div class="pc-card" style="margin-top:16px">
+  <h3><i class="fa-solid fa-truck-fast"></i> Delivery details</h3>
+  <label class="dl-label">Delivery zone</label>
+  <select id="zone" class="dl-select"></select>
+  <label class="dl-label">Distance (km)</label>
+  <input id="km" class="dl-input" type="number" step="0.1" value="0">
+  <label class="dl-label">Delivery location</label>
+  <div class="dl-geo-wrap">
+    <input id="geo-search" class="dl-input" type="text" autocomplete="off"
+           placeholder="Search your hotel, apartment, street or area&hellip;">
+    <div id="geo-results" style="display:none"></div>
+  </div>
+  <div class="dl-geo-bar">
+    <button type="button" id="geo-myloc" class="dl-btn sec">
+      <i class="fa-solid fa-location-crosshairs"></i> Use my location</button>
+    <button type="button" id="geo-clear" class="dl-btn danger"><i class="fa-solid fa-xmark"></i> Clear</button>
+  </div>
+  <div id="addr-map"></div>
+  <div id="geo-hint"></div>
+  <label class="dl-label">Delivery address / notes for the driver</label>
+  <textarea id="addr" class="dl-textarea" rows="2"
+            placeholder="e.g. Slipway Villas, Block B, Apt 12 &mdash; or describe where to meet you"></textarea>
+  <label class="dl-label">Phone</label>
+  <input id="phone" class="dl-input">
+  <label class="dl-label">Payment method</label>
+  <select id="pay" class="dl-select"></select>
+  <label class="dl-label">Instructions</label>
+  <input id="notes" class="dl-input">
+
+  <div class="dl-between" style="margin-top:16px">
+    <div id="summary" class="dl-mut"></div>
+    <button id="place" class="dl-btn" disabled><i class="fa-solid fa-paper-plane"></i> Place order</button>
+  </div>
+</div>
+
+</main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -76,8 +93,10 @@
   var geoMap = null, geoMarker = null, searchTimer = null;
 
   function destPinIcon() {
-    return L.divIcon({ className: "", iconSize: [32, 32], iconAnchor: [16, 30],
-      html: '<div style="font-size:28px;line-height:30px;text-align:center;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));">🏁</div>' });
+    return L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 30],
+      html: '<span style="width:34px;height:34px;border-radius:50% 50% 50% 4px;background:#3F1BA8;' +
+            'color:#fff;display:grid;place-items:center;font-size:14px;' +
+            'box-shadow:0 3px 8px rgba(0,0,0,.3);"><i class="fa-solid fa-flag-checkered"></i></span>' });
   }
   function initGeoMap() {
     if (geoMap) { geoMap.invalidateSize(); return; }
@@ -95,9 +114,10 @@
       var p = ev.target.getLatLng(); setDestination(p.lat, p.lng);
     });
     geoMap.setView(ll, Math.max(geoMap.getZoom(), 15));
-    document.getElementById("geo-hint").textContent =
-      "📍 Exact delivery point set (" + Math.abs(destLat).toFixed(5) + ", " + Math.abs(destLng).toFixed(5) + ")" +
-      (label ? " — " + label : "") + ". Drag the pin to fine-tune.";
+    document.getElementById("geo-hint").innerHTML =
+      '<i class="fa-solid fa-circle-check"></i> Exact delivery point set (' +
+      Math.abs(destLat).toFixed(5) + ", " + Math.abs(destLng).toFixed(5) + ")" +
+      (label ? " &mdash; " + DELIVERY.esc(label) : "") + ". Drag the pin to fine-tune.";
   }
   function clearDestination() {
     destLat = destLng = null;
@@ -110,7 +130,7 @@
     if (!list.length) { box.style.display = "none"; return; }
     box.innerHTML = list.map(function (p, i) {
       return '<div class="dl-geo-item" data-i="' + i + '"><b>' + DELIVERY.esc(p.label) +
-        '</b><small>' + DELIVERY.esc(p.type || "place") + "</small></div>";
+        "</b><small>" + DELIVERY.esc(p.type || "place") + "</small></div>";
     }).join("");
     box.style.display = "block";
     box.querySelectorAll(".dl-geo-item").forEach(function (el) {
@@ -139,7 +159,7 @@
   });
   document.getElementById("geo-myloc").addEventListener("click", function () {
     if (!navigator.geolocation) { DELIVERY.toast("Location not supported.", "error"); return; }
-    DELIVERY.toast("Finding your location…", "info");
+    DELIVERY.toast("Finding your location&hellip;", "info");
     navigator.geolocation.getCurrentPosition(function (pos) {
       setDestination(pos.coords.latitude, pos.coords.longitude, "My location");
     }, function (err) {
@@ -162,7 +182,8 @@
       return "<tr><td>" + DELIVERY.esc(l.item_name) + "</td>" +
         "<td>" + l.qty + "</td><td>" + money(l.rate) + "</td>" +
         "<td>" + money(l.rate * l.qty) + "</td>" +
-        '<td><button class="dl-btn danger" data-i="' + i + '">Remove</button></td></tr>';
+        '<td><button class="dl-btn sm danger" data-i="' + i +
+          '"><i class="fa-solid fa-trash-can"></i> Remove</button></td></tr>';
     }).join("");
     tb.querySelectorAll("button[data-i]").forEach(function (b) {
       b.addEventListener("click", function () {

@@ -1,24 +1,43 @@
 {% set page_title = "My orders" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+{% include "delivery/templates/includes/delivery_shell_css.html" %}
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
-  <h2 class="dl-section-title" style="margin-top:0">My orders</h2>
-  <div id="orders" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+<div class="pc-app">
+{% include "delivery/templates/includes/delivery_side.html" %}
+<main class="pc-main">
+{% include "delivery/templates/includes/delivery_topbar.html" %}
 
-  <h2 class="dl-section-title">My parcels</h2>
-  <div id="parcels" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+<section class="pc-hero">
+  <div class="pc-hero-l">
+    <span class="hic"><i class="fa-solid fa-boxes-stacked"></i></span>
+    <div>
+      <h1>My orders</h1>
+      <p>Everything you have ordered &mdash; food, parcels and trips &mdash; in one place.</p>
+    </div>
+  </div>
+  <div class="pc-hero-actions">
+    <a class="pc-ghost-btn" href="/delivery/track"><i class="fa-solid fa-location-crosshairs"></i> Track a reference</a>
+  </div>
+</section>
 
-  <h2 class="dl-section-title">My transport</h2>
-  <div id="transport" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+<h2 class="pc-sec-title" style="margin-top:18px"><span class="tic"><i class="fa-solid fa-bag-shopping"></i></span> My orders</h2>
+<div id="orders" class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
+
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-box"></i></span> My parcels</h2>
+<div id="parcels" class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
+
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-car-side"></i></span> My transport</h2>
+<div id="transport" class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
+
+</main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
 <script>
 (function () {
   function table(rows, cols, empty) {
-    if (!rows.length) return '<div class="dl-empty">' + empty + "</div>";
+    if (!rows.length) return '<div class="dl-empty"><i class="fa-regular fa-folder-open"></i>' + empty + "</div>";
     return '<table class="dl-table"><thead><tr>' +
       cols.map(function (c) { return "<th>" + c[1] + "</th>"; }).join("") +
       "</tr></thead><tbody>" + rows.map(function (r) {
@@ -42,7 +61,8 @@
       ["grand_total", "Total", function (r) { return DELIVERY.fmt(r.grand_total); }],
       ["payment_status", "Payment"]], "No orders yet.");
   }).catch(function (e) {
-    document.getElementById("orders").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+    document.getElementById("orders").innerHTML =
+      '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
   });
 
   DELIVERY.call("delivery.api.customer.my_parcels").then(function (rows) {
@@ -62,9 +82,11 @@
       ["agreed_price", "Agreed", function (r) { return r.agreed_price ? DELIVERY.fmt(r.agreed_price) : "&mdash;"; }],
       ["name", "", function (r) {
         return (r.agreed_price && r.workflow_state === "PRICE_AGREED")
-          ? '<button class="dl-btn" data-approve="' + r.name + '">Approve &amp; pay</button>'
+          ? '<button class="dl-btn sm" data-approve="' + r.name +
+            '"><i class="fa-solid fa-check"></i> Approve &amp; pay</button>'
           : (r.payment_status !== "Paid" && r.agreed_price
-             ? '<button class="dl-btn sec" data-pay="' + r.name + '">Pay</button>' : "");
+             ? '<button class="dl-btn sm sec" data-pay="' + r.name +
+               '"><i class="fa-solid fa-wallet"></i> Pay</button>' : "");
       }]], "No trips yet.");
 
     document.querySelectorAll("[data-approve]").forEach(function (b) {

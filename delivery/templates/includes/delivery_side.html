@@ -1,0 +1,41 @@
+{% set u = frappe.session.user %}
+{# Has Role lookups (get_roles() is not exposed to the website Jinja sandbox) #}
+{% set is_logged_in = u and u != 'Guest' %}
+{% set is_merchant = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Merchant User'}) %}
+{% set is_ops = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Delivery Operations'}) %}
+{% set is_admin = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'System Manager'}) %}
+{% set is_driver = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Driver'}) %}
+{% set here = frappe.request.path if frappe.request else '' %}
+<aside class="pc-side">
+  <a class="pc-logo" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> {{ platform_name or "Delivery" }}</a>
+  <nav class="pc-nav">
+    <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
+    <a href="/delivery/menu"{% if here == '/delivery/menu' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>
+    <a href="/delivery/cart"{% if here == '/delivery/cart' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Cart <span class="cnt" data-cart-count>0</span></a>
+    <a href="/delivery/parcel"{% if here == '/delivery/parcel' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-box"></i></span> Send a Parcel</a>
+    <a href="/delivery/transport"{% if here == '/delivery/transport' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-truck"></i></span> Transport</a>
+    <a href="/delivery/track"{% if here == '/delivery/track' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
+    {% if is_logged_in %}
+      <div class="grp">My workspace</div>
+      <a href="/delivery/me"{% if here == '/delivery/me' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
+      {% if is_merchant %}<a href="/delivery/merchant"{% if here == '/delivery/merchant' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-shop"></i></span> Merchant</a>{% endif %}
+      {% if is_ops or is_admin %}<a href="/delivery/operations"{% if here == '/delivery/operations' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-gauge-high"></i></span> Operations</a>{% endif %}
+      {% if is_driver %}<a href="/delivery/driver"{% if here == '/delivery/driver' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-helmet-safety"></i></span> Driver</a>{% endif %}
+      <div class="grp">Account</div>
+      <a href="/api/method/logout"><span class="ni"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Log out</a>
+    {% else %}
+      <a href="/login?redirect-to=/delivery"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
+    {% endif %}
+  </nav>
+  <div class="pc-promo">
+    <h4>Send a parcel today</h4>
+    <p>Door-to-door parcels and transport with live GPS tracking on the map.</p>
+    <div class="art"><i class="fa-solid fa-truck-fast"></i></div>
+    <a href="/delivery/parcel">Get started</a>
+  </div>
+  <div class="pc-sidehelp">
+    <h5>Need help?</h5>
+    <p>Follow any order, parcel or trip in real time from the tracking page.</p>
+    <a href="/delivery/track"><i class="fa-solid fa-location-crosshairs"></i> Track an order</a>
+  </div>
+</aside>

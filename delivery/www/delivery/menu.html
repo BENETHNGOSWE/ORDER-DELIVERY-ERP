@@ -1,25 +1,40 @@
 {% set page_title = "Menu" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+{% include "delivery/templates/includes/delivery_shell_css.html" %}
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
+<div class="pc-app">
+{% include "delivery/templates/includes/delivery_side.html" %}
+<main class="pc-main">
+{% include "delivery/templates/includes/delivery_topbar.html" %}
 
-  <div class="dl-card">
-    <div class="dl-row">
-      <div style="flex:1">
-        <label class="dl-label">Merchant</label>
-        <select id="merchant" class="dl-select"></select>
-      </div>
-      <div style="flex:1">
-        <label class="dl-label">Search</label>
-        <input id="q" class="dl-input" placeholder="Search items">
-      </div>
+<section class="pc-hero">
+  <div class="pc-hero-l">
+    <span class="hic"><i class="fa-solid fa-utensils"></i></span>
+    <div>
+      <h1>Menu</h1>
+      <p>Fresh from local merchants, delivered to your door.</p>
     </div>
   </div>
+</section>
 
-  <h2 id="title" class="dl-section-title">Catalogue</h2>
-  <div id="items" class="dl-grid"><div class="dl-empty">Choose a merchant.</div></div>
+<div class="pc-card" style="margin-top:18px">
+  <div class="dl-row">
+    <div style="flex:1; min-width:220px">
+      <label class="dl-label" for="merchant">Merchant</label>
+      <select id="merchant" class="dl-select"></select>
+    </div>
+    <div style="flex:1; min-width:220px">
+      <label class="dl-label" for="q">Search</label>
+      <input id="q" class="dl-input" placeholder="Search items&hellip;">
+    </div>
+  </div>
+</div>
+
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-store"></i></span> <span id="title">Catalogue</span></h2>
+<div id="items" class="dl-grid"><div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-shop"></i>Choose a merchant.</div></div></div>
+
+</main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -36,22 +51,27 @@
       .then(function (data) {
         var host = document.getElementById("items");
         document.getElementById("title").textContent = data.merchant;
-        if (!data.items.length) { host.innerHTML = '<div class="dl-empty">Nothing published yet.</div>'; return; }
+        if (!data.items.length) {
+          host.innerHTML = '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-box-open"></i>Nothing published yet.</div></div>';
+          return;
+        }
         host.innerHTML = data.items.map(function (i) {
           var rate = i.discount_rate ? i.standard_rate * (1 - i.discount_rate / 100) : i.standard_rate;
           var out = i.track_stock && i.available_stock <= 0;
           return '<div class="dl-card">' +
-            '<h3>' + DELIVERY.esc(i.item_name) + '</h3>' +
-            '<div class="dl-mut">' + DELIVERY.esc(i.category || "") + '</div>' +
-            '<div class="dl-mut">' + DELIVERY.esc(i.description || "") + '</div>' +
-            '<div class="dl-between" style="margin-top:10px">' +
-              '<span class="dl-price">' + DELIVERY.fmt(rate) + '</span>' +
-              '<button class="dl-btn" data-item="' + DELIVERY.esc(i.name) +
+            '<span class="dl-thumb"><i class="fa-solid fa-utensils"></i></span>' +
+            "<h3>" + DELIVERY.esc(i.item_name) + "</h3>" +
+            (i.category ? '<div style="margin-bottom:6px"><span class="pill s-acc">' + DELIVERY.esc(i.category) + "</span></div>" : "") +
+            '<div class="dl-mut">' + DELIVERY.esc(i.description || "") + "</div>" +
+            '<div class="dl-between" style="margin-top:auto; padding-top:12px">' +
+              '<span class="dl-price">' + DELIVERY.fmt(rate) + "</span>" +
+              '<button class="dl-btn sm" data-item="' + DELIVERY.esc(i.name) +
                 '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + rate + '"' +
-                (out ? " disabled" : "") + '>' + (out ? "Sold out" : "Add") + '</button>' +
-            '</div>' +
-            (i.track_stock ? '<div class="dl-mut">' + i.available_stock + ' in stock</div>' : '') +
-            '</div>';
+                (out ? " disabled" : "") + "><i class=\"fa-solid fa-cart-plus\"></i> " +
+                (out ? "Sold out" : "Add") + "</button>" +
+            "</div>" +
+            (i.track_stock ? '<div class="dl-mut" style="margin-top:8px">' + i.available_stock + " in stock</div>" : "") +
+            "</div>";
         }).join("");
         host.querySelectorAll("button[data-item]").forEach(function (b) {
           b.addEventListener("click", function () {
@@ -69,7 +89,7 @@
   DELIVERY.call("delivery.api.customer.list_merchants").then(function (rows) {
     var sel = document.getElementById("merchant");
     sel.innerHTML = rows.map(function (m) {
-      return '<option value="' + m.name + '">' + DELIVERY.esc(m.merchant_name) + '</option>';
+      return '<option value="' + m.name + '">' + DELIVERY.esc(m.merchant_name) + "</option>";
     }).join("");
     var pick = chosen && rows.some(function (m) { return m.name === chosen; })
                ? chosen : (rows[0] && rows[0].name);

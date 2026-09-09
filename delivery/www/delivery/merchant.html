@@ -1,33 +1,49 @@
 {% set page_title = "Merchant portal" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+{% include "delivery/templates/includes/delivery_shell_css.html" %}
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
-  <div class="dl-between">
-    <div><h2 id="who" class="dl-section-title" style="margin:0">Merchant portal</h2>
-      <div id="st" class="dl-mut"></div></div>
-    <button id="toggle" class="dl-btn sec">Close shop</button>
-  </div>
+<div class="pc-app">
+{% include "delivery/templates/includes/delivery_side.html" %}
+<main class="pc-main">
+{% include "delivery/templates/includes/delivery_topbar.html" %}
 
-  <div id="kpi" class="dl-kpi" style="margin-top:14px"></div>
-
-  <h2 class="dl-section-title">Orders awaiting acceptance</h2>
-  <div id="inbox" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
-
-  <h2 class="dl-section-title">Catalogue</h2>
-  <div class="dl-card">
-    <div class="dl-row">
-      <input id="new-name" class="dl-input" style="flex:1" placeholder="Item name">
-      <input id="new-cat" class="dl-input" style="max-width:150px" placeholder="Category">
-      <input id="new-rate" class="dl-input" style="max-width:120px" type="number" placeholder="Price">
-      <input id="new-prep" class="dl-input" style="max-width:110px" type="number" placeholder="Prep min">
-      <button id="add" class="dl-btn">Add item</button>
+<section class="pc-hero">
+  <div class="pc-hero-l">
+    <span class="hic"><i class="fa-solid fa-shop"></i></span>
+    <div>
+      <h1 id="who">Merchant portal</h1>
+      <p id="st">Loading your shop&hellip;</p>
     </div>
-    <table class="dl-table" style="margin-top:12px">
-      <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Live</th><th></th></tr></thead>
-      <tbody id="cat"></tbody></table>
   </div>
+  <div class="pc-hero-actions">
+    <button id="toggle" class="pc-hero-btn">Close shop</button>
+  </div>
+</section>
+
+<div id="kpi" class="dl-kpi" style="margin-top:18px"></div>
+
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-bell"></i></span> Orders awaiting acceptance</h2>
+<div id="inbox" class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
+
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-utensils"></i></span> Catalogue</h2>
+<div class="pc-card" style="margin-bottom:16px">
+  <h3><i class="fa-solid fa-plus"></i> Add a new item</h3>
+  <div class="dl-row">
+    <input id="new-name" class="dl-input" style="flex:2; min-width:170px" placeholder="Item name">
+    <input id="new-cat" class="dl-input" style="flex:1; min-width:120px" placeholder="Category">
+    <input id="new-rate" class="dl-input" style="flex:1; min-width:110px" type="number" placeholder="Price (TZS)">
+    <input id="new-prep" class="dl-input" style="flex:1; min-width:120px" type="number" placeholder="Prep minutes">
+    <button id="add" class="dl-btn"><i class="fa-solid fa-plus"></i> Add item</button>
+  </div>
+</div>
+<div class="pc-card">
+  <table class="dl-table">
+    <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Live</th><th></th></tr></thead>
+    <tbody id="cat"></tbody></table>
+</div>
+
+</main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -39,30 +55,37 @@
     DELIVERY.call("delivery.api.merchant.whoami").then(function (w) {
       ME = w.merchant;
       document.getElementById("who").textContent = w.merchant_name;
-      document.getElementById("st").textContent = w.service_type + " · " + w.status;
+      document.getElementById("st").textContent = w.service_type + " \u00b7 " + w.status;
       document.getElementById("toggle").textContent = w.status === "Open" ? "Close shop" : "Open shop";
       inbox(); catalogue(); stats();
     }).catch(function (e) {
-      document.getElementById("inbox").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+      document.getElementById("inbox").innerHTML =
+        '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
     });
   }
 
   function stats() {
     DELIVERY.call("delivery.api.merchant.stats").then(function (s) {
-      DELIVERY.currency = DELIVERY.currency;
       var b = s.by_state || {};
+      var stat = function (icon, val, label) {
+        return '<div class="dl-stat"><span class="dl-stat-ic"><i class="fa-solid ' + icon +
+          '"></i></span><div><b>' + val + "</b><span>" + label + "</span></div></div>";
+      };
       document.getElementById("kpi").innerHTML =
-        '<div class="dl-card"><b>' + (s.orders || 0) + '</b><span class="dl-mut">Orders</span></div>' +
-        '<div class="dl-card"><b>' + (b.COMPLETED || 0) + '</b><span class="dl-mut">Completed</span></div>' +
-        '<div class="dl-card"><b>' + DELIVERY.fmt(s.completed_revenue) + '</b><span class="dl-mut">Revenue</span></div>' +
-        '<div class="dl-card"><b>' + (s.catalog_items || 0) + '</b><span class="dl-mut">Items</span></div>';
+        stat("fa-shopping-bag", s.orders || 0, "Orders") +
+        stat("fa-circle-check", b.COMPLETED || 0, "Completed") +
+        stat("fa-money-bill-wave", DELIVERY.fmt(s.completed_revenue), "Revenue") +
+        stat("fa-utensils", s.catalog_items || 0, "Items");
     }).catch(function () {});
   }
 
   function inbox() {
     DELIVERY.call("delivery.api.merchant.pending_orders").then(function (rows) {
       var host = document.getElementById("inbox");
-      if (!rows.length) { host.innerHTML = '<div class="dl-empty">Nothing waiting.</div>'; return; }
+      if (!rows.length) {
+        host.innerHTML = '<div class="dl-empty"><i class="fa-regular fa-circle-check"></i>No orders waiting.</div>';
+        return;
+      }
       host.innerHTML = '<table class="dl-table"><thead><tr><th>Order</th><th>Customer</th>' +
         '<th>Total</th><th>Address</th><th></th></tr></thead><tbody>' +
         rows.map(function (o) {
@@ -70,8 +93,10 @@
             "<br><span class='dl-mut'>" + DELIVERY.esc(o.customer_phone || "") + "</span></td>" +
             "<td>" + DELIVERY.fmt(o.grand_total) + "</td>" +
             "<td>" + DELIVERY.esc(o.delivery_address || "") + "</td>" +
-            '<td><button class="dl-btn" data-acc="' + o.name + '">Accept</button> ' +
-            '<button class="dl-btn danger" data-rej="' + o.name + '">Reject</button></td></tr>';
+            '<td><button class="dl-btn sm" data-acc="' + o.name +
+              '"><i class="fa-solid fa-check"></i> Accept</button> ' +
+            '<button class="dl-btn sm danger" data-rej="' + o.name +
+              '"><i class="fa-solid fa-xmark"></i> Reject</button></td></tr>';
         }).join("") + "</tbody></table>";
 
       host.querySelectorAll("[data-acc]").forEach(function (b) {
@@ -101,13 +126,17 @@
   function catalogue() {
     DELIVERY.call("delivery.api.merchant.catalog").then(function (rows) {
       document.getElementById("cat").innerHTML = rows.map(function (i) {
-        return "<tr><td>" + DELIVERY.esc(i.item_name) + "</td><td>" + DELIVERY.esc(i.category || "") +
-          "</td><td>" + DELIVERY.fmt(i.standard_rate) + "</td>" +
-          '<td><input class="dl-input stk" data-item="' + i.name + '" style="max-width:90px" value="' +
-            (i.available_stock || 0) + '"></td>' +
-          "<td>" + (i.published ? "Yes" : "No") + "</td>" +
-          '<td><button class="dl-btn sec" data-save="' + i.name + '">Save</button></td></tr>';
-      }).join("") || '<tr><td colspan="6" class="dl-empty">No items yet.</td></tr>';
+        return "<tr><td><div class='dl-band'><span class='dl-band-ic'>" +
+            '<i class="fa-solid fa-utensils"></i></span>' + DELIVERY.esc(i.item_name) + "</div></td>" +
+          "<td>" + DELIVERY.esc(i.category || "") + "</td>" +
+          "<td>" + DELIVERY.fmt(i.standard_rate) + "</td>" +
+          '<td><input class="dl-input stk" data-item="' + i.name +
+            '" style="max-width:90px; height:38px" value="' + (i.available_stock || 0) + '"></td>' +
+          "<td>" + (i.published ? '<span class="pill s-don">Published</span>'
+                                : '<span class="pill s-req">Hidden</span>') + "</td>" +
+          '<td><button class="dl-btn sm sec" data-save="' + i.name +
+            '"><i class="fa-solid fa-floppy-disk"></i> Save</button></td></tr>';
+      }).join("") || '<tr><td colspan="6"><div class="dl-empty"><i class="fa-solid fa-box-open"></i>No items yet &mdash; add your first one above.</div></td></tr>';
 
       document.querySelectorAll("[data-save]").forEach(function (b) {
         b.addEventListener("click", function () {

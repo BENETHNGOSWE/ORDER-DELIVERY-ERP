@@ -1,29 +1,47 @@
 {% set page_title = "Driver" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
+{% include "delivery/templates/includes/delivery_shell_css.html" %}
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
-  <div class="dl-between">
-    <div><h2 id="who" class="dl-section-title" style="margin:0">Driver dashboard</h2>
-      <div id="meta" class="dl-mut"></div></div>
-    <select id="avail" class="dl-select" style="max-width:170px">
+<div class="pc-app">
+{% include "delivery/templates/includes/delivery_side.html" %}
+<main class="pc-main">
+{% include "delivery/templates/includes/delivery_topbar.html" %}
+
+<section class="pc-hero">
+  <div class="pc-hero-l">
+    <span class="hic"><i class="fa-solid fa-helmet-safety"></i></span>
+    <div>
+      <h1 id="who">Driver dashboard</h1>
+      <p id="meta">Loading your profile&hellip;</p>
+    </div>
+  </div>
+  <div class="pc-hero-actions">
+    <select id="avail" class="pc-hero-select">
       <option>Available</option><option>On Trip</option><option>Offline</option>
     </select>
   </div>
+</section>
 
-  <div id="kpi" class="dl-kpi" style="margin-top:14px"></div>
+<div id="kpi" class="dl-kpi" style="margin-top:18px"></div>
 
-  <div class="dl-card" style="margin-top:12px">
-    <div class="dl-between">
-      <div><b>Live location sharing</b>
-        <div class="dl-mut" id="loc-status">Share your GPS so customers can follow you on the map.</div></div>
-      <button id="loc-toggle" class="dl-btn">Start sharing</button>
+<div class="pc-card" style="margin-top:16px">
+  <div class="dl-between">
+    <div style="display:flex; align-items:center; gap:14px; min-width:0">
+      <span class="dl-stat-ic"><i class="fa-solid fa-location-dot"></i></span>
+      <div style="min-width:0">
+        <b style="font-size:15px">Live location sharing</b>
+        <div class="dl-mut" id="loc-status">Share your GPS so customers can follow you on the map.</div>
+      </div>
     </div>
+    <button id="loc-toggle" class="dl-btn">Start sharing</button>
   </div>
+</div>
 
-  <h2 class="dl-section-title">My jobs</h2>
-  <div id="jobs" class="dl-card"><div class="dl-empty">Loading&hellip;</div></div>
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-route"></i></span> My jobs</h2>
+<div id="jobs"><div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div></div>
+
+</main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -33,10 +51,12 @@
     DELIVERY.call("delivery.api.driver.profile").then(function (p) {
       document.getElementById("who").textContent = p.driver_name;
       document.getElementById("meta").textContent =
-        p.driver_code + " · " + p.vehicle_type + " · " + p.max_load_kg + " kg · rating " + p.rating;
+        p.driver_code + " \u00b7 " + p.vehicle_type + " \u00b7 " + p.max_load_kg + " kg \u00b7 rating " + p.rating;
       document.getElementById("avail").value = p.status === "Offline" ? "Offline" : p.status;
     }).catch(function (e) {
-      document.getElementById("jobs").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+      document.getElementById("jobs").innerHTML =
+        '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' +
+        DELIVERY.esc(e.message) + "</div></div>";
     });
   }
 
@@ -44,23 +64,34 @@
     DELIVERY.call("delivery.api.driver.my_jobs").then(function (rows) {
       var host = document.getElementById("jobs");
       document.getElementById("kpi").innerHTML =
-        '<div class="dl-card"><b>' + rows.length + '</b><span class="dl-mut">Active jobs</span></div>';
-      if (!rows.length) { host.innerHTML = '<div class="dl-empty">No active jobs.</div>'; return; }
+        '<div class="dl-stat"><span class="dl-stat-ic"><i class="fa-solid fa-route"></i></span>' +
+        '<div><b>' + rows.length + "</b><span>Active jobs</span></div></div>";
+      if (!rows.length) {
+        host.innerHTML = '<div class="pc-card"><div class="dl-empty"><i class="fa-regular fa-face-smile"></i>No active jobs right now.</div></div>';
+        return;
+      }
 
       host.innerHTML = rows.map(function (j) {
         var actions = "";
         if (j.state === "DRIVER_ASSIGNED" || j.state === "ACCEPTED" || j.state === "PREPARING") {
-          actions = '<button class="dl-btn" data-pick="' + j.reference + '">Confirm pickup</button>';
+          actions = '<button class="dl-btn" data-pick="' + j.reference +
+                    '"><i class="fa-solid fa-hand-holding"></i> Confirm pickup</button>';
         } else if (j.state === "PICKED_UP") {
           actions = j.service === "Transport"
-            ? '<button class="dl-btn" data-stop="' + j.reference + '">Next stop</button>'
-            : '<button class="dl-btn" data-done="' + j.reference + '">Complete handoff</button>';
+            ? '<button class="dl-btn" data-stop="' + j.reference +
+              '"><i class="fa-solid fa-location-arrow"></i> Next stop</button>'
+            : '<button class="dl-btn" data-done="' + j.reference +
+              '"><i class="fa-solid fa-clipboard-check"></i> Complete handoff</button>';
         }
-        return '<div class="dl-card" style="margin-bottom:10px"><div class="dl-between">' +
-          "<div><b>" + j.reference + "</b> &middot; " + DELIVERY.esc(j.service) + "<br>" +
-          '<span class="dl-mut">' + DELIVERY.esc(j.address || "") + "</span></div>" +
+        return '<div class="pc-card" style="margin-bottom:14px"><div class="dl-between">' +
+          '<div style="display:flex; align-items:center; gap:13px; min-width:0">' +
+            '<span class="dl-stat-ic"><i class="fa-solid ' +
+              (j.service === "Transport" ? "fa-car-side" : "fa-box") + '"></i></span>' +
+            '<div style="min-width:0"><b>' + j.reference + '</b> <span class="dl-mut">&middot; ' +
+              DELIVERY.esc(j.service) + "</span><br>" +
+            '<span class="dl-mut">' + DELIVERY.esc(j.address || "") + "</span></div></div>" +
           DELIVERY.statePill(j.state) + "</div>" +
-          '<div class="dl-between" style="margin-top:8px">' +
+          '<div class="dl-between" style="margin-top:12px">' +
             '<span class="dl-price">' + DELIVERY.fmt(j.amount) + " &middot; " +
               DELIVERY.esc(j.payment_status || "") + "</span><span>" + actions + "</span></div></div>";
       }).join("");
@@ -94,7 +125,9 @@
         });
       });
     }).catch(function (e) {
-      document.getElementById("jobs").innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+      document.getElementById("jobs").innerHTML =
+        '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' +
+        DELIVERY.esc(e.message) + "</div></div>";
     });
   }
 

@@ -1,42 +1,59 @@
 {% set page_title = "Track" %}
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
-<!-- Leaflet (same library used by the Sales Team Tracker) -->
+{% include "delivery/templates/includes/delivery_shell_css.html" %}
+<!-- Leaflet (same library used by the customer tracking map) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  #dl-map { height: 420px; width: 100%; border-radius: 12px; border: 2px solid #d5dbe4;
-            z-index: 1; margin-top: 12px; }
-  .dl-map-status { margin-top: 8px; font-weight: 600; color: #1976D2; font-size: 13px; }
-  .dl-pulse { width: 18px; height: 18px; background: #1976D2; border: 3px solid #fff;
-              border-radius: 50%; box-shadow: 0 0 0 0 rgba(25,118,210,.6);
+  #dl-map { height: 420px; width: 100%; border-radius: 14px; border: 1.5px solid var(--line);
+            z-index: 1; margin-top: 14px; }
+  .dl-map-status { margin-top: 10px; font-weight: 600; color: var(--purple-dark); font-size: 13px; }
+  .dl-pulse { width: 18px; height: 18px; background: var(--purple); border: 3px solid #fff;
+              border-radius: 50%; box-shadow: 0 0 0 0 rgba(91,43,224,.6);
               animation: dl-pulse 1.6s infinite; }
-  @keyframes dl-pulse { 0%{box-shadow:0 0 0 0 rgba(25,118,210,.55);}
-                        70%{box-shadow:0 0 0 16px rgba(25,118,210,0);}
-                        100%{box-shadow:0 0 0 0 rgba(25,118,210,0);} }
-  .dl-driver-tag { display:inline-block; margin-top:6px; padding:4px 10px; border-radius:20px;
-                   background:#e3f2fd; color:#1565c0; font-size:12px; font-weight:600; }
+  @keyframes dl-pulse { 0%{box-shadow:0 0 0 0 rgba(91,43,224,.55);}
+                        70%{box-shadow:0 0 0 16px rgba(91,43,224,0);}
+                        100%{box-shadow:0 0 0 0 rgba(91,43,224,0);} }
+  .dl-driver-tag { display:inline-flex; align-items:center; gap:7px; padding:5px 12px;
+                   border-radius:999px; background:var(--purple-light); color:var(--purple-dark);
+                   font-size:12px; font-weight:700; }
 </style>
 </head><body>
-<div class="dl-wrap">
-  {% include "delivery/templates/includes/delivery_nav.html" %}
-  <div class="dl-card">
-    <label class="dl-label">Reference</label>
-    <div class="dl-row">
-      <input id="ref" class="dl-input" style="flex:1"
-             placeholder="DL-ORD-2026-0001 / PR-2026-0001 / TR-2026-0001">
-      <button id="go" class="dl-btn">Track</button>
+<div class="pc-app">
+{% include "delivery/templates/includes/delivery_side.html" %}
+<main class="pc-main">
+{% include "delivery/templates/includes/delivery_topbar.html" %}
+
+<section class="pc-hero">
+  <div class="pc-hero-l">
+    <span class="hic"><i class="fa-solid fa-location-dot"></i></span>
+    <div>
+      <h1>Track an order</h1>
+      <p>Follow your delivery live on the map &mdash; every step of the way.</p>
     </div>
   </div>
-  <div id="out" style="margin-top:14px"></div>
-  <div id="map-card" class="dl-card" style="display:none; margin-top:12px">
-    <div class="dl-between">
-      <h3 style="margin:0">Live location</h3>
-      <span id="map-live" class="dl-driver-tag">● Live</span>
-    </div>
-    <div id="dl-map"></div>
-    <div id="map-status" class="dl-map-status">Initializing map&hellip;</div>
+</section>
+
+<div class="pc-card" style="margin-top:18px">
+  <label class="dl-label">Reference</label>
+  <div class="dl-row">
+    <input id="ref" class="dl-input" style="flex:1; min-width:220px"
+           placeholder="DL-ORD-2026-0001 / DL-PRC-2026-0001 / DL-TRP-2026-0001">
+    <button id="go" class="dl-btn"><i class="fa-solid fa-magnifying-glass"></i> Track</button>
   </div>
+</div>
+<div id="out" style="margin-top:16px"></div>
+<div id="map-card" class="pc-card" style="display:none; margin-top:16px">
+  <div class="dl-between">
+    <h3><i class="fa-solid fa-location-dot"></i> Live location</h3>
+    <span id="map-live" class="dl-driver-tag"><i class="fa-solid fa-tower-broadcast"></i> Live</span>
+  </div>
+  <div id="dl-map"></div>
+  <div id="map-status" class="dl-map-status">Initializing map&hellip;</div>
+</div>
+
+</main>
 </div>
 
 <script src="/assets/delivery/js/delivery_portal.js"></script>
@@ -59,7 +76,8 @@
     DELIVERY.call("delivery.api.customer.track", { reference: ref }).then(render)
       .catch(function (e) {
         document.getElementById("out").innerHTML =
-          '<div class="dl-card dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+          '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' +
+          DELIVERY.esc(e.message) + "</div></div>";
         document.getElementById("map-card").style.display = "none";
       });
   }
@@ -83,8 +101,8 @@
     }).join("");
 
     document.getElementById("out").innerHTML =
-      '<div class="dl-card"><div class="dl-between">' +
-        "<h3 style='margin:0'>" + DELIVERY.esc(t.reference) + " &middot; " + DELIVERY.esc(t.service) + "</h3>" +
+      '<div class="pc-card"><div class="dl-between">' +
+        "<h3>" + DELIVERY.esc(t.reference) + " &middot; " + DELIVERY.esc(t.service) + "</h3>" +
         DELIVERY.statePill(t.state) + "</div>" +
         '<div class="dl-steps">' + steps + "</div>" +
         '<div class="dl-mut">Amount ' + DELIVERY.fmt(t.amount) + " &middot; " +
@@ -92,7 +110,7 @@
           (t.driver_name ? " &middot; driver <b>" + DELIVERY.esc(t.driver_name) + "</b>" : "") +
           (t.otp_code ? " &middot; handoff code <b>" + DELIVERY.esc(t.otp_code) + "</b>" : "") +
         "</div></div>" +
-      '<div class="dl-card" style="margin-top:12px"><h3 style="margin-top:0">History</h3>' +
+      '<div class="pc-card" style="margin-top:16px"><h3><i class="fa-solid fa-clock-rotate-left"></i> History</h3>' +
         '<table class="dl-table"><thead><tr><th>When</th><th>State</th><th>By</th><th>Note</th>' +
         "</tr></thead><tbody>" + (hist || '<tr><td colspan="4">No history yet.</td></tr>') +
         "</tbody></table></div>";
@@ -150,23 +168,25 @@
         var who = r.driver_name ? ("Driver: " + r.driver_name) : "Driver";
         var pts = trail.map(function (p) { return [p.lat, p.lng]; });
 
-        // emoji pins avoid Leaflet's missing default-marker-image issues
-        function pin(emoji, bg) {
-          return L.divIcon({ className: "", iconSize: [32, 32], iconAnchor: [16, 28],
-            html: '<div style="font-size:26px;line-height:32px;text-align:center;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));">' + emoji + '</div>' });
+        // icon pins avoid Leaflet's missing default-marker-image issues
+        function pin(iconCls, bg) {
+          return L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 30],
+            html: '<span style="width:34px;height:34px;border-radius:50% 50% 50% 4px;background:' + bg +
+                  ';color:#fff;display:grid;place-items:center;font-size:13px;' +
+                  'box-shadow:0 3px 8px rgba(0,0,0,.3);"><i class="fa-solid ' + iconCls + '"></i></span>' });
         }
-        function addPlace(pt, emoji, title) {
+        function addPlace(pt, iconCls, bg, title) {
           if (!pt || !pt.lat || !pt.lng) return null;
-          var m = L.marker([pt.lat, pt.lng], { icon: pin(emoji) }).addTo(layer);
+          var m = L.marker([pt.lat, pt.lng], { icon: pin(iconCls, bg) }).addTo(layer);
           m.bindPopup("<b>" + title + "</b><br>" + DELIVERY.esc(pt.label || ""));
           return [pt.lat, pt.lng];
         }
 
         // driver's travelled breadcrumb trail
         if (pts.length > 1) {
-          routeLine = L.polyline(pts, { color: "#1976D2", weight: 4, opacity: 0.75 }).addTo(layer);
+          routeLine = L.polyline(pts, { color: "#5B2BE0", weight: 4, opacity: 0.75 }).addTo(layer);
           pts.forEach(function (ll) {
-            L.circleMarker(ll, { radius: 3, color: "#0d47a1", fillColor: "#fff", fillOpacity: 1 }).addTo(layer);
+            L.circleMarker(ll, { radius: 3, color: "#3F1BA8", fillColor: "#fff", fillOpacity: 1 }).addTo(layer);
           });
         }
 
@@ -181,12 +201,12 @@
         }
 
         // pickup (merchant) and destination (drop-off) pins
-        var pickupLL = addPlace(r.pickup, "🏪", "Pickup");
-        var dropLL = addPlace(r.dropoff, "🏁", "Destination");
+        var pickupLL = addPlace(r.pickup, "fa-store", "#5B2BE0", "Pickup");
+        var dropLL = addPlace(r.dropoff, "fa-flag-checkered", "#171717", "Destination");
 
         // remaining route: driver -> destination (dashed)
         if (pos && dropLL) {
-          L.polyline([pos, dropLL], { color: "#43A047", weight: 3,
+          L.polyline([pos, dropLL], { color: "#20B26B", weight: 3,
             dashArray: "8,8", opacity: 0.9 }).addTo(layer);
         }
 
@@ -202,8 +222,7 @@
             (r.driver_phone ? " &middot; " + DELIVERY.esc(r.driver_phone) : "") +
             (dropLL ? " &mdash; en route to destination" : " &mdash; tracking live");
         } else if (r.has_driver) {
-          status.textContent = who + " has not shared a location yet. The map updates automatically." +
-            (dropLL ? "" : "");
+          status.textContent = who + " has not shared a location yet. The map updates automatically.";
           if (dropLL || pickupLL) map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 14 });
           else map.setView(DAR, 12);
         } else {
@@ -220,7 +239,8 @@
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(function () { fetchRoute(false); }, 10000); // every 10s
-    document.getElementById("map-live").textContent = "● Live";
+    var live = document.getElementById("map-live");
+    if (live) live.innerHTML = '<i class="fa-solid fa-tower-broadcast"></i> Live';
   }
   function stopPolling() {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
