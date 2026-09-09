@@ -1,21 +1,38 @@
 # ============================================================================
-# OPTIONAL custom image — NOT used by docker-compose.yml.
+# Koda Delivery — production image.
 #
-# The production stack in docker-compose.yml runs the OFFICIAL frappe/erpnext
-# image directly and does NOT build this file. You do not need this Dockerfile
-# to get Frappe running on your domain.
+# The official frappe/erpnext v16 image PLUS the custom "delivery" app baked
+# in (code installed into the bench env + portal assets pre-placed where
+# nginx serves them). Every service in docker-compose.yml builds/uses this
+# image, so a Coolify redeploy ALWAYS ships with the app — no manual
+# get-app/install-app steps, and no more "Internal Server Error" after
+# updates. Site data is NOT in the image: it lives in the volumes
+# (mariadb-data, sites, redis-queue-data) and survives every deploy.
 #
-# After Frappe is running and you have created the site, install the custom
-# "delivery" app yourself from the backend container terminal:
-#
-#   bench --site delivery.kodatechnologies.co.tz install-app delivery   # if already installed locally
-#   # or, to pull this app from GitHub at runtime:
-#   bench get-app --skip-assets https://github.com/BENETHNGOSWE/ORDER-DELIVERY-ERP.git
-#   mv apps/ORDER-DELIVERY-ERP apps/delivery        # repo folder must match the module name
-#   bench pip install -e apps/delivery
-#   bench --site delivery.kodatechnologies.co.tz install-app delivery
-#
-# (Only use this Dockerfile later if you want to bake the custom app into the
-#  image so it survives container recreation without manual setup.)
+# Base is pinned to the exact version the compose stack used before, so the
+# first build after this change is a drop-in replacement.
 # ============================================================================
 FROM frappe/erpnext:v16.34.1
+
+# ---- stage app code + assets (as root, then hand ownership to frappe) ----
+USER root
+COPY pyproject.toml /home/frappe/frappe-bench/apps/delivery/pyproject.toml
+COPY delivery /home/frappe/frappe-bench/apps/delivery/delivery
+COPY docker/dl-entrypoint.sh /opt/scripts/dl-entrypoint.sh
+
+# Portal static assets:
+#  - /usr/share/nginx/html/assets/delivery  -> served by the frontend nginx
+#    immediately (html is image content, NOT a volume, so this survives)
+#  - /opt/delivery-assets                   -> staging copy the entrypoint
+#    wrapper syncs into the shared sites volume on boot
+COPY delivery/public /usr/share/nginx/html/assets/delivery
+COPY delivery/public /opt/delivery-assets
+
+RUN chmod +x /opt/scripts/dl-entrypoint.sh \
+    && chown -R frappe:frappe /home/frappe/frappe-bench/apps/delivery /opt/delivery-assets \
+    && chmod -R a+rX /usr/share/nginx/html/assets/delivery
+
+# ---- install the app into the bench python env ----
+USER frappe
+WORKDIR /home/frappe/frappe-bench
+RUN bench pip install -e apps/delivery

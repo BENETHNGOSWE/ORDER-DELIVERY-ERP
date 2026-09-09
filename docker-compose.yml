@@ -1,14 +1,27 @@
 # ============================================================================
-# ERPNext / Frappe v16 on Coolify — production stack.
-# Follows the proven Coolify layout: official frappe/erpnext v16 image for every
-# role, with DB/Redis set as LITERAL environment variables on each service
-# (no configurator, no host-header variable, no image build).
-# Only `frontend` is public (port 8080). The custom "delivery" app is installed
-# later from the backend terminal (see DEPLOY-COOLIFY.md).
+# ERPNext / Frappe v16 on Coolify — production stack (permanent-app edition).
+#
+# Same proven layout as before, but every Frappe service now BUILDS the repo's
+# Dockerfile (official frappe/erpnext v16.34.1 + the custom "delivery" app
+# baked in). A Coolify deploy therefore always ships with the app installed:
+# git push -> Deploy -> done. No manual get-app / install-app after updates.
+#
+# Data lives in named volumes (mariadb-data, sites, redis-queue-data) and is
+# NOT affected by redeploys or container recreation. Only `frontend` is
+# public (port 8080).
 # ============================================================================
+x-frappe-image: &frappe-image koda-delivery-erpnext:16.34.1
+x-frappe-build: &frappe-build
+  context: .
+  dockerfile: Dockerfile
+x-frappe-entrypoint: &frappe-entrypoint ["/bin/bash", "/opt/scripts/dl-entrypoint.sh"]
+
 services:
   frontend:
-    image: frappe/erpnext:v16.34.1
+    build:
+      <<: *frappe-build
+    image: *frappe-image
+    entrypoint: *frappe-entrypoint
     restart: unless-stopped
     command:
       - nginx-entrypoint.sh
@@ -29,7 +42,10 @@ services:
       - "8080"
 
   backend:
-    image: frappe/erpnext:v16.34.1
+    build:
+      <<: *frappe-build
+    image: *frappe-image
+    entrypoint: *frappe-entrypoint
     restart: unless-stopped
     environment:
       DB_HOST: mariadb
@@ -47,7 +63,10 @@ services:
       - redis-queue
 
   websocket:
-    image: frappe/erpnext:v16.34.1
+    build:
+      <<: *frappe-build
+    image: *frappe-image
+    entrypoint: *frappe-entrypoint
     restart: unless-stopped
     command:
       - node
@@ -65,7 +84,10 @@ services:
       - backend
 
   scheduler:
-    image: frappe/erpnext:v16.34.1
+    build:
+      <<: *frappe-build
+    image: *frappe-image
+    entrypoint: *frappe-entrypoint
     restart: unless-stopped
     command:
       - bench
@@ -83,7 +105,10 @@ services:
       - backend
 
   worker:
-    image: frappe/erpnext:v16.34.1
+    build:
+      <<: *frappe-build
+    image: *frappe-image
+    entrypoint: *frappe-entrypoint
     restart: unless-stopped
     command:
       - bench
