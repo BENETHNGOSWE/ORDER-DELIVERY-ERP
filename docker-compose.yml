@@ -47,6 +47,10 @@ services:
     image: *frappe-image
     entrypoint: *frappe-entrypoint
     restart: unless-stopped
+    # stock default CMD, pinned explicitly so the wrapper entrypoint
+    # always receives it (start.sh = gunicorn on 0.0.0.0:8000)
+    command:
+      - start.sh
     environment:
       DB_HOST: mariadb
       DB_PORT: "3306"
