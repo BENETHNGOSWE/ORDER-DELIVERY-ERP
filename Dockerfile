@@ -17,6 +17,7 @@ FROM frappe/erpnext:v16.34.1
 # ---- stage app code + assets (as root, then hand ownership to frappe) ----
 USER root
 COPY pyproject.toml /home/frappe/frappe-bench/apps/delivery/pyproject.toml
+COPY README.md /home/frappe/frappe-bench/apps/delivery/README.md
 COPY delivery /home/frappe/frappe-bench/apps/delivery/delivery
 COPY docker/dl-entrypoint.sh /opt/scripts/dl-entrypoint.sh
 
