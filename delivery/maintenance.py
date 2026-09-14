@@ -400,15 +400,34 @@ def _ensure_delivery_workspace():
 
 
 def _ensure_delivery_desktop_icon():
-    """Create the 'Delivery' desktop-grid icon + its Workspace Sidebar entry
-    (uses Frappe's own helper: creates Workspace Sidebar 'Delivery' with one
-    item linking to the workspace, plus the Desktop Icon)."""
-    from frappe.desk.doctype.desktop_icon import add_workspace_to_desktop
+    """Create the 'Delivery' desktop-grid icon (plain ORM, no frappe helper
+    imports - helper names differ across v16 builds). Also create the
+    matching Workspace Sidebar entry when that doctype exists, so the icon
+    passes its boot-time permission check."""
+    if frappe.db.exists("DocType", "Workspace Sidebar") \
+            and not frappe.db.exists("Workspace Sidebar", DELIVERY_WS):
+        try:
+            sb = frappe.new_doc("Workspace Sidebar")
+            sb.title = DELIVERY_WS
+            sb.append("items", {"label": DELIVERY_WS, "type": "Link",
+                                "link_to": DELIVERY_WS, "link_type": "Workspace"})
+            sb.insert(ignore_permissions=True)
+        except Exception:
+            pass
 
-    add_workspace_to_desktop(DELIVERY_WS)
-    # make sure the icon is standard so it renders for every user
-    frappe.db.set_value("Desktop Icon", {"label": DELIVERY_WS},
-                        {"standard": 1, "idx": 0, "icon": "tool"}, update_modified=False)
+    if frappe.db.exists("Desktop Icon", {"label": DELIVERY_WS}):
+        frappe.db.set_value("Desktop Icon", {"label": DELIVERY_WS},
+                            {"standard": 1, "idx": 0}, update_modified=False)
+        return
+    icon = frappe.new_doc("Desktop Icon")
+    icon.label = DELIVERY_WS
+    icon.icon_type = "Link"
+    icon.link_type = "Workspace Sidebar"
+    icon.link_to = DELIVERY_WS
+    icon.icon = "tool"
+    icon.standard = 1
+    icon.idx = 0
+    icon.insert(ignore_permissions=True)
 
 
 def desk_show_delivery_only():
@@ -416,10 +435,10 @@ def desk_show_delivery_only():
 
     1. Ensure the public Delivery workspace exists.
     2. Hide other public workspaces (public=0, is_hidden=1 - nothing deleted).
-    3. Prune the Desktop Icon grid: delete every STANDARD icon that is not
-       the Delivery one (the v16 grid renders these records directly; stock
-       icons for Accounting/Stock/etc. are baked in at install time and do
-       not disappear when their workspaces are hidden).
+    3. Prune the Desktop Icon grid FIRST: delete every STANDARD icon that is
+       not the Delivery one (the v16 grid renders these records directly;
+       stock tiles are baked in at install time and ignore workspace
+       visibility). Delivery's own icon is created last and best-effort.
     Idempotent; re-runs automatically after every migrate (hooks.py).
     """
     _ensure_delivery_workspace()
@@ -431,7 +450,6 @@ def desk_show_delivery_only():
                             {"public": 0, "is_hidden": 1}, update_modified=False)
         hidden.append(name)
 
-    _ensure_delivery_desktop_icon()
     removed = []
     for row in frappe.get_all("Desktop Icon",
                               filters={"standard": 1},
@@ -447,11 +465,20 @@ def desk_show_delivery_only():
             frappe.db.set_value("Desktop Icon", row.name, "hidden", 1,
                                 update_modified=False)
 
+    icon_error = None
+    try:
+        _ensure_delivery_desktop_icon()
+    except Exception as e:
+        icon_error = str(e)
+
     frappe.db.commit()
     _clear_desk_caches()
-    return {"kept_public": [DELIVERY_WS],
-            "hidden_count": len(hidden), "hidden": hidden,
-            "icons_removed": len(removed), "icons": removed}
+    result = {"kept_public": [DELIVERY_WS],
+              "hidden_count": len(hidden), "hidden": hidden,
+              "icons_removed": len(removed), "icons": removed}
+    if icon_error:
+        result["icon_warning"] = "Delivery tile could not be created: " + icon_error
+    return result
 
 
 def _clear_desk_caches():
