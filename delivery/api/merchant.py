@@ -117,14 +117,16 @@ def catalog(merchant=None, published=None):
                           fields=["name", "item_code", "item_name", "item_type",
                                   "category", "description", "standard_rate",
                                   "discount_rate", "available_stock", "track_stock",
-                                  "prep_minutes", "published", "is_featured"],
+                                  "prep_minutes", "published", "is_featured",
+                                  "apply_service_charge", "service_charge_pct"],
                           order_by="category asc, item_name asc", limit=500)
 
 
 @frappe.whitelist()
 def add_item(merchant, item_name, item_type="Food", category=None,
              standard_rate=0, description=None, prep_minutes=0,
-             available_stock=0, track_stock=0, published=1, item_code=None):
+             available_stock=0, track_stock=0, published=1, item_code=None,
+             apply_service_charge=0, service_charge_pct=0):
     _assert_mine(merchant)
     code = item_code or "{0}-{1}".format(
         merchant, frappe.scrub(item_name)[:24]).upper().replace(" ", "-")
@@ -142,6 +144,9 @@ def add_item(merchant, item_name, item_type="Food", category=None,
         "available_stock": int(available_stock),
         "track_stock": int(track_stock),
         "published": int(published),
+        "apply_service_charge": int(apply_service_charge or 0),
+        "service_charge_pct": (flt(service_charge_pct)
+                               if int(apply_service_charge or 0) else 0),
     })
     item.insert(ignore_permissions=True)
     frappe.db.commit()
@@ -155,13 +160,14 @@ def update_item(item, **changes):
 
     allowed = {"item_name", "category", "description", "standard_rate",
                "discount_rate", "prep_minutes", "published", "is_featured",
-               "available_stock", "track_stock"}
+               "available_stock", "track_stock",
+               "apply_service_charge", "service_charge_pct"}
     for key, value in changes.items():
         if key not in allowed:
             continue
-        if key in ("standard_rate", "discount_rate"):
+        if key in ("standard_rate", "discount_rate", "service_charge_pct"):
             value = flt(value)
-        elif key in ("prep_minutes", "available_stock"):
+        elif key in ("prep_minutes", "available_stock", "apply_service_charge"):
             value = int(flt(value))
         elif key in ("published", "is_featured", "track_stock"):
             value = int(value)

@@ -37,6 +37,11 @@
     <input id="new-cat" class="dl-input" style="flex:1; min-width:120px" placeholder="Category">
     <input id="new-rate" class="dl-input" style="flex:1; min-width:110px" type="number" placeholder="Price (TZS)">
     <input id="new-prep" class="dl-input" style="flex:1; min-width:120px" type="number" placeholder="Prep minutes">
+    <label style="display:flex; align-items:center; gap:7px; font-size:13.5px; white-space:nowrap; color:#555">
+      <input id="new-svc" type="checkbox" style="width:17px; height:17px; accent-color:var(--purple)"> Service charge
+    </label>
+    <input id="new-svcpct" class="dl-input" type="number" step="0.1" min="0" max="100"
+           placeholder="Service %" style="display:none; max-width:110px">
     <button id="add" class="dl-btn"><i class="fa-solid fa-plus"></i> Add item</button>
   </div>
 </div>
@@ -207,7 +212,12 @@
         return "<tr><td><div class='dl-band'><span class='dl-band-ic'>" +
             '<i class="fa-solid fa-utensils"></i></span>' + DELIVERY.esc(i.item_name) + "</div></td>" +
           "<td>" + DELIVERY.esc(i.category || "") + "</td>" +
-          "<td>" + DELIVERY.fmt(i.standard_rate) + "</td>" +
+          "<td>" + DELIVERY.fmt(i.standard_rate) +
+            (i.apply_service_charge
+              ? "<br><span class='dl-mut' style='font-size:12px'>+" + (i.service_charge_pct || 0) +
+                "% svc &rarr; " + DELIVERY.fmt(i.standard_rate * (1 + (i.service_charge_pct || 0) / 100)) + "</span>"
+              : "") +
+          "</td>" +
           '<td><input class="dl-input stk" data-item="' + i.name +
             '" style="max-width:90px; height:38px" value="' + (i.available_stock || 0) + '"></td>' +
           "<td>" + (i.published ? '<span class="pill s-don">Published</span>'
@@ -235,15 +245,38 @@
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
   });
 
+  document.getElementById("new-svc").addEventListener("change", function () {
+    document.getElementById("new-svcpct").style.display =
+      this.checked ? "block" : "none";
+    if (this.checked) document.getElementById("new-svcpct").focus();
+  });
+
   document.getElementById("add").addEventListener("click", function () {
+    var svc = document.getElementById("new-svc").checked ? 1 : 0;
+    var svcPct = Number(document.getElementById("new-svcpct").value || 0);
+    if (svc && (!svcPct || svcPct <= 0)) {
+      DELIVERY.toast("Enter the service charge percentage (e.g. 3 for 3%)", "error");
+      return;
+    }
     DELIVERY.call("delivery.api.merchant.add_item", {
       merchant: ME,
       item_name: document.getElementById("new-name").value,
       category: document.getElementById("new-cat").value || "General",
       standard_rate: Number(document.getElementById("new-rate").value || 0),
       prep_minutes: Number(document.getElementById("new-prep").value || 0),
+      apply_service_charge: svc,
+      service_charge_pct: svc ? svcPct : 0,
       published: 1
-    }).then(function () { DELIVERY.toast("Item added", "success"); catalogue(); stats(); })
+    }).then(function () {
+      DELIVERY.toast("Item added", "success"); catalogue(); stats();
+      document.getElementById("new-name").value = "";
+      document.getElementById("new-cat").value = "";
+      document.getElementById("new-rate").value = "";
+      document.getElementById("new-prep").value = "";
+      document.getElementById("new-svc").checked = false;
+      document.getElementById("new-svcpct").value = "";
+      document.getElementById("new-svcpct").style.display = "none";
+    })
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
   });
 
