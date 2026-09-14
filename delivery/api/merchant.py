@@ -67,7 +67,11 @@ def whoami():
     if not mine:
         frappe.throw(_("Your login is not linked to a merchant profile."),
                      frappe.PermissionError)
-    m = frappe.get_doc("Merchant", mine[0])
+    # ownership is asserted by _my_merchants(); read via db (no doctype read
+    # permission - merchants intentionally cannot browse other merchants)
+    m = frappe.db.get_value("Merchant", mine[0],
+                            ["name", "merchant_name", "service_type", "status"],
+                            as_dict=True)
     return {"user": frappe.session.user, "merchant": m.name,
             "merchant_name": m.merchant_name, "service_type": m.service_type,
             "status": m.status, "all": mine}
@@ -76,7 +80,12 @@ def whoami():
 @frappe.whitelist()
 def profile(merchant=None):
     name = _merchant_or_throw(merchant)
-    m = frappe.get_doc("Merchant", name)
+    m = frappe.db.get_value(
+        "Merchant", name,
+        ["name", "merchant_name", "service_type", "status", "phone", "email",
+         "city", "area", "full_address", "avg_prep_minutes",
+         "minimum_order_value", "delivery_radius_km", "commission_rate"],
+        as_dict=True)
     return {"merchant": m.name, "merchant_name": m.merchant_name,
             "service_type": m.service_type, "status": m.status,
             "phone": m.phone, "email": m.email, "city": m.city, "area": m.area,
