@@ -171,10 +171,18 @@ def transport_query_conditions(user=None, doctype=None):
 
 def menu_item_permission(doc, user=None, permission_type=None):
     """DL Menu Item: merchants may only read/write their own items;
-    ops/admin unrestricted. (DocType perms already exclude other roles.)"""
+    ops/admin unrestricted. Create and unsaved docs (merchant not stamped
+    yet - e.g. image attach on a new form) are allowed for merchants;
+    the doctype validate() stamps the merchant and blocks cross-merchant
+    saves, so this stays safe."""
     user = user or frappe.session.user
     if _unrestricted(user):
         return True
     if "Merchant User" in frappe.get_roles(user):
-        return doc.get("merchant") in _my_merchants(user)
+        if permission_type == "create" or doc is None:
+            return True
+        merchant = doc.get("merchant") if hasattr(doc, "get") else None
+        if not merchant:
+            return True  # unsaved / not stamped yet; validate() enforces ownership
+        return merchant in _my_merchants(user)
     return False

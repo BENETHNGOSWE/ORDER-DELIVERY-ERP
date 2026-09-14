@@ -59,7 +59,7 @@
       "in_standard_filter": 1,
       "label": "Merchant",
       "options": "Merchant",
-      "reqd": 1
+      "reqd": 0
     },
     {
       "default": "Food",
@@ -168,7 +168,7 @@
   ],
   "image_field": "item_image",
   "links": [],
-  "modified": "2026-09-14 09:25:03.516340",
+  "modified": "2026-09-14 09:59:32.736526",
   "modified_by": "Administrator",
   "module": "Delivery Logistics",
   "name": "DL Menu Item",
