@@ -75,6 +75,19 @@ class DeliveryOrder(ServiceDocument):
         frappe.db.commit()
         return self
 
+    def mark_ready_for_delivery(self, note=None):
+        """Merchant signals the order is ready (ACCEPTED/PREPARING ->
+        READY_FOR_DELIVERY). Operations then assigns a driver."""
+        if self.workflow_state not in ("ACCEPTED", "PREPARING"):
+            frappe.throw(_("Only an accepted/preparing order can be marked ready "
+                           "(currently {0}).").format(self.workflow_state),
+                         title=_("Wrong State"))
+        state_machine.set_state(self, "READY_FOR_DELIVERY",
+                                note=note or _("Merchant marked the order ready for delivery"))
+        self.save(ignore_permissions=True)
+        frappe.db.commit()
+        return self
+
 
 # ---------------------------------------------------------------------------
 # module-level hooks kept for compatibility; the Document methods above are what

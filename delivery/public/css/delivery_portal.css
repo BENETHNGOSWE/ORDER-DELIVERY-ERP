@@ -69,6 +69,7 @@
 .s-req { background: #e2e8f0; color: #334155; } .s-rev { background: #fef3c7; color: #92400e; }
 .s-quo { background: #e0e7ff; color: #3730a3; } .s-pen { background: #ffedd5; color: #9a3412; }
 .s-acc { background: var(--dl-brand-l); color: var(--dl-brand-d); } .s-pre { background: #fce7f3; color: #9d174d; }
+.s-rdy { background: #D9FF5A; color: #1a1a1a; }
 .s-drv { background: #e0e7ff; color: #3730a3; } .s-trn { background: #cffafe; color: #155e75; }
 .s-don { background: #dcfce7; color: #166534; } .s-can { background: #fee2e2; color: #991b1b; }
 

@@ -84,7 +84,7 @@
 
   function render(t) {
     DELIVERY.currency = t.currency;
-    var order = ["PENDING", "ACCEPTED", "PREPARING", "DRIVER_ASSIGNED", "PICKED_UP", "COMPLETED"];
+    var order = ["PENDING", "ACCEPTED", "PREPARING", "READY_FOR_DELIVERY", "DRIVER_ASSIGNED", "PICKED_UP", "COMPLETED"];
     if (t.service === "Parcel") order = ["REQUESTED", "UNDER_REVIEW", "PRICE_AGREED"].concat(order.slice(1));
     if (t.service === "Transport") order = ["UNDER_REVIEW", "PRICE_AGREED"].concat(order.slice(1));
     var at = order.indexOf(t.state);

@@ -196,8 +196,8 @@ def assign_driver(reference, driver, trip=None):
     _require_ops()
     dt, doc = _find(reference)
 
-    if doc.workflow_state not in ("ACCEPTED", "PREPARING"):
-        frappe.throw(_("{0} must be accepted before a driver is assigned "
+    if doc.workflow_state not in ("ACCEPTED", "PREPARING", "READY_FOR_DELIVERY"):
+        frappe.throw(_("{0} must be ready before a driver is assigned "
                        "(currently {1}).").format(reference, doc.workflow_state),
                      title=_("Wrong State"))
 
@@ -245,7 +245,7 @@ def dashboard():
                            + frappe.db.count("Transport Request",
                                              {"workflow_state": "UNDER_REVIEW"}),
         "unassigned": frappe.db.count("Delivery Order",
-                                      {"workflow_state": ["in", ["ACCEPTED", "PREPARING"]]})
+                                      {"workflow_state": ["in", ["ACCEPTED", "PREPARING", "READY_FOR_DELIVERY"]]})
                       + frappe.db.count("Parcel Request",
                                         {"workflow_state": ["in", ["ACCEPTED", "PREPARING"]]})
                       + frappe.db.count("Transport Request",

@@ -270,3 +270,71 @@ def stats(merchant=None):
 
     return {"orders": total, "by_state": {r[0]: r[1] for r in by_state_rows},
             "completed_revenue": flt(revenue, 2), "catalog_items": items}
+
+
+# ---------------------------------------------------------------------------
+# kitchen / readiness / payment updates
+# ---------------------------------------------------------------------------
+ACTIVE_ORDER_STATES = ("ACCEPTED", "PREPARING", "READY_FOR_DELIVERY",
+                       "DRIVER_ASSIGNED", "PICKED_UP")
+
+PAYMENT_STATUSES = ("Pending", "Authorized", "Paid", "Failed", "Refunded")
+
+
+@frappe.whitelist()
+def active_orders(merchant=None, limit=50):
+    """Orders this merchant is preparing / waiting on (for the kitchen list)."""
+    name = _merchant_or_throw(merchant)
+    return frappe.get_all("Delivery Order",
+                          filters={"merchant": name,
+                                   "workflow_state": ["in", ACTIVE_ORDER_STATES]},
+                          fields=["name", "workflow_state", "customer_name",
+                                  "customer_phone", "grand_total", "currency",
+                                  "payment_status", "payment_method",
+                                  "assigned_driver", "ready_at"],
+                          order_by="creation desc", limit=int(limit))
+
+
+@frappe.whitelist()
+def start_preparing(order):
+    """ACCEPTED -> PREPARING (used when an order was accepted without prep)."""
+    doc = _order(order)
+    if doc.workflow_state != "ACCEPTED":
+        frappe.throw(_("Only an accepted order can start preparing "
+                       "(currently {0}).").format(doc.workflow_state),
+                     title=_("Wrong State"))
+    from delivery.delivery_logistics import state_machine
+    state_machine.set_state(doc, "PREPARING", note=_("Merchant started preparing"))
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"order": doc.name, "state": doc.workflow_state}
+
+
+@frappe.whitelist()
+def mark_ready(order):
+    """PREPARING -> READY_FOR_DELIVERY: operations can now assign a driver."""
+    doc = _order(order)
+    doc.mark_ready_for_delivery()
+    return {"order": doc.name, "state": doc.workflow_state}
+
+
+@frappe.whitelist()
+def set_order_payment(order, payment_status, payment_method=None):
+    """Merchant records the real payment state on their own order
+    (e.g. cash received -> Paid) and corrects the payment method."""
+    doc = _order(order)
+    if payment_status not in PAYMENT_STATUSES:
+        frappe.throw(_("Payment status must be one of: {0}.")
+                     .format(", ".join(PAYMENT_STATUSES)))
+    if payment_method:
+        valid_methods = [o.strip() for o in (frappe.get_meta("Delivery Order")
+                         .get_field("payment_method").options or "").split("\n") if o.strip()]
+        if payment_method not in valid_methods:
+            frappe.throw(_("Payment method must be one of: {0}.")
+                         .format(", ".join(valid_methods)))
+        doc.payment_method = payment_method
+    doc.payment_status = payment_status
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"order": doc.name, "payment_status": doc.payment_status,
+            "payment_method": doc.payment_method}

@@ -119,6 +119,7 @@
       var cls = {
         REQUESTED: "s-req", UNDER_REVIEW: "s-rev", PRICE_AGREED: "s-quo",
         PENDING: "s-pen", ACCEPTED: "s-acc", PREPARING: "s-pre",
+        READY_FOR_DELIVERY: "s-rdy",
         DRIVER_ASSIGNED: "s-drv", PICKED_UP: "s-trn", COMPLETED: "s-don",
         CANCELLED: "s-can",
       }[state] || "s-req";

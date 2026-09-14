@@ -26,6 +26,9 @@
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-bell"></i></span> Orders awaiting acceptance</h2>
 <div id="inbox" class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
 
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-fire-burner"></i></span> In the kitchen</h2>
+<div id="kitchen" class="pc-card"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
+
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-utensils"></i></span> Catalogue</h2>
 <div class="pc-card" style="margin-bottom:16px">
   <h3><i class="fa-solid fa-plus"></i> Add a new item</h3>
@@ -57,7 +60,7 @@
       document.getElementById("who").textContent = w.merchant_name;
       document.getElementById("st").textContent = w.service_type + " \u00b7 " + w.status;
       document.getElementById("toggle").textContent = w.status === "Open" ? "Close shop" : "Open shop";
-      inbox(); catalogue(); stats();
+      inbox(); kitchen(); catalogue(); stats();
     }).catch(function (e) {
       document.getElementById("inbox").innerHTML =
         '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
@@ -116,7 +119,74 @@
           if (!why) return;
           DELIVERY.call("delivery.api.merchant.reject_order",
                         { order: b.dataset.rej, reason: why })
-            .then(function () { inbox(); stats(); })
+            .then(function () { inbox(); kitchen(); stats(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+    }).catch(function () {});
+  }
+
+  function kitchen() {
+    DELIVERY.call("delivery.api.merchant.active_orders").then(function (rows) {
+      var host = document.getElementById("kitchen");
+      if (!rows.length) {
+        host.innerHTML = '<div class="dl-empty"><i class="fa-regular fa-clock"></i>Nothing in the kitchen right now.</div>';
+        return;
+      }
+      var methods = ["Cash On Delivery", "M-Pesa", "Tigo Pesa", "Card"];
+      host.innerHTML = '<table class="dl-table"><thead><tr><th>Order</th><th>Total</th><th>State</th>' +
+        '<th>Payment</th><th></th></tr></thead><tbody>' +
+        rows.map(function (o) {
+          var acts = "";
+          if (o.workflow_state === "ACCEPTED") {
+            acts = '<button class="dl-btn sm sec" data-prep="' + o.name +
+                   '"><i class="fa-solid fa-kitchen-set"></i> Start preparing</button> ';
+          }
+          if (o.workflow_state === "ACCEPTED" || o.workflow_state === "PREPARING") {
+            acts += '<button class="dl-btn sm" data-ready="' + o.name +
+                    '"><i class="fa-solid fa-bell-concierge"></i> Ready for delivery</button>';
+          }
+          var pay = '<select class="dl-input pay-st" data-o="' + o.name +
+                    '" style="max-width:110px; height:38px">' +
+            ["Pending", "Paid"].map(function (s) {
+              return "<option" + (s === (o.payment_status || "Pending") ? " selected" : "") + ">" + s + "</option>";
+            }).join("") + "</select> " +
+            '<select class="dl-input pay-me" data-o="' + o.name +
+            '" style="max-width:150px; height:38px">' +
+            methods.map(function (m) {
+              return "<option" + (m === (o.payment_method || "Cash On Delivery") ? " selected" : "") + ">" + m + "</option>";
+            }).join("") + "</select> " +
+            '<button class="dl-btn sm sec" data-paysave="' + o.name +
+            '"><i class="fa-solid fa-floppy-disk"></i> Save</button>';
+          return "<tr><td>" + o.name + "<br><span class='dl-mut'>" +
+            DELIVERY.esc(o.customer_name || "") + "</span></td>" +
+            "<td>" + DELIVERY.fmt(o.grand_total) + "</td>" +
+            "<td>" + DELIVERY.statePill(o.workflow_state) + "</td>" +
+            "<td>" + pay + "</td>" +
+            "<td>" + acts + "</td></tr>";
+        }).join("") + "</tbody></table>";
+
+      host.querySelectorAll("[data-prep]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          DELIVERY.call("delivery.api.merchant.start_preparing", { order: b.dataset.prep })
+            .then(function (r) { DELIVERY.toast(r.order + " is being prepared", "success"); kitchen(); stats(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+      host.querySelectorAll("[data-ready]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          DELIVERY.call("delivery.api.merchant.mark_ready", { order: b.dataset.ready })
+            .then(function (r) { DELIVERY.toast(r.order + " is ready for delivery", "success"); kitchen(); stats(); })
+            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+        });
+      });
+      host.querySelectorAll("[data-paysave]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var st = host.querySelector('.pay-st[data-o="' + b.dataset.paysave + '"]').value;
+          var me = host.querySelector('.pay-me[data-o="' + b.dataset.paysave + '"]').value;
+          DELIVERY.call("delivery.api.merchant.set_order_payment",
+                        { order: b.dataset.paysave, payment_status: st, payment_method: me })
+            .then(function (r) { DELIVERY.toast(r.order + " payment: " + r.payment_status, "success"); })
             .catch(function (e) { DELIVERY.toast(e.message, "error"); });
         });
       });
