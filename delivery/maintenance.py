@@ -567,3 +567,71 @@ def link_merchant_user(merchant=None, user=None):
     except Exception:
         pass
     return {"merchant": merchant, "portal_user": user}
+
+
+def ensure_merchant_user(email, merchant=None, password=None, first_name=None):
+    """One-step merchant onboarding: creates the User if missing, grants the
+    Merchant User role, links the Merchant record and (optionally) sets the
+    login password.
+
+        bench --site <s> execute delivery.maintenance.ensure_merchant_user \
+            --kwargs '{"email": "merchant3@demo.com", "password": "merchant123"}'
+    """
+    from frappe.utils.password import update_password
+
+    email = (email or "").strip().lower()
+    if not email or "@" not in email:
+        frappe.throw("Pass a valid email: --kwargs '{{\"email\": \"...\", "
+                     "\"password\": \"...\"}}'")
+
+    if frappe.db.exists("User", email):
+        user_doc = frappe.get_doc("User", email)
+    else:
+        user_doc = frappe.new_doc("User")
+        user_doc.email = email
+        user_doc.first_name = first_name or email.split("@")[0].title()
+        user_doc.user_type = "System User"          # needs Desk access
+        user_doc.send_welcome_email = 0
+        user_doc.insert(ignore_permissions=True)
+
+    if "Merchant User" not in frappe.get_roles(email):
+        user_doc.add_roles("Merchant User")
+
+    # resolve the merchant record (explicit > the only unlinked one)
+    if merchant:
+        if not frappe.db.exists("Merchant", merchant):
+            frappe.throw("No such Merchant: {0}".format(merchant))
+    else:
+        unlinked = frappe.get_all("Merchant",
+                                  filters=[["portal_user", "in", ("", None)]],
+                                  pluck="name")
+        if len(unlinked) == 1:
+            merchant = unlinked[0]
+        else:
+            frappe.throw("Pass the merchant too: --kwargs "
+                         "'{{\"email\": \"...\", \"merchant\": \"MERCHANT-NAME\"}}' "
+                         "(candidates: {0})".format(", ".join(unlinked) or "none"))
+
+    frappe.db.set_value("Merchant", merchant, "portal_user", email,
+                        update_modified=False)
+    if password:
+        update_password(email, password)
+
+    frappe.db.commit()
+    try:
+        frappe.clear_cache()
+    except Exception:
+        pass
+    return {"user": email, "merchant": merchant,
+            "role": "Merchant User", "password_set": bool(password),
+            "created_new_user": user_doc.is_new() if hasattr(user_doc, "is_new") else "linked"}
+
+
+def list_merchant_logins():
+    """Show every Merchant and which login (if any) can operate it."""
+    out = []
+    for m in frappe.get_all("Merchant",
+                            fields=["name", "merchant_name", "portal_user"]):
+        out.append({"merchant": m.name, "merchant_name": m.merchant_name,
+                    "login": m.portal_user or "NOT LINKED"})
+    return out
