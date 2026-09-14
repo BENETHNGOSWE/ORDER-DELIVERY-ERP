@@ -470,6 +470,7 @@
       <div id="cart-lines"></div>
       <div class="x-tot" id="cart-tot" style="display:none">
         <div class="r"><span>Subtotal</span><span id="c-sub">0</span></div>
+        <div class="r" id="c-svc-row" style="display:none"><span>Service fee</span><span id="c-svc">0</span></div>
         <div class="r"><span>Delivery fee</span><span id="c-fee">—</span></div>
         <div class="gr"><span>Total</span><span id="c-total">0</span></div>
         <a class="x-checkout" href="/delivery/cart">Checkout</a>
@@ -532,6 +533,7 @@
         <div id="ck-lines"></div>
         <div class="ck-tot">
           <div class="r"><span>Subtotal</span><b id="ck-sub">0</b></div>
+          <div class="r" id="ck-svc-row" style="display:none"><span>Service fee</span><b id="ck-svc">0</b></div>
           <div class="r"><span>Delivery fee</span><b id="ck-fee">—</b></div>
           <div class="gr"><span>Total</span><span id="ck-total">0</span></div>
           <button class="ck-place" id="ck-place">Place order</button>
@@ -715,16 +717,18 @@
         '<div class="x-qty"><button data-dec="'+i+'">−</button><span class="q">'+l.qty+'</span><button data-inc="'+i+'">+</button></div>'+
         '<button class="x-rm" data-rm="'+i+'">×</button></div>';
     }).join("");
-    var sub=DELIVERY.cartTotal();
-    document.getElementById("c-sub").textContent=money(sub);
-    document.getElementById("mbar-total").textContent=money(sub);
+    var t=DELIVERY.cartTotals();
+    document.getElementById("c-sub").textContent=money(t.base);
+    document.getElementById("c-svc").textContent=money(t.service);
+    document.getElementById("c-svc-row").style.display=t.service>0?"flex":"none";
+    document.getElementById("mbar-total").textContent=money(t.grand);
     document.getElementById("c-fee").textContent="…";
-    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:null, distance_km:0, items_total:sub})
+    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:null, distance_km:0, items_total:t.base})
       .then(function(f){
         var fee=f.delivery_fee||0;
         document.getElementById("c-fee").textContent=fee?money(fee):"FREE";
-        document.getElementById("c-total").textContent=money(sub+fee);
-      }).catch(function(){ document.getElementById("c-fee").textContent="—"; document.getElementById("c-total").textContent=money(sub); });
+        document.getElementById("c-total").textContent=money(t.grand+fee);
+      }).catch(function(){ document.getElementById("c-fee").textContent="—"; document.getElementById("c-total").textContent=money(t.grand); });
     box.querySelectorAll("[data-inc]").forEach(function(b){ b.onclick=function(){ var l=lines[+b.dataset.inc]; l.qty++; DELIVERY.saveCart(); renderCart(); }; });
     box.querySelectorAll("[data-dec]").forEach(function(b){ b.onclick=function(){ var l=lines[+b.dataset.dec]; if(l.qty>1) l.qty--; else lines.splice(+b.dataset.dec,1); DELIVERY.saveCart(); renderCart(); }; });
     box.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ lines.splice(+b.dataset.rm,1); if(!lines.length) DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); }; });
@@ -880,14 +884,16 @@
     host.querySelectorAll("[data-dec]").forEach(function(b){ b.onclick=function(){ var l=lines[+b.dataset.dec]; if(l.qty>1)l.qty--; else lines.splice(+b.dataset.dec,1); if(!lines.length)DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); renderCheckout(); }; });
     host.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ lines.splice(+b.dataset.rm,1); if(!lines.length)DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); renderCheckout(); }; });
 
-    var sub=DELIVERY.cartTotal();
-    document.getElementById("ck-sub").textContent=money(sub);
+    var t=DELIVERY.cartTotals();
+    document.getElementById("ck-sub").textContent=money(t.base);
+    document.getElementById("ck-svc").textContent=money(t.service);
+    document.getElementById("ck-svc-row").style.display=t.service>0?"flex":"none";
     document.getElementById("ck-fee").textContent="…";
-    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:document.getElementById("ck-zone").value, distance_km:0, items_total:sub})
+    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:document.getElementById("ck-zone").value, distance_km:0, items_total:t.base})
       .then(function(f){ var fee=f.delivery_fee||0;
         document.getElementById("ck-fee").textContent=fee?money(fee):"FREE";
-        document.getElementById("ck-total").textContent=money(sub+fee);
-      }).catch(function(){ document.getElementById("ck-fee").textContent="—"; document.getElementById("ck-total").textContent=money(sub); });
+        document.getElementById("ck-total").textContent=money(t.grand+fee);
+      }).catch(function(){ document.getElementById("ck-fee").textContent="—"; document.getElementById("ck-total").textContent=money(t.grand); });
   }
 
   function ckIcon(){ return L.divIcon({className:"", iconSize:[32,32], iconAnchor:[16,30],
