@@ -43,7 +43,12 @@
 </div>
 
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-chart-pie"></i></span> Reports</h2>
-<div id="rep-boxes" class="dl-kpi"><div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-spinner fa-pulse"></i>Loading reports&hellip;</div></div>
+<div id="rep-boxes" class="dl-kpi dl-kpi-3"><div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-spinner fa-pulse"></i>Loading reports&hellip;</div></div>
+
+<div class="pc-card" style="margin-top:14px">
+  <h3><i class="fa-solid fa-calendar-days"></i> Order totals by period <span class="dl-mut" style="font-weight:500">(completed orders)</span></h3>
+  <div id="rep-periods"><div class="dl-empty">Loading&hellip;</div></div>
+</div>
 
 <div class="pc-card" style="margin-top:14px">
   <h3><i class="fa-solid fa-store"></i> Payable to merchants <span class="dl-mut" style="font-weight:500">(item amounts only &mdash; service charges excluded)</span></h3>
@@ -174,13 +179,27 @@
           '"></i></span><div><b>' + val + "</b><span>" + label + "</span></div></div>";
       };
       var cur = r.currency + " ";
+      var merchTotal = r.merchant_payables.reduce(function (s, m) { return s + m.payable; }, 0);
       document.getElementById("rep-boxes").innerHTML =
-        stat("fa-calendar-day", r.today.orders, "Orders today (" + cur + r.today.grand_total.toLocaleString("en-US") + ")") +
-        stat("fa-calendar-week", r.week.orders, "Orders last 7 days (" + cur + r.week.grand_total.toLocaleString("en-US") + ")") +
-        stat("fa-calendar", r.month.orders, "Orders this month (" + cur + r.month.grand_total.toLocaleString("en-US") + ")") +
-        stat("fa-store", cur + r.platform_revenue.delivery_office_share.toLocaleString("en-US"), "Office share of delivery fees") +
-        stat("fa-percent", cur + r.platform_revenue.service_fees.toLocaleString("en-US"), "Service charges earned") +
-        stat("fa-sack-dollar", cur + r.platform_revenue.total.toLocaleString("en-US"), "Platform revenue (completed)");
+        stat("fa-store", cur + merchTotal.toLocaleString("en-US"), "Pay merchants (items only)") +
+        stat("fa-sack-dollar", cur + r.platform_revenue.total.toLocaleString("en-US"), "Platform revenue") +
+        stat("fa-building-columns", cur + r.platform_revenue.delivery_office_share.toLocaleString("en-US"), "Office 30% of fees") +
+        stat("fa-percent", cur + r.platform_revenue.service_fees.toLocaleString("en-US"), "Service charges") +
+        stat("fa-calendar-day", r.today.orders, "Orders today") +
+        stat("fa-calendar-week", r.week.orders, "Orders this week");
+
+      var money2 = function (n) { return cur + n.toLocaleString("en-US"); };
+      var per = [["Today", r.today], ["Last 7 days", r.week], ["This month", r.month], ["All time", r.all_time]];
+      document.getElementById("rep-periods").innerHTML =
+        '<table class="dl-table"><thead><tr><th>Period</th><th>Orders</th><th>Items total</th>' +
+        '<th>Service fees</th><th>Delivery fees</th><th>Grand total</th></tr></thead><tbody>' +
+        per.map(function (p) {
+          return "<tr><td><b>" + p[0] + "</b></td><td>" + p[1].orders + "</td>" +
+            "<td>" + money2(p[1].items_total) + "</td>" +
+            "<td>" + money2(p[1].service_fee_total) + "</td>" +
+            "<td>" + money2(p[1].delivery_fees) + "</td>" +
+            "<td><b>" + money2(p[1].grand_total) + "</b></td></tr>";
+        }).join("") + "</tbody></table>";
 
       document.getElementById("rep-merchants").innerHTML = r.merchant_payables.length
         ? '<table class="dl-table"><thead><tr><th>Merchant</th><th>Completed orders</th>' +
