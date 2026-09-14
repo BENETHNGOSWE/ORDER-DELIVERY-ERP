@@ -354,12 +354,6 @@ _WS_SHORTCUTS = [
     ("Logistics Settings", "Logistics Settings"),
 ]
 
-_WS_URL_SHORTCUTS = [
-    # admin box 9: end-of-day reports (merchant payables, platform revenue,
-    # per-driver payouts) live in the Operations web console
-    ("Reports", "/delivery/operations"),
-]
-
 
 def _ws_block(btype, **data):
     return {"id": uuid.uuid4().hex[:10], "type": btype, "data": data}
@@ -375,8 +369,9 @@ def _workspace_content():
     ]
     for label, _link_to in _WS_SHORTCUTS:
         blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
-    for label, _url in _WS_URL_SHORTCUTS:
-        blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
+    blocks.append(_ws_block("paragraph", col=12,
+        text='Open the <a href="/delivery/operations"><b>End-of-Day Reports</b></a>'
+             ' (merchant payables, platform revenue, per-driver payouts).'))
     return json.dumps(blocks)
 
 
@@ -392,8 +387,6 @@ def _ensure_delivery_workspace():
         for label, link_to in _WS_SHORTCUTS:
             ws.append("shortcuts", {"label": label, "type": "DocType",
                                     "link_to": link_to, "doc_view": "List"})
-        for label, url in _WS_URL_SHORTCUTS:
-            ws.append("shortcuts", {"label": label, "type": "URL", "link_to": url})
         ws.content = _workspace_content()
         ws.flags.ignore_permissions = True
         ws.save(ignore_permissions=True)
@@ -414,8 +407,6 @@ def _ensure_delivery_workspace():
     for label, link_to in _WS_SHORTCUTS:
         ws.append("shortcuts", {"label": label, "type": "DocType",
                                 "link_to": link_to, "doc_view": "List"})
-    for label, url in _WS_URL_SHORTCUTS:
-        ws.append("shortcuts", {"label": label, "type": "URL", "link_to": url})
     ws.append("links", {"type": "Card Break", "label": "Deliveries", "icon": "tool"})
     for label, link_to in _WS_SHORTCUTS[:5]:
         ws.append("links", {"type": "Link", "label": label,
@@ -468,7 +459,14 @@ def desk_show_delivery_only():
        visibility). Delivery's own icon is created last and best-effort.
     Idempotent; re-runs automatically after every migrate (hooks.py).
     """
-    _ensure_delivery_workspace()
+    ws_error = None
+    try:
+        _ensure_delivery_workspace()
+    except Exception as e:
+        # never let a workspace-sync problem skip the hiding/pruning below -
+        # that is what re-establishes "Delivery only" after every migrate
+        ws_error = str(e)
+        frappe.log_error("Delivery workspace sync failed: {0}".format(ws_error))
     hidden = []
     for name in frappe.get_all("Workspace", filters={"public": 1}, pluck="name"):
         if name == DELIVERY_WS:
@@ -505,6 +503,8 @@ def desk_show_delivery_only():
               "icons_removed": len(removed), "icons": removed}
     if icon_error:
         result["icon_warning"] = "Delivery tile could not be created: " + icon_error
+    if ws_error:
+        result["workspace_warning"] = ws_error
     return result
 
 
