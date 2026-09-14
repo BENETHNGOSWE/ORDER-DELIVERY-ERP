@@ -84,15 +84,16 @@
       };
       document.getElementById("pay").innerHTML =
         stat("fa-motorcycle", e.completed, "Completed") +
-        stat("fa-sack-dollar", DELIVERY.fmt(e.delivery_fees_total), "Fees collected") +
+        stat("fa-sack-dollar", DELIVERY.fmt(e.items_collected), "Collected (items + service)") +
         stat("fa-wallet", DELIVERY.fmt(e.payable_total), "Your pay (" + e.driver_share_pct + "%)") +
         stat("fa-building-columns", DELIVERY.fmt(e.office_total), "Office (" + (100 - e.driver_share_pct) + "%)") +
         '<div class="pc-card dl-mut" style="grid-column:1/-1; padding:12px 16px">' +
           "<i class=\"fa-solid fa-circle-info\" style=\"color:var(--purple)\"></i> Today: " +
           DELIVERY.currency + " " + (e.payable_today || 0).toLocaleString("en-US") +
-          " earned of " + DELIVERY.currency + " " +
-          (e.delivery_fees_today || 0).toLocaleString("en-US") + " in fees. " +
-          "Your pay is 70% of delivery fees on completed deliveries, payable end of day." +
+          " pay of " + DELIVERY.currency + " " +
+          (e.delivery_fees_today || 0).toLocaleString() + " in delivery fees. " +
+          "Order amounts you collect (items + service) belong to the office; " +
+          "your pay is " + e.driver_share_pct + "% of the delivery fee, payable end of day." +
         "</div>";
     }).catch(function () {});
   }

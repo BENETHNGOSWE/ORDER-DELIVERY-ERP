@@ -365,14 +365,19 @@ def job_items(reference):
 @frappe.whitelist()
 def earnings():
     """Driver payout summary: 70% of delivery fees on completed deliveries
-    (share configurable in Logistics Settings -> Driver Share of Delivery Fee)."""
+    (share configurable in Logistics Settings -> Driver Share of Delivery Fee).
+    ``items_collected`` = items subtotal + service fees on completed orders -
+    the money the driver collects on behalf of the office (remitted, not theirs)."""
     from delivery.delivery_logistics import billing
     code = _driver_for()
     rows = frappe.get_all("Delivery Order",
                           filters={"assigned_driver": code,
                                    "workflow_state": "COMPLETED"},
-                          fields=["delivery_fee", "creation"])
+                          fields=["delivery_fee", "items_total",
+                                  "service_fee_total", "creation"])
     fees_total = sum(flt(r.delivery_fee) for r in rows)
+    items_collected = sum(flt(r.items_total) + flt(r.service_fee_total)
+                          for r in rows)
     share = billing.driver_fee_share_pct()
     from frappe.utils import nowdate
     today = sum(flt(r.delivery_fee) for r in rows
@@ -380,6 +385,7 @@ def earnings():
     return {
         "completed": len(rows),
         "delivery_fees_total": round(fees_total, 2),
+        "items_collected": round(items_collected, 2),
         "driver_share_pct": share,
         "payable_total": round(fees_total * share / 100.0, 2),
         "office_total": round(fees_total * (100 - share) / 100.0, 2),
