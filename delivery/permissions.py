@@ -193,17 +193,20 @@ def menu_item_permission(doc, user=None, permission_type=None):
 
 
 def merchant_permission(doc, user=None, permission_type=None):
-    """Merchant record: a login may only read the merchant(s) it manages.
-    Other merchants stay invisible; ops/admin unrestricted."""
+    """Merchant record access:
+    - doctype-level checks (doc=None, e.g. workspace-shortcut visibility,
+      awesomebar, 'New' buttons) are DENIED for merchant-only users, so the
+      'Merchants' shortcut stays hidden;
+    - document-level checks pass ONLY for the login's own merchant record,
+      which is what link-field validation needs on DL Menu Item forms;
+    - ops/admin unrestricted."""
     user = user or frappe.session.user
     if _unrestricted(user):
         return True
     if "Merchant User" not in frappe.get_roles(user):
         return False
-    if doc is None or isinstance(doc, str):
-        # link-field searches ("select" checks); results are filtered by the
-        # query conditions below, so nothing leaks
-        return True
+    if doc is None:
+        return False   # hide shortcut/search/new at doctype level
     name = doc if isinstance(doc, str) else doc.get("name")
     return name in _my_merchants(user)
 
