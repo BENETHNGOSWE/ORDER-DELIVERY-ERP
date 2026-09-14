@@ -384,7 +384,7 @@ def _ensure_delivery_workspace():
                        "merchants and drivers. The customer shop itself lives at /delivery."),
     ]
     for label, link_to in _WS_SHORTCUTS:
-        ws.append("shortcut", {"label": label, "type": "DocType",
+        ws.append("shortcuts", {"label": label, "type": "DocType",
                                "link_to": link_to, "doc_view": "List"})
         blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
     ws.content = json.dumps(blocks)
