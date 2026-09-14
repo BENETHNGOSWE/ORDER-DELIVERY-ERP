@@ -268,8 +268,8 @@
   });
 
   DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
-    DELIVERY.currency = c.currency; profile(); jobs();
-  }).catch(function () { profile(); jobs(); });
+    DELIVERY.currency = c.currency; profile(); jobs(); earnings();
+  }).catch(function () { DELIVERY.currency = "TZS"; profile(); jobs(); earnings(); });
 })();
 </script>
 </body></html>
