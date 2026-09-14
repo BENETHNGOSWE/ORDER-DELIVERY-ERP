@@ -300,3 +300,105 @@ def update_settings(**changes):
     frappe.db.commit()
     frappe.clear_cache()
     return {"updated": True, "currency": s.currency}
+
+
+# ---------------------------------------------------------------------------
+# reports (admin dashboard box 9)
+# ---------------------------------------------------------------------------
+@frappe.whitelist()
+def reports():
+    """End-of-day style report:
+    - order counts + totals for today / last 7 days / last 30 days
+    - amount payable to each merchant (item amounts only, service fee excluded)
+    - platform revenue: office share of delivery fees + all service charges
+    """
+    from delivery.delivery_logistics import billing
+    from frappe.utils import add_days, nowdate, get_first_day
+
+    def window(days=None, month_start=False):
+        if month_start:
+            return get_first_day(nowdate()).strftime("%Y-%m-%d")
+        return add_days(nowdate(), -days).strftime("%Y-%m-%d") if days else nowdate()
+
+    def stats(since=None):
+        f = {"workflow_state": "COMPLETED"}
+        if since:
+            f["creation"] = [">=", since]
+        rows = frappe.get_all("Delivery Order", filters=f,
+                              fields=["grand_total", "items_total",
+                                      "service_fee_total", "delivery_fee"])
+        return {"orders": len(rows),
+                "grand_total": round(sum(flt(r.grand_total) for r in rows), 2),
+                "items_total": round(sum(flt(r.items_total) for r in rows), 2),
+                "service_fee_total": round(sum(flt(r.service_fee_total) for r in rows), 2),
+                "delivery_fees": round(sum(flt(r.delivery_fee) for r in rows), 2)}
+
+    completed_all = frappe.get_all("Delivery Order",
+                                   filters={"workflow_state": "COMPLETED"},
+                                   fields=["merchant", "items_total",
+                                           "service_fee_total", "delivery_fee"])
+    payables = {}
+    for r in completed_all:
+        m = r.merchant or "Unknown"
+        payables.setdefault(m, {"items_total": 0.0, "service_fee": 0.0, "orders": 0})
+        payables[m]["items_total"] += flt(r.items_total)
+        payables[m]["service_fee"] += flt(r.service_fee_total)
+        payables[m]["orders"] += 1
+
+    names = list(payables)
+    mnames = {m["name"]: m["merchant_name"] for m in
+              frappe.get_all("Merchant", filters={"name": ["in", names]},
+                             fields=["name", "merchant_name"])} if names else {}
+    share = billing.driver_fee_share_pct()
+    all_fees = sum(flt(r.delivery_fee) for r in completed_all)
+
+    return {
+        "currency": billing.settings().currency,
+        "today": stats(window()),
+        "week": stats(window(days=7)),
+        "month": stats(window(month_start=True)),
+        "all_time": stats(),
+        "merchant_payables": [
+            {"merchant": m, "merchant_name": mnames.get(m, m),
+             "orders": v["orders"],
+             "payable": round(v["items_total"], 2),
+             "service_fee": round(v["service_fee"], 2)}
+            for m, v in sorted(payables.items(),
+                               key=lambda kv: -kv[1]["items_total"])],
+        "platform_revenue": {
+            "delivery_office_share": round(all_fees * (100 - share) / 100.0, 2),
+            "service_fees": round(sum(flt(r.service_fee_total) for r in completed_all), 2),
+            "total": round(all_fees * (100 - share) / 100.0
+                           + sum(flt(r.service_fee_total) for r in completed_all), 2),
+        },
+        "driver_share_pct": share,
+    }
+
+
+@frappe.whitelist()
+def driver_payouts():
+    """Per-driver payout: 70% of delivery fees on completed deliveries."""
+    from delivery.delivery_logistics import billing
+    share = billing.driver_fee_share_pct()
+    rows = frappe.get_all("Delivery Order",
+                          filters={"workflow_state": "COMPLETED",
+                                   "assigned_driver": ["is", "set"]},
+                          fields=["assigned_driver", "delivery_fee"])
+    agg = {}
+    for r in rows:
+        agg.setdefault(r.assigned_driver, {"jobs": 0, "fees": 0.0})
+        agg[r.assigned_driver]["jobs"] += 1
+        agg[r.assigned_driver]["fees"] += flt(r.delivery_fee)
+    names = list(agg)
+    dnames = {d["name"]: d for d in
+              frappe.get_all("Delivery Driver", filters={"name": ["in", names]},
+                             fields=["name", "driver_name", "phone"])} if names else {}
+    out = []
+    for code, v in agg.items():
+        info = dnames.get(code, {})
+        out.append({"driver": code, "driver_name": info.get("driver_name", code),
+                    "phone": info.get("phone"), "jobs": v["jobs"],
+                    "fees_total": round(v["fees"], 2),
+                    "share_pct": share,
+                    "payable": round(v["fees"] * share / 100.0, 2)})
+    return sorted(out, key=lambda x: -x["payable"])

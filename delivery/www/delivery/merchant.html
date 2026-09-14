@@ -79,6 +79,14 @@
         stat("fa-circle-check", b.COMPLETED || 0, "Completed") +
         stat("fa-money-bill-wave", DELIVERY.fmt(s.completed_revenue), "Revenue") +
         stat("fa-utensils", s.catalog_items || 0, "Items");
+      document.getElementById("pay-amount").textContent = DELIVERY.fmt(s.payable_to_merchant || 0);
+      document.getElementById("pay-orders").textContent =
+        (s.payable_orders || 0) + " completed orders";
+      if (s.service_fees_collected) {
+        document.getElementById("pay-note").innerHTML =
+          "Item amounts on your completed orders. Service charges collected on your items: <b>" +
+          DELIVERY.fmt(s.service_fees_collected) + "</b> (platform share).";
+      }
     }).catch(function () {});
   }
 

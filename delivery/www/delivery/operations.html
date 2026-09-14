@@ -38,8 +38,24 @@
   </div>
   <div class="dl-mut" style="margin-top:12px">
     <i class="fa-solid fa-circle-info" style="color:var(--purple)"></i>
-    The order must be accepted first. After assignment the customer's 4-digit handoff code is shown &mdash; share it with the customer for the final handoff.
+    Assign when the merchant marks the order <b>Ready for delivery</b>. The customer's 4-digit handoff code is shown after assignment &mdash; share it with the customer for the final handoff.
   </div>
+</div>
+
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-chart-pie"></i></span> Reports</h2>
+<div id="rep-boxes" class="dl-kpi"><div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-spinner fa-pulse"></i>Loading reports&hellip;</div></div>
+
+<div class="pc-card" style="margin-top:14px">
+  <h3><i class="fa-solid fa-store"></i> Payable to merchants <span class="dl-mut" style="font-weight:500">(item amounts only &mdash; service charges excluded)</span></h3>
+  <div id="rep-merchants"><div class="dl-empty">Loading&hellip;</div></div>
+</div>
+
+<div class="pc-card" style="margin-top:14px">
+  <h3><i class="fa-solid fa-motorcycle"></i> Driver payouts <span class="dl-mut" style="font-weight:500">(70% of delivery fees on completed deliveries)</span></h3>
+  <div class="dl-row" style="margin-bottom:10px">
+    <select id="rep-driver" class="dl-select" style="max-width:320px"><option value="">All drivers</option></select>
+  </div>
+  <div id="rep-drivers"><div class="dl-empty">Loading&hellip;</div></div>
 </div>
 
 </main>
@@ -151,7 +167,60 @@
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
   });
 
-  dash(); queue(); drivers();
+  function reports() {
+    DELIVERY.call("delivery.api.operations.reports").then(function (r) {
+      var stat = function (icon, val, label) {
+        return '<div class="dl-stat"><span class="dl-stat-ic"><i class="fa-solid ' + icon +
+          '"></i></span><div><b>' + val + "</b><span>" + label + "</span></div></div>";
+      };
+      var cur = r.currency + " ";
+      document.getElementById("rep-boxes").innerHTML =
+        stat("fa-calendar-day", r.today.orders, "Orders today (" + cur + r.today.grand_total.toLocaleString("en-US") + ")") +
+        stat("fa-calendar-week", r.week.orders, "Orders last 7 days (" + cur + r.week.grand_total.toLocaleString("en-US") + ")") +
+        stat("fa-calendar", r.month.orders, "Orders this month (" + cur + r.month.grand_total.toLocaleString("en-US") + ")") +
+        stat("fa-store", cur + r.platform_revenue.delivery_office_share.toLocaleString("en-US"), "Office share of delivery fees") +
+        stat("fa-percent", cur + r.platform_revenue.service_fees.toLocaleString("en-US"), "Service charges earned") +
+        stat("fa-sack-dollar", cur + r.platform_revenue.total.toLocaleString("en-US"), "Platform revenue (completed)");
+
+      document.getElementById("rep-merchants").innerHTML = r.merchant_payables.length
+        ? '<table class="dl-table"><thead><tr><th>Merchant</th><th>Completed orders</th>' +
+          '<th>Payable (items)</th><th>Service fees collected</th></tr></thead><tbody>' +
+          r.merchant_payables.map(function (m) {
+            return "<tr><td>" + DELIVERY.esc(m.merchant_name) + "</td><td>" + m.orders +
+              "</td><td><b>" + cur + m.payable.toLocaleString("en-US") + "</b></td>" +
+              "<td>" + cur + m.service_fee.toLocaleString("en-US") + "</td></tr>";
+          }).join("") + "</tbody></table>"
+        : '<div class="dl-empty"><i class="fa-regular fa-folder-open"></i>No completed orders yet.</div>';
+    }).catch(function (e) {
+      document.getElementById("rep-boxes").innerHTML =
+        '<div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-triangle-exclamation"></i>' +
+        DELIVERY.esc(e.message) + "</div>";
+    });
+
+    DELIVERY.call("delivery.api.operations.driver_payouts").then(function (rows) {
+      var sel = document.getElementById("rep-driver");
+      sel.innerHTML = '<option value="">All drivers</option>' + rows.map(function (d) {
+        return '<option value="' + d.driver + '">' + DELIVERY.esc(d.driver_name) + "</option>";
+      }).join("");
+      var render = function () {
+        var show = rows.filter(function (d) { return !sel.value || d.driver === sel.value; });
+        document.getElementById("rep-drivers").innerHTML = show.length
+          ? '<table class="dl-table"><thead><tr><th>Driver</th><th>Phone</th><th>Completed</th>' +
+            '<th>Fees collected</th><th>Payable (' + (show[0].share_pct) + "%)</th></tr></thead><tbody>" +
+            show.map(function (d) {
+              return "<tr><td>" + DELIVERY.esc(d.driver_name) + "</td><td>" +
+                DELIVERY.esc(d.phone || "") + "</td><td>" + d.jobs + "</td><td>" +
+                DELIVERY.currency + " " + d.fees_total.toLocaleString("en-US") + "</td>" +
+                '<td><b>' + DELIVERY.currency + " " + d.payable.toLocaleString("en-US") + "</b></td></tr>";
+            }).join("") + "</tbody></table>"
+          : '<div class="dl-empty"><i class="fa-regular fa-folder-open"></i>No completed driver deliveries yet.</div>';
+      };
+      sel.addEventListener("change", render);
+      render();
+    }).catch(function () {});
+  }
+
+  dash(); queue(); drivers(); reports();
 })();
 </script>
 </body></html>

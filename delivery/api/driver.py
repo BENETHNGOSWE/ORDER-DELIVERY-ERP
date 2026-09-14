@@ -299,3 +299,65 @@ def my_location():
 	                        ["driver_name", "status", "latitude", "longitude"],
 	                        as_dict=True)
 	return {"driver": code, **d} if d else {"driver": code}
+
+
+# ---------------------------------------------------------------------------
+# pickup verification + earnings
+# ---------------------------------------------------------------------------
+@frappe.whitelist()
+def job_items(reference):
+    """Item lines of a job assigned to the requesting driver - shown before
+    pickup so the driver can confirm what is packed matches the order."""
+    code = _driver_for()
+    for dt in ("Delivery Order", "Parcel Request", "Transport Request"):
+        if frappe.db.exists(dt, reference):
+            if frappe.db.get_value(dt, reference, "assigned_driver") != code:
+                frappe.throw(_("That job is not assigned to you."),
+                             frappe.PermissionError)
+            if dt != "Delivery Order":
+                return {"service": dt, "items": [],
+                        "note": _("Parcel / transport job - nothing to verify item by item.")}
+            rows = frappe.get_all("Delivery Order Item",
+                                  filters={"parent": reference, "parenttype": "Delivery Order"},
+                                  fields=["item_code", "item_name", "qty", "rate",
+                                          "amount", "service_fee"])
+            total = frappe.db.get_value("Delivery Order", reference,
+                                        ["items_total", "grand_total",
+                                         "payment_status", "payment_method",
+                                         "customer_name", "delivery_address"],
+                                        as_dict=True)
+            return {"service": "Delivery Order", "items": rows,
+                    "items_total": total.get("items_total"),
+                    "grand_total": total.get("grand_total"),
+                    "payment_status": total.get("payment_status"),
+                    "payment_method": total.get("payment_method"),
+                    "customer_name": total.get("customer_name"),
+                    "delivery_address": total.get("delivery_address")}
+    frappe.throw(_("Not found: {0}").format(reference), frappe.DoesNotExistError)
+
+
+@frappe.whitelist()
+def earnings():
+    """Driver payout summary: 70% of delivery fees on completed deliveries
+    (share configurable in Logistics Settings -> Driver Share of Delivery Fee)."""
+    from delivery.delivery_logistics import billing
+    code = _driver_for()
+    rows = frappe.get_all("Delivery Order",
+                          filters={"assigned_driver": code,
+                                   "workflow_state": "COMPLETED"},
+                          fields=["delivery_fee", "creation"])
+    fees_total = sum(flt(r.delivery_fee) for r in rows)
+    share = billing.driver_fee_share_pct()
+    from frappe.utils import nowdate
+    today = sum(flt(r.delivery_fee) for r in rows
+                if str(r.creation)[:10] == str(nowdate()))
+    return {
+        "completed": len(rows),
+        "delivery_fees_total": round(fees_total, 2),
+        "driver_share_pct": share,
+        "payable_total": round(fees_total * share / 100.0, 2),
+        "office_total": round(fees_total * (100 - share) / 100.0, 2),
+        "delivery_fees_today": round(today, 2),
+        "payable_today": round(today * share / 100.0, 2),
+        "currency": billing._cfg("currency") or "TZS",
+    }

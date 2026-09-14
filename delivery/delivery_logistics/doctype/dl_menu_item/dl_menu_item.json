@@ -24,7 +24,10 @@
     "available_stock",
     "track_stock",
     "prep_minutes",
-    "published"
+    "published",
+    "service_charge_13",
+    "apply_service_charge",
+    "service_charge_pct"
   ],
   "fields": [
     {
@@ -164,11 +167,32 @@
       "fieldtype": "Check",
       "idx": 19,
       "label": "Published On Portal"
+    },
+    {
+      "fieldname": "service_charge_13",
+      "fieldtype": "Section Break",
+      "label": "Service Charge",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "apply_service_charge",
+      "fieldtype": "Check",
+      "label": "Apply Service Charge",
+      "default": "0"
+    },
+    {
+      "fieldname": "service_charge_pct",
+      "fieldtype": "Percent",
+      "label": "Service Charge %",
+      "depends_on": "apply_service_charge",
+      "non_negative": 1,
+      "default": "0",
+      "description": "Added on top of the item price; shown to the customer as part of the total."
     }
   ],
   "image_field": "item_image",
   "links": [],
-  "modified": "2026-09-14 09:59:32.736526",
+  "modified": "2026-09-14 18:38:41.118202",
   "modified_by": "Administrator",
   "module": "Delivery Logistics",
   "name": "DL Menu Item",

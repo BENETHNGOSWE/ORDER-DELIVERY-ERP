@@ -56,7 +56,11 @@
           return;
         }
         host.innerHTML = data.items.map(function (i) {
-          var rate = i.discount_rate ? i.standard_rate * (1 - i.discount_rate / 100) : i.standard_rate;
+          var base = (typeof i.base_rate === "number") ? i.base_rate
+            : (i.discount_rate ? i.standard_rate * (1 - i.discount_rate / 100) : i.standard_rate);
+          var svc = (typeof i.service_fee === "number") ? i.service_fee
+            : (i.apply_service_charge ? base * (i.service_charge_pct || 0) / 100 : 0);
+          var eff = (typeof i.effective_rate === "number") ? i.effective_rate : base + svc;
           var out = i.track_stock && i.available_stock <= 0;
           return '<div class="dl-card">' +
             '<span class="dl-thumb"><i class="fa-solid fa-utensils"></i></span>' +
@@ -64,9 +68,16 @@
             (i.category ? '<div style="margin-bottom:6px"><span class="pill s-acc">' + DELIVERY.esc(i.category) + "</span></div>" : "") +
             '<div class="dl-mut">' + DELIVERY.esc(i.description || "") + "</div>" +
             '<div class="dl-between" style="margin-top:auto; padding-top:12px">' +
-              '<span class="dl-price">' + DELIVERY.fmt(rate) + "</span>" +
+              "<span>" +
+                '<span class="dl-price">' + DELIVERY.fmt(eff) + "</span>" +
+                (svc > 0 ? '<br><span class="dl-mut" style="font-size:11.5px">' +
+                  DELIVERY.fmt(base) + " + " + DELIVERY.fmt(svc) + " service (" +
+                  (i.service_charge_pct || 0) + "%)</span>" : "") +
+              "</span>" +
               '<button class="dl-btn sm" data-item="' + DELIVERY.esc(i.name) +
-                '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + rate + '"' +
+                '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + base + '"' +
+                ' data-svcpct="' + (i.apply_service_charge ? (i.service_charge_pct || 0) : 0) + '"' +
+                ' data-svcfee="' + svc + '" data-eff="' + eff + '"' +
                 (out ? " disabled" : "") + "><i class=\"fa-solid fa-cart-plus\"></i> " +
                 (out ? "Sold out" : "Add") + "</button>" +
             "</div>" +
@@ -75,7 +86,11 @@
         }).join("");
         host.querySelectorAll("button[data-item]").forEach(function (b) {
           b.addEventListener("click", function () {
-            DELIVERY.addToCart(merchant, b.dataset.item, b.dataset.name, b.dataset.rate, 1);
+            DELIVERY.addToCart(merchant, b.dataset.item, b.dataset.name, b.dataset.rate, 1, {
+              pct: Number(b.dataset.svcpct || 0),
+              fee: Number(b.dataset.svcfee || 0),
+              eff: Number(b.dataset.eff || 0),
+            });
           });
         });
       })

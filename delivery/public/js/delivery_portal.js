@@ -94,20 +94,34 @@
       localStorage.setItem("dl_cart_merchant", this.cartMerchant || "");
       this.renderCartBadge();
     },
-    addToCart: function (merchant, item, name, rate, qty) {
+    addToCart: function (merchant, item, name, rate, qty, svc) {
       if (this.cartMerchant && this.cartMerchant !== merchant) {
         if (!confirm("Your cart has items from another merchant. Clear it and start a new order?")) return;
         this.cart = [];
       }
       this.cartMerchant = merchant;
+      svc = svc || {};
       var found = this.cart.filter(function (l) { return l.item === item; })[0];
       if (found) found.qty += Number(qty || 1);
-      else this.cart.push({ item: item, item_name: name, rate: Number(rate), qty: Number(qty || 1) });
+      else this.cart.push({
+        item: item, item_name: name, rate: Number(rate), qty: Number(qty || 1),
+        svc_pct: Number(svc.pct || 0), svc_fee: Number(svc.fee || 0),
+        eff_rate: Number(svc.eff || rate),
+      });
       this.saveCart();
       this.toast(name + " added to cart", "success");
     },
+    cartTotals: function () {
+      var t = { base: 0, service: 0, grand: 0 };
+      this.cart.forEach(function (l) {
+        t.base += l.rate * l.qty;
+        t.service += (l.svc_fee || 0) * l.qty;
+      });
+      t.grand = t.base + t.service;
+      return t;
+    },
     cartTotal: function () {
-      return this.cart.reduce(function (s, l) { return s + l.rate * l.qty; }, 0);
+      return this.cartTotals().grand;
     },
     renderCartBadge: function () {
       var b = document.querySelector("[data-cart-count]");

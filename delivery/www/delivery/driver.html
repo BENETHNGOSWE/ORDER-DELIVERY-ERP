@@ -25,6 +25,22 @@
 
 <div id="kpi" class="dl-kpi" style="margin-top:18px"></div>
 
+<div id="pay" class="dl-kpi" style="margin-top:14px"></div>
+
+<!-- pickup verification modal -->
+<div id="pick-modal" style="display:none; position:fixed; inset:0; z-index:9990;
+     background:rgba(23,23,23,.55); align-items:center; justify-content:center; padding:16px">
+  <div class="pc-card" style="max-width:560px; width:100%; max-height:86vh; overflow:auto">
+    <h3><i class="fa-solid fa-clipboard-check"></i> Confirm order before pickup</h3>
+    <div class="dl-mut" id="pick-meta" style="margin-bottom:12px"></div>
+    <div id="pick-items"></div>
+    <div class="dl-between" style="margin-top:16px">
+      <button class="dl-btn sec" id="pick-cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
+      <button class="dl-btn" id="pick-confirm"><i class="fa-solid fa-check"></i> Yes, everything matches</button>
+    </div>
+  </div>
+</div>
+
 <div class="pc-card" style="margin-top:16px">
   <div class="dl-between">
     <div style="display:flex; align-items:center; gap:14px; min-width:0">
@@ -59,6 +75,74 @@
         DELIVERY.esc(e.message) + "</div></div>";
     });
   }
+
+  function earnings() {
+    DELIVERY.call("delivery.api.driver.earnings").then(function (e) {
+      var stat = function (icon, val, label) {
+        return '<div class="dl-stat"><span class="dl-stat-ic"><i class="fa-solid ' + icon +
+          '"></i></span><div><b>' + val + "</b><span>" + label + "</span></div></div>";
+      };
+      document.getElementById("pay").innerHTML =
+        stat("fa-motorcycle", e.completed, "Deliveries completed") +
+        stat("fa-sack-dollar", DELIVERY.currency + " " + e.delivery_fees_total.toLocaleString("en-US"),
+             "Delivery fees collected") +
+        stat("fa-wallet", DELIVERY.currency + " " + e.payable_total.toLocaleString("en-US"),
+             "Your pay (" + e.driver_share_pct + "% of fees)") +
+        stat("fa-building-columns", DELIVERY.currency + " " + e.office_total.toLocaleString("en-US"),
+             "Office share (" + (100 - e.driver_share_pct) + "%)") +
+        '<div class="pc-card dl-mut" style="grid-column:1/-1; padding:12px 16px">' +
+          "<i class=\"fa-solid fa-circle-info\" style=\"color:var(--purple)\"></i> Today: " +
+          DELIVERY.currency + " " + (e.payable_today || 0).toLocaleString("en-US") +
+          " earned of " + DELIVERY.currency + " " +
+          (e.delivery_fees_today || 0).toLocaleString("en-US") + " in fees. " +
+          "Your pay is 70% of delivery fees on completed deliveries, payable end of day." +
+        "</div>";
+    }).catch(function () {});
+  }
+
+  // ---- pickup verification (order items table before confirming) ----
+  var pickRef = null;
+  function showPickupModal(ref) {
+    pickRef = ref;
+    document.getElementById("pick-items").innerHTML =
+      '<div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading items&hellip;</div>';
+    document.getElementById("pick-modal").style.display = "flex";
+    DELIVERY.call("delivery.api.driver.job_items", { reference: ref }).then(function (d) {
+      document.getElementById("pick-meta").innerHTML =
+        "<b>" + DELIVERY.esc(ref) + "</b> &middot; " + DELIVERY.esc(d.customer_name || "") +
+        "<br>" + DELIVERY.esc(d.delivery_address || "") +
+        ' &middot; <span class="pill ' + (d.payment_status === "Paid" ? "s-don" : "s-pen") + '">' +
+        DELIVERY.esc(d.payment_status || "") + " &middot; " + DELIVERY.esc(d.payment_method || "") + "</span>";
+      if (!d.items || !d.items.length) {
+        document.getElementById("pick-items").innerHTML =
+          '<div class="dl-mut">' + DELIVERY.esc(d.note || "No item lines on this job.") + "</div>";
+        return;
+      }
+      document.getElementById("pick-items").innerHTML =
+        '<table class="dl-table"><thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead><tbody>' +
+        d.items.map(function (r) {
+          return "<tr><td>" + DELIVERY.esc(r.item_name) +
+            (r.service_fee ? '<br><span class="dl-mut">incl. service ' + DELIVERY.fmt(r.service_fee) + "</span>" : "") +
+            "</td><td>" + r.qty + "</td><td>" + DELIVERY.fmt(r.amount) + "</td></tr>";
+        }).join("") +
+        '<tr><td><b>Total</b></td><td></td><td><b>' + DELIVERY.fmt(d.items_total) + "</b></td></tr>" +
+        "</tbody></table>";
+    }).catch(function (e) {
+      document.getElementById("pick-items").innerHTML =
+        '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
+    });
+  }
+  document.getElementById("pick-cancel").addEventListener("click", function () {
+    document.getElementById("pick-modal").style.display = "none"; pickRef = null;
+  });
+  document.getElementById("pick-confirm").addEventListener("click", function () {
+    if (!pickRef) return;
+    var ref = pickRef;
+    document.getElementById("pick-modal").style.display = "none"; pickRef = null;
+    DELIVERY.call("delivery.api.driver.confirm_pickup", { reference: ref })
+      .then(function (r) { DELIVERY.toast(r.reference + " picked up", "success"); jobs(); earnings(); })
+      .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+  });
 
   function jobs() {
     DELIVERY.call("delivery.api.driver.my_jobs").then(function (rows) {
@@ -98,9 +182,7 @@
 
       host.querySelectorAll("[data-pick]").forEach(function (b) {
         b.addEventListener("click", function () {
-          DELIVERY.call("delivery.api.driver.confirm_pickup", { reference: b.dataset.pick })
-            .then(function (r) { DELIVERY.toast(r.reference + " picked up", "success"); jobs(); })
-            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
+          showPickupModal(b.dataset.pick);
         });
       });
       host.querySelectorAll("[data-stop]").forEach(function (b) {
@@ -120,7 +202,7 @@
           var cash = prompt("Cash collected (0 if already paid)", "0");
           DELIVERY.call("delivery.api.driver.complete_handoff",
                         { reference: b.dataset.done, otp: otp, collected_amount: Number(cash || 0) })
-            .then(function (r) { DELIVERY.toast(r.reference + " delivered", "success"); jobs(); })
+            .then(function (r) { DELIVERY.toast(r.reference + " delivered", "success"); jobs(); earnings(); })
             .catch(function (e) { DELIVERY.toast(e.message, "error"); });
         });
       });

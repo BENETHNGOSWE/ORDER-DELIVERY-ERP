@@ -61,6 +61,10 @@ def _customer_identity(customer_name=None, phone=None):
     return email
 
 
+def r2(n):
+    return flt(n, 2)
+
+
 def _guest_owned_guard(doctype, reference):
     """Guests may pay/approve only documents they created as guests
     (customer is a guest-* user). Logged-in users are unaffected."""
@@ -109,10 +113,17 @@ def merchant_catalog(merchant, item_type=None, category=None, search=None):
         filters["category"] = category
 
     fields = ["name", "item_code", "item_name", "item_type", "category", "description",
-              "standard_rate", "discount_rate", "available_stock", "track_stock",
+              "standard_rate", "discount_rate", "apply_service_charge",
+              "service_charge_pct", "available_stock", "track_stock",
               "prep_minutes", "item_image", "is_featured"]
     rows = frappe.get_all("DL Menu Item", filters=filters, fields=fields,
                           order_by="is_featured desc, item_name asc", limit=300)
+    from delivery.delivery_logistics.billing import _item_rate, service_fee_for
+    for r in rows:
+        base = _item_rate(r)
+        r.base_rate = base
+        r.service_fee = service_fee_for(r, base)
+        r.effective_rate = r2(base + r.service_fee)
 
     if search:
         q = search.lower()
@@ -151,7 +162,8 @@ def browse_items(search=None, category=None, item_type=None, sort="featured", li
 
     rows = frappe.get_all("DL Menu Item", filters=filters,
         fields=["name", "item_code", "item_name", "item_type", "category",
-                "description", "standard_rate", "discount_rate", "prep_minutes",
+                "description", "standard_rate", "discount_rate",
+                "apply_service_charge", "service_charge_pct", "prep_minutes",
                 "item_image", "is_featured", "available_stock", "merchant"],
         order_by=order_by, limit=limit)
 
@@ -175,6 +187,8 @@ def browse_items(search=None, category=None, item_type=None, sort="featured", li
         rate = flt(r.standard_rate)
         disc = flt(r.discount_rate or 0)
         price = rate - (rate * disc / 100.0) if disc else rate
+        svc = flt(price * flt(r.service_charge_pct or 0) / 100.0) \
+              if r.apply_service_charge else 0.0
         items.append({
             "name": r.name,
             "item_code": r.item_code,
@@ -183,6 +197,11 @@ def browse_items(search=None, category=None, item_type=None, sort="featured", li
             "category": r.category or "Other",
             "description": r.description or "",
             "rate": flt(price, 2),
+            "base_rate": flt(price, 2),
+            "service_fee": flt(svc, 2),
+            "effective_rate": flt(price + svc, 2),
+            "apply_service_charge": bool(r.apply_service_charge),
+            "service_charge_pct": flt(r.service_charge_pct or 0),
             "standard_rate": rate,
             "discount_rate": disc,
             "prep_minutes": flt(r.prep_minutes or m.avg_prep_minutes or 20),

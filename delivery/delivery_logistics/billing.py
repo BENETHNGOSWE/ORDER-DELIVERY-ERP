@@ -126,6 +126,22 @@ def _item_rate(item):
     return r2(rate)
 
 
+def service_fee_for(item, amount):
+    """Service charge on an item line (base amount), when enabled on the item."""
+    if not item.get("apply_service_charge"):
+        return 0.0
+    return r2(flt(amount) * flt(item.get("service_charge_pct") or 0) / 100.0)
+
+
+def driver_fee_share_pct():
+    """% of the delivery fee that belongs to the driver (settings, default 70)."""
+    try:
+        pct = flt(frappe.db.get_single_value("Logistics Settings", "driver_share_pct"))
+    except Exception:
+        pct = 0.0
+    return pct if 0 < pct <= 100 else 70.0
+
+
 def food_retail_totals(order, adjust_stock=False):
     """
     Compute and store every charge on a Delivery Order.
@@ -138,6 +154,7 @@ def food_retail_totals(order, adjust_stock=False):
     merchant's inventory.
     """
     items_total = 0.0
+    service_total = 0.0
     prep_minutes = []
 
     for line in order.get("order_items") or []:
@@ -151,7 +168,9 @@ def food_retail_totals(order, adjust_stock=False):
         line.rate = _item_rate(item)
         line.qty = flt(line.qty) or 1
         line.amount = r2(line.rate * line.qty)
+        line.service_fee = service_fee_for(item, line.amount)
         items_total += line.amount
+        service_total += line.service_fee
 
         if adjust_stock and item.track_stock:
             item.available_stock = int(flt(item.available_stock) - line.qty)
@@ -160,6 +179,7 @@ def food_retail_totals(order, adjust_stock=False):
             prep_minutes.append(int(item.prep_minutes))
 
     order.items_total = r2(items_total)
+    order.service_fee_total = r2(service_total)
 
     fee = estimate_delivery_fee(order.get("delivery_zone"),
                                 order.get("delivery_distance_km"),

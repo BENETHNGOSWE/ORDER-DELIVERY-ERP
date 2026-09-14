@@ -31,6 +31,7 @@
     "delivery_instructions",
     "charges_25",
     "items_total",
+    "service_fee_total",
     "delivery_fee",
     "small_order_fee",
     "column_break_28",
@@ -245,6 +246,13 @@
       "read_only": 1
     },
     {
+      "fieldname": "service_fee_total",
+      "fieldtype": "Currency",
+      "label": "Service Fee Total",
+      "read_only": 1,
+      "options": "currency"
+    },
+    {
       "fieldname": "delivery_fee",
       "fieldtype": "Currency",
       "idx": 26,
@@ -433,7 +441,7 @@
     }
   ],
   "links": [],
-  "modified": "2026-09-14 10:10:55.182135",
+  "modified": "2026-09-14 18:38:41.118986",
   "modified_by": "Administrator",
   "module": "Delivery Logistics",
   "name": "Delivery Order",

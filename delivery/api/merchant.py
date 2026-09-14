@@ -277,8 +277,22 @@ def stats(merchant=None):
 
     items = frappe.db.count("DL Menu Item", {"merchant": name})
 
+    # what the platform owes this merchant: item amounts only
+    # (service charges belong to the platform)
+    payable_rows = frappe.db.sql(
+        "SELECT COALESCE(SUM(items_total),0), COUNT(*) FROM `tabDelivery Order` "
+        "WHERE merchant=%s AND workflow_state='COMPLETED'", name)
+    payable = flt(payable_rows[0][0], 2)
+    payable_orders = int(payable_rows[0][1] or 0)
+    service_rows = frappe.db.sql(
+        "SELECT COALESCE(SUM(service_fee_total),0) FROM `tabDelivery Order` "
+        "WHERE merchant=%s AND workflow_state='COMPLETED'", name)
+
     return {"orders": total, "by_state": {r[0]: r[1] for r in by_state_rows},
-            "completed_revenue": flt(revenue, 2), "catalog_items": items}
+            "completed_revenue": flt(revenue, 2), "catalog_items": items,
+            "payable_to_merchant": payable,
+            "payable_orders": payable_orders,
+            "service_fees_collected": flt(service_rows[0][0], 2)}
 
 
 # ---------------------------------------------------------------------------
