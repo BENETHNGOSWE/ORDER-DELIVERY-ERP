@@ -176,6 +176,9 @@
 
   /* KPI stat tiles */
   .dl-kpi{ display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(175px, 1fr)); margin:0 0 6px; }
+  .dl-kpi-4{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 860px){ .dl-kpi-4{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 440px){ .dl-kpi-4{ grid-template-columns:1fr; } }
   .dl-stat{ display:flex; align-items:center; gap:13px; background:#fff; border:1px solid var(--line);
     border-radius:16px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
   .dl-stat-ic{ width:44px; height:44px; border-radius:13px; background:var(--purple-light);
