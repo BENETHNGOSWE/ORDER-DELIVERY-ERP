@@ -1,13 +1,13 @@
 // DL Menu Item form behaviour:
-// - merchants: the Merchant field is read-only and pre-filled with their own
-//   shop via delivery.api.merchant.whoami (a whitelisted, ownership-checked
-//   call - client-side lookups on the Merchant doctype would fail because
-//   merchants intentionally have no read permission on Merchant).
+// - merchants: the Merchant field is HIDDEN (no DocPerm on Merchant => any
+//   link-title fetch would raise "No permission"); the shop name is shown
+//   as plain intro text from delivery.api.merchant.whoami instead. The
+//   server stamps the merchant on save, so the field value is never needed.
 // - admins/operations: normal dropdown, free to pick any merchant.
 frappe.ui.form.on("DL Menu Item", {
-	setup(frm) { lock_merchant_field(frm); },
-	onload(frm) { prefill_own_merchant(frm); },
-	refresh(frm) { lock_merchant_field(frm); prefill_own_merchant(frm); },
+	setup(frm) { apply_merchant_view(frm); },
+	refresh(frm) { apply_merchant_view(frm); whoami_shop_name(frm); },
+	onload(frm) { whoami_shop_name(frm); },
 });
 
 function is_merchant_only() {
@@ -17,9 +17,9 @@ function is_merchant_only() {
 		!roles.includes("Delivery Operations");
 }
 
-function lock_merchant_field(frm) {
+function apply_merchant_view(frm) {
 	if (is_merchant_only()) {
-		frm.set_df_property("merchant", "read_only", 1);
+		frm.set_df_property("merchant", "hidden", 1);
 		if (!frm._intro_set) {
 			frm.set_intro(__("New items are automatically added to your shop."), false);
 			frm._intro_set = 1;
@@ -27,14 +27,19 @@ function lock_merchant_field(frm) {
 	}
 }
 
-function prefill_own_merchant(frm) {
-	if (!is_merchant_only() || !frm.is_new() || frm.doc.merchant || frm._whoami_done) return;
+function whoami_shop_name(frm) {
+	if (!is_merchant_only() || frm._whoami_done) return;
 	frm._whoami_done = 1;
 	frappe.call({
 		method: "delivery.api.merchant.whoami",
 		callback(r) {
-			if (!r || !r.message || !r.message.merchant) return;
-			if (!frm.doc.merchant) frm.set_value("merchant", r.message.merchant);
+			if (!r || !r.message || !r.message.merchant_name) return;
+			// replace the intro with the concrete shop name (plain text,
+			// no link fetch, no permission check involved)
+			if (frm._intro_set) {
+				frm.set_intro(__("New items are automatically added to your shop: {0}",
+					[r.message.merchant_name]), false);
+			}
 		},
 	});
 }

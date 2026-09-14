@@ -216,7 +216,7 @@
   ],
   "image_field": "logo",
   "links": [],
-  "modified": "2026-09-14 10:39:54.414298",
+  "modified": "2026-09-14 12:03:12.533139",
   "modified_by": "Administrator",
   "module": "Delivery Logistics",
   "name": "Merchant",
@@ -238,10 +238,6 @@
       "role": "Delivery Operations",
       "submit": 1,
       "write": 1
-    },
-    {
-      "role": "Merchant User",
-      "read": 1
     }
   ],
   "search_fields": "merchant_name,city",

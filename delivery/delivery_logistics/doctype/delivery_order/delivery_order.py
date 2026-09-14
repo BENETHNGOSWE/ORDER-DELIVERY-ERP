@@ -10,16 +10,22 @@ from delivery.delivery_logistics.base import ServiceDocument
 class DeliveryOrder(ServiceDocument):
     AMOUNT_FIELD = "grand_total"
 
-    #: the ONLY move a merchant may make on workflow_state from Desk
-    MERCHANT_STATE_MOVES = (("ACCEPTED", "READY_FOR_DELIVERY"),
-                            ("PREPARING", "READY_FOR_DELIVERY"))
+    #: the moves a merchant may make on workflow_state from Desk:
+    #: the normal kitchen walk Pending -> Accepted -> Preparing -> Ready
+    MERCHANT_STATE_MOVES = (
+        ("PENDING", "ACCEPTED"),
+        ("ACCEPTED", "PREPARING"),
+        ("ACCEPTED", "READY_FOR_DELIVERY"),
+        ("PREPARING", "READY_FOR_DELIVERY"),
+    )
 
     def service(self):
         return self.get("order_type") or "Food"
 
     def _guard_merchant_state_change(self):
-        """Merchants may set Workflow State to READY_FOR_DELIVERY (so ops can
-        dispatch); every other state change stays admin/ops-only."""
+        """Merchants may walk their orders forward from Desk
+        (Pending -> Accepted -> Preparing -> Ready for Delivery) so
+        operations can dispatch. Every other move stays admin/ops-only."""
         roles = set(frappe.get_roles())
         if {"System Manager", "Delivery Operations"} & roles:
             return
@@ -31,12 +37,19 @@ class DeliveryOrder(ServiceDocument):
         if not old or old == self.workflow_state:
             return
         if (old, self.workflow_state) not in self.MERCHANT_STATE_MOVES:
-            frappe.throw(_("Merchants can only move an accepted/preparing order "
-                           "to READY FOR DELIVERY."), frappe.PermissionError)
+            frappe.throw(_("Merchants can only move orders forward: "
+                           "Pending &rarr; Accepted &rarr; Preparing &rarr; "
+                           "Ready for Delivery (from {0}).").format(old),
+                         frappe.PermissionError)
         # route through the state machine so the audit trail is written
+        target = self.workflow_state
         self.workflow_state = old
-        state_machine.set_state(self, "READY_FOR_DELIVERY",
-                                note=_("Merchant marked the order ready for delivery"))
+        state_machine.set_state(self, target,
+                                note=_("Merchant updated the status (Desk)"))
+        if target in ("ACCEPTED", "PREPARING") and not self.get("ready_at"):
+            prep = int(flt(self.get("prep_minutes"))
+                       or int(billing._cfg("default_prep_minutes") or 30))
+            self.ready_at = add_to_date(now_datetime(), minutes=prep)
 
     # -- lifecycle --------------------------------------------------------
     def validate(self):
