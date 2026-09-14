@@ -313,12 +313,19 @@ def reports():
     - platform revenue: office share of delivery fees + all service charges
     """
     from delivery.delivery_logistics import billing
-    from frappe.utils import add_days, nowdate, get_first_day
+    from frappe.utils import nowdate
+    from datetime import datetime, timedelta
 
     def window(days=None, month_start=False):
+        """'YYYY-MM-DD' string - plain stdlib date math; some frappe builds
+        return str (not date) from get_first_day/add_days, so .strftime on
+        their results crashes with 'str has no attribute strftime'."""
+        d = datetime.strptime(nowdate(), "%Y-%m-%d").date()
         if month_start:
-            return get_first_day(nowdate()).strftime("%Y-%m-%d")
-        return add_days(nowdate(), -days).strftime("%Y-%m-%d") if days else nowdate()
+            d = d.replace(day=1)
+        elif days:
+            d = d - timedelta(days=days)
+        return d.strftime("%Y-%m-%d")
 
     def stats(since=None):
         f = {"workflow_state": "COMPLETED"}
