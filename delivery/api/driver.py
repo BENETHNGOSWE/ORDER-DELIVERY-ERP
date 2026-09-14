@@ -319,7 +319,7 @@ def job_items(reference):
                         "note": _("Parcel / transport job - nothing to verify item by item.")}
             rows = frappe.get_all("Delivery Order Item",
                                   filters={"parent": reference, "parenttype": "Delivery Order"},
-                                  fields=["item_code", "item_name", "qty", "rate",
+                                  fields=["item_name", "qty", "rate",
                                           "amount", "service_fee"])
             total = frappe.db.get_value("Delivery Order", reference,
                                         ["items_total", "grand_total",
