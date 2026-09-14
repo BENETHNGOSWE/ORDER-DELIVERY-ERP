@@ -586,6 +586,11 @@ def ensure_merchant_user(email, merchant=None, password=None, first_name=None):
 
     if frappe.db.exists("User", email):
         user_doc = frappe.get_doc("User", email)
+        # Desk access is required for the merchant Desk features; demo seeds
+        # create merchants as "Website User", which is hard-blocked from Desk.
+        if user_doc.user_type != "System User":
+            user_doc.user_type = "System User"
+            user_doc.save(ignore_permissions=True)
     else:
         user_doc = frappe.new_doc("User")
         user_doc.email = email
@@ -597,20 +602,26 @@ def ensure_merchant_user(email, merchant=None, password=None, first_name=None):
     if "Merchant User" not in frappe.get_roles(email):
         user_doc.add_roles("Merchant User")
 
-    # resolve the merchant record (explicit > the only unlinked one)
+    # resolve the merchant record:
+    #   explicit argument > already linked to this login > the only unlinked one
     if merchant:
         if not frappe.db.exists("Merchant", merchant):
             frappe.throw("No such Merchant: {0}".format(merchant))
     else:
-        unlinked = frappe.get_all("Merchant",
-                                  filters=[["portal_user", "in", ("", None)]],
-                                  pluck="name")
-        if len(unlinked) == 1:
-            merchant = unlinked[0]
+        linked = frappe.get_all("Merchant", filters={"portal_user": email},
+                                pluck="name")
+        if linked:
+            merchant = linked[0]
         else:
-            frappe.throw("Pass the merchant too: --kwargs "
-                         "'{{\"email\": \"...\", \"merchant\": \"MERCHANT-NAME\"}}' "
-                         "(candidates: {0})".format(", ".join(unlinked) or "none"))
+            unlinked = frappe.get_all("Merchant",
+                                      filters=[["portal_user", "in", ("", None)]],
+                                      pluck="name")
+            if len(unlinked) == 1:
+                merchant = unlinked[0]
+            else:
+                frappe.throw("Pass the merchant too: --kwargs "
+                             "'{{\"email\": \"...\", \"merchant\": \"MERCHANT-NAME\"}}' "
+                             "(candidates: {0})".format(", ".join(unlinked) or "none"))
 
     frappe.db.set_value("Merchant", merchant, "portal_user", email,
                         update_modified=False)
