@@ -340,9 +340,11 @@ def reports():
     payables = {}
     for r in completed_all:
         m = r.merchant or "Unknown"
-        payables.setdefault(m, {"items_total": 0.0, "service_fee": 0.0, "orders": 0})
+        payables.setdefault(m, {"items_total": 0.0, "service_fee": 0.0,
+                                "grand_total": 0.0, "orders": 0})
         payables[m]["items_total"] += flt(r.items_total)
         payables[m]["service_fee"] += flt(r.service_fee_total)
+        payables[m]["grand_total"] += flt(r.items_total) + flt(r.service_fee_total)
         payables[m]["orders"] += 1
 
     names = list(payables)
@@ -362,7 +364,8 @@ def reports():
             {"merchant": m, "merchant_name": mnames.get(m, m),
              "orders": v["orders"],
              "payable": round(v["items_total"], 2),
-             "service_fee": round(v["service_fee"], 2)}
+             "service_fee": round(v["service_fee"], 2),
+             "order_total": round(v["grand_total"], 2)}
             for m, v in sorted(payables.items(),
                                key=lambda kv: -kv[1]["items_total"])],
         "platform_revenue": {

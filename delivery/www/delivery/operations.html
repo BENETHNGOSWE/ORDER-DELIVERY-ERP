@@ -51,7 +51,10 @@
 </div>
 
 <div class="pc-card" style="margin-top:14px">
-  <h3><i class="fa-solid fa-store"></i> Payable to merchants <span class="dl-mut" style="font-weight:500">(item amounts only &mdash; service charges excluded)</span></h3>
+  <h3><i class="fa-solid fa-store"></i> Payable to merchants <span class="dl-mut" style="font-weight:500">(payable = item amounts only; service charges belong to the platform)</span></h3>
+  <div class="dl-row" style="margin-bottom:10px">
+    <select id="rep-merchant" class="dl-select" style="max-width:320px"><option value="">All merchants</option></select>
+  </div>
   <div id="rep-merchants"><div class="dl-empty">Loading&hellip;</div></div>
 </div>
 
@@ -173,49 +176,100 @@
   });
 
   function reports() {
+    var money = function (n) { return DELIVERY.currency + " " + Number(n || 0).toLocaleString("en-US"); };
+
+    // section 1+2: KPI tiles + period table (each guarded - one bad piece
+    // must never leave the other sections stuck on "Loading...")
     DELIVERY.call("delivery.api.operations.reports").then(function (r) {
+      DELIVERY.currency = r.currency || DELIVERY.currency;
+      var cur = r.currency + " ";
       var stat = function (icon, val, label) {
         return '<div class="dl-stat"><span class="dl-stat-ic"><i class="fa-solid ' + icon +
           '"></i></span><div><b>' + val + "</b><span>" + label + "</span></div></div>";
       };
-      var cur = r.currency + " ";
-      var merchTotal = r.merchant_payables.reduce(function (s, m) { return s + m.payable; }, 0);
-      document.getElementById("rep-boxes").innerHTML =
-        stat("fa-store", cur + merchTotal.toLocaleString("en-US"), "Pay merchants (items only)") +
-        stat("fa-sack-dollar", cur + r.platform_revenue.total.toLocaleString("en-US"), "Platform revenue") +
-        stat("fa-building-columns", cur + r.platform_revenue.delivery_office_share.toLocaleString("en-US"), "Office 30% of fees") +
-        stat("fa-percent", cur + r.platform_revenue.service_fees.toLocaleString("en-US"), "Service charges") +
-        stat("fa-calendar-day", r.today.orders, "Orders today") +
-        stat("fa-calendar-week", r.week.orders, "Orders this week");
-
-      var money2 = function (n) { return cur + n.toLocaleString("en-US"); };
-      var per = [["Today", r.today], ["Last 7 days", r.week], ["This month", r.month], ["All time", r.all_time]];
-      document.getElementById("rep-periods").innerHTML =
-        '<table class="dl-table"><thead><tr><th>Period</th><th>Orders</th><th>Items total</th>' +
-        '<th>Service fees</th><th>Delivery fees</th><th>Grand total</th></tr></thead><tbody>' +
-        per.map(function (p) {
-          return "<tr><td><b>" + p[0] + "</b></td><td>" + p[1].orders + "</td>" +
-            "<td>" + money2(p[1].items_total) + "</td>" +
-            "<td>" + money2(p[1].service_fee_total) + "</td>" +
-            "<td>" + money2(p[1].delivery_fees) + "</td>" +
-            "<td><b>" + money2(p[1].grand_total) + "</b></td></tr>";
-        }).join("") + "</tbody></table>";
-
-      document.getElementById("rep-merchants").innerHTML = r.merchant_payables.length
-        ? '<table class="dl-table"><thead><tr><th>Merchant</th><th>Completed orders</th>' +
-          '<th>Payable (items)</th><th>Service fees collected</th></tr></thead><tbody>' +
-          r.merchant_payables.map(function (m) {
-            return "<tr><td>" + DELIVERY.esc(m.merchant_name) + "</td><td>" + m.orders +
-              "</td><td><b>" + cur + m.payable.toLocaleString("en-US") + "</b></td>" +
-              "<td>" + cur + m.service_fee.toLocaleString("en-US") + "</td></tr>";
-          }).join("") + "</tbody></table>"
-        : '<div class="dl-empty"><i class="fa-regular fa-folder-open"></i>No completed orders yet.</div>';
+      try {
+        var merchTotal = (r.merchant_payables || []).reduce(function (s, m) { return s + m.payable; }, 0);
+        document.getElementById("rep-boxes").innerHTML =
+          stat("fa-store", cur + merchTotal.toLocaleString("en-US"), "Pay merchants (items only)") +
+          stat("fa-sack-dollar", cur + r.platform_revenue.total.toLocaleString("en-US"), "Platform revenue") +
+          stat("fa-building-columns", cur + r.platform_revenue.delivery_office_share.toLocaleString("en-US"), "Office 30% of fees") +
+          stat("fa-percent", cur + r.platform_revenue.service_fees.toLocaleString("en-US"), "Service charges") +
+          stat("fa-calendar-day", r.today.orders, "Orders today") +
+          stat("fa-calendar-week", r.week.orders, "Orders this week");
+      } catch (e) {
+        document.getElementById("rep-boxes").innerHTML =
+          '<div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-triangle-exclamation"></i>' +
+          DELIVERY.esc(e.message) + "</div>";
+      }
+      try {
+        var per = [["Today", r.today], ["Last 7 days", r.week], ["This month", r.month], ["All time", r.all_time]];
+        document.getElementById("rep-periods").innerHTML =
+          '<table class="dl-table"><thead><tr><th>Period</th><th>Orders</th><th>Items total</th>' +
+          '<th>Service fees</th><th>Delivery fees</th><th>Grand total</th></tr></thead><tbody>' +
+          per.map(function (p) {
+            return "<tr><td><b>" + p[0] + "</b></td><td>" + p[1].orders + "</td>" +
+              "<td>" + money(p[1].items_total) + "</td>" +
+              "<td>" + money(p[1].service_fee_total) + "</td>" +
+              "<td>" + money(p[1].delivery_fees) + "</td>" +
+              "<td><b>" + money(p[1].grand_total) + "</b></td></tr>";
+          }).join("") + "</tbody></table>";
+      } catch (e) {
+        var pe = document.getElementById("rep-periods");
+        if (pe) pe.innerHTML = '<div class="dl-empty">' + DELIVERY.esc(e.message) + "</div>";
+      }
+      // section 3: merchant payables (driver-payouts style: dropdown + table)
+      try {
+        var rows = r.merchant_payables || [];
+        var msel = document.getElementById("rep-merchant");
+        if (msel) {
+          msel.innerHTML = '<option value="">All merchants</option>' + rows.map(function (m) {
+            return '<option value="' + m.merchant + '">' + DELIVERY.esc(m.merchant_name) + "</option>";
+          }).join("");
+          var renderM = function () {
+            var show = rows.filter(function (m) { return !msel.value || m.merchant === msel.value; });
+            document.getElementById("rep-merchants").innerHTML = show.length
+              ? '<table class="dl-table"><thead><tr><th>Merchant</th><th>Completed</th>' +
+                '<th>Order total</th><th>Service charges</th><th>Payable (items)</th></tr></thead><tbody>' +
+                show.map(function (m) {
+                  return "<tr><td>" + DELIVERY.esc(m.merchant_name) + "</td><td>" + m.orders + "</td>" +
+                    "<td>" + money(m.order_total) + "</td>" +
+                    "<td>" + money(m.service_fee) + "</td>" +
+                    '<td><b style="color:var(--purple-dark)">' + money(m.payable) + "</b></td></tr>";
+                }).join("") +
+                '<tr><td><b>Total</b></td><td></td><td><b>' + money(show.reduce(function (s, m) { return s + m.order_total; }, 0)) +
+                "</b></td><td><b>" + money(show.reduce(function (s, m) { return s + m.service_fee; }, 0)) +
+                "</b></td><td><b>" + money(show.reduce(function (s, m) { return s + m.payable; }, 0)) + "</b></td></tr>" +
+                "</tbody></table>"
+              : '<div class="dl-empty"><i class="fa-regular fa-folder-open"></i>No completed orders yet.</div>';
+          };
+          msel.addEventListener("change", renderM);
+          renderM();
+        } else {
+          document.getElementById("rep-merchants").innerHTML = rows.length
+            ? '<table class="dl-table"><thead><tr><th>Merchant</th><th>Completed</th><th>Order total</th>' +
+              '<th>Service charges</th><th>Payable (items)</th></tr></thead><tbody>' +
+              rows.map(function (m) {
+                return "<tr><td>" + DELIVERY.esc(m.merchant_name) + "</td><td>" + m.orders + "</td>" +
+                  "<td>" + money(m.order_total) + "</td><td>" + money(m.service_fee) + "</td>" +
+                  "<td><b>" + money(m.payable) + "</b></td></tr>";
+              }).join("") + "</tbody></table>"
+            : '<div class="dl-empty">No completed orders yet.</div>';
+        }
+      } catch (e) {
+        document.getElementById("rep-merchants").innerHTML =
+          '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
+      }
     }).catch(function (e) {
       document.getElementById("rep-boxes").innerHTML =
         '<div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-triangle-exclamation"></i>' +
         DELIVERY.esc(e.message) + "</div>";
+      document.getElementById("rep-merchants").innerHTML =
+        '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
+      var pe = document.getElementById("rep-periods");
+      if (pe) pe.innerHTML = '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
     });
 
+    // section 4: driver payouts
     DELIVERY.call("delivery.api.operations.driver_payouts").then(function (rows) {
       var sel = document.getElementById("rep-driver");
       sel.innerHTML = '<option value="">All drivers</option>' + rows.map(function (d) {
@@ -229,17 +283,21 @@
             show.map(function (d) {
               return "<tr><td>" + DELIVERY.esc(d.driver_name) + "</td><td>" +
                 DELIVERY.esc(d.phone || "") + "</td><td>" + d.jobs + "</td><td>" +
-                DELIVERY.currency + " " + d.fees_total.toLocaleString("en-US") + "</td>" +
-                '<td><b>' + DELIVERY.currency + " " + d.payable.toLocaleString("en-US") + "</b></td></tr>";
+                money(d.fees_total) + "</td>" +
+                '<td><b>' + money(d.payable) + "</b></td></tr>";
             }).join("") + "</tbody></table>"
           : '<div class="dl-empty"><i class="fa-regular fa-folder-open"></i>No completed driver deliveries yet.</div>';
       };
       sel.addEventListener("change", render);
       render();
-    }).catch(function () {});
+    }).catch(function (e) {
+      document.getElementById("rep-drivers").innerHTML =
+        '<div class="dl-empty"><i class="fa-solid fa-triangle-exclamation"></i>' + DELIVERY.esc(e.message) + "</div>";
+    });
   }
 
   dash(); queue(); drivers(); reports();
+
 })();
 </script>
 </body></html>
