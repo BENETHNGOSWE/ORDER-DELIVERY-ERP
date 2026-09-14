@@ -662,13 +662,17 @@
       return '<div class="x-item"><div class="x-ithumb" style="'+thumbBg+'">'+off+pop+thumb+'</div>'+
         '<div class="x-ibody"><div class="x-iname">'+DELIVERY.esc(it.item_name)+'</div>'+
         '<div class="x-isub">'+DELIVERY.esc(it.merchant_name)+' · '+DELIVERY.esc(it.category||"")+'</div>'+
-        '<div class="x-ifoot"><span class="x-price">'+money(it.rate)+old+'</span>'+
+        '<div class="x-ifoot"><span class="x-price">'+money(it.effective_rate||it.rate)+old+'</span>'+
         '<button class="x-add" '+(soldOut?"disabled":"")+' data-i="'+i+'">'+(soldOut?"Sold out":"Add +")+'</button></div></div></div>';
     }).join("");
     host.querySelectorAll(".x-add[data-i]").forEach(function(b){
       b.addEventListener("click", function(){
         var it=list[Number(b.dataset.i)];
-        DELIVERY.addToCart(it.merchant, it.name, it.item_name, it.rate, 1);
+        DELIVERY.addToCart(it.merchant, it.name, it.item_name, it.rate, 1, {
+          pct: it.apply_service_charge ? (it.service_charge_pct||0) : 0,
+          fee: it.service_fee||0,
+          eff: it.effective_rate||0
+        });
         DELIVERY.saveCart(); renderCart();
       });
     });

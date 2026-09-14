@@ -70,9 +70,6 @@
             '<div class="dl-between" style="margin-top:auto; padding-top:12px">' +
               "<span>" +
                 '<span class="dl-price">' + DELIVERY.fmt(eff) + "</span>" +
-                (svc > 0 ? '<br><span class="dl-mut" style="font-size:11.5px">' +
-                  DELIVERY.fmt(base) + " + " + DELIVERY.fmt(svc) + " service (" +
-                  (i.service_charge_pct || 0) + "%)</span>" : "") +
               "</span>" +
               '<button class="dl-btn sm" data-item="' + DELIVERY.esc(i.name) +
                 '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + base + '"' +
