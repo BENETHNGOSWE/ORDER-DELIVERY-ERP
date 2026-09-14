@@ -365,21 +365,40 @@ DELIVERY_DOCTYPE_MODULES = {
 
 
 def repair_doctype_module_links():
+    """Heal poisoned doctype rows. A row written by an interrupted sync can
+    carry a stale module AND a modified timestamp equal to our JSON's - the
+    normal sync then skips the file ('unchanged'), and the orphan-doctype
+    pass deletes the row because its controller import fails. Force-reimport
+    our JSON (timestamp-independent) whenever the row is missing or wrong."""
+    import os
     try:
+        from frappe.modules.import_file import import_file_by_path
+        app_path = frappe.get_app_path("delivery")
         fixed = []
         for dt, expected in DELIVERY_DOCTYPE_MODULES.items():
             try:
                 module = frappe.db.get_value("DocType", dt, "module")
             except Exception:
+                module = None
+            if module == expected:
                 continue
-            if module and module != expected:
-                frappe.db.set_value("DocType", dt, "module", expected)
-                fixed.append("{0}: {1} -> {2}".format(dt, module, expected))
+            path = os.path.join(app_path, "delivery_logistics", "doctype",
+                                frappe.scrub(dt), frappe.scrub(dt) + ".json")
+            if not os.path.exists(path):
+                continue
+            try:
+                import_file_by_path(path, force=True, reset_permissions=True)
+                fixed.append("{0} (was: {1})".format(dt, module))
+            except Exception as e2:
+                frappe.log_error("Reimport {0} failed: {1}".format(dt, e2))
+                print("Reimport {0} FAILED: {1}".format(dt, e2))
         if fixed:
             frappe.db.commit()
+            print("Repaired doctype rows:", ", ".join(fixed))
         return {"fixed": fixed}
     except Exception as e:
         frappe.log_error("Doctype module repair failed: {0}".format(e))
+        print("Doctype module repair failed:", e)
         return {"fixed": [], "error": str(e)}
 
 
