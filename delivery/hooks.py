@@ -22,7 +22,10 @@ fixtures = [
 ]
 
 after_install = "delivery.install.after_install"
-after_migrate = "delivery.maintenance.desk_show_delivery_only"
+after_migrate = [
+	"delivery.maintenance.desk_show_delivery_only",
+	"delivery.maintenance.ensure_default_item_categories",
+]
 
 # ---------------------------------------------------------------------------
 # Document events

@@ -142,6 +142,24 @@ def merchant_catalog(merchant, item_type=None, category=None, search=None):
 
 
 @frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
+def categories():
+    """Active home-page category tiles ("Shop by category"), admin-managed
+    via the Item Category doctype."""
+    rows = frappe.get_all("Item Category",
+                          filters={"is_active": 1},
+                          fields=["category_name", "match_type", "match_value",
+                                  "fontawesome_icon", "display_order"],
+                          order_by="display_order asc, category_name asc",
+                          limit=100)
+    return [{"key": (r.category_name or "").lower().replace(" ", ""),
+             "category_name": r.category_name,
+             "match_type": r.match_type,
+             "match_value": r.match_value,
+             "icon": r.fontawesome_icon or "fa-tag"}
+            for r in rows]
+
+
 def browse_items(search=None, category=None, item_type=None, sort="featured", limit=200):
     """
     Marketplace-wide catalogue for the home page: every published, in-stock

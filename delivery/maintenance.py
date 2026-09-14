@@ -334,6 +334,38 @@ def bulk_attach_images(folder="/home/frappe/product-images", match_by=None):
 
 
 # ---------------------------------------------------------------------------
+# Default home-page categories ("Shop by category") - seeded once, then the
+# admin manages them from Desk -> Item Category.
+# ---------------------------------------------------------------------------
+DEFAULT_CATEGORIES = [
+    ("Food", "Words", "food", "fa-burger", 1),
+    ("Groceries", "Words", "grocer,household,retail", "fa-cart-shopping", 2),
+    ("Drinks", "Words", "drink,beverage,juice,soda", "fa-glass-water", 3),
+    ("Snacks", "Words", "snack", "fa-cookie", 4),
+    ("Bakery", "Words", "baker,bread,pastry,cake", "fa-bread-slice", 5),
+    ("Offers", "Offers", "", "fa-tag", 6),
+]
+
+
+def ensure_default_item_categories():
+    if frappe.db.count("Item Category"):
+        return {"seeded": 0}
+    for name, mt, mv, icon, order in DEFAULT_CATEGORIES:
+        if not frappe.db.exists("Item Category", name):
+            frappe.get_doc({
+                "doctype": "Item Category",
+                "category_name": name,
+                "match_type": mt,
+                "match_value": mv,
+                "fontawesome_icon": icon,
+                "display_order": order,
+                "is_active": 1,
+            }).insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"seeded": len(DEFAULT_CATEGORIES)}
+
+
+# ---------------------------------------------------------------------------
 # Desk cleanup: show ONLY the Delivery app on the Desk home.
 # The client does not use the stock ERPNext/Frappe modules, so their
 # workspaces are hidden (not deleted) and a single public "Delivery"
@@ -346,6 +378,7 @@ _WS_SHORTCUTS = [
     # client-approved order (top of Desk grid first)
     ("Delivery Orders", "Delivery Order"),
     ("Menu Items", "DL Menu Item"),
+    ("Item Categories", "Item Category"),
     ("Merchants", "Merchant"),
     ("Drivers", "Delivery Driver"),
     ("Parcels", "Parcel Request"),

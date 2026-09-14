@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "autoname": "field:category_name",
+ "creation": "2026-09-15 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "category_name",
+  "match_type",
+  "match_value",
+  "col_break_1",
+  "fontawesome_icon",
+  "display_order",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "category_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Category Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Words",
+   "description": "Words = matches items whose Item Type or Category text contains any of the words below. Offers = items with a discount.",
+   "fieldname": "match_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Match Type",
+   "options": "Words\nOffers",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.match_type=='Words'",
+   "description": "Comma-separated, e.g. pizza, italian (case-insensitive). Matches the item's Category text or its Item Type.",
+   "fieldname": "match_value",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Match Words"
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "fa-tag",
+   "description": "Font Awesome 6 free icon class, e.g. fa-pizza-slice",
+   "fieldname": "fontawesome_icon",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Icon (Font Awesome)"
+  },
+  {
+   "default": "0",
+   "fieldname": "display_order",
+   "fieldtype": "Int",
+   "label": "Display Order",
+   "non_negative": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-15 00:00:00",
+ "module": "Delivery Logistics",
+ "name": "Item Category",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Delivery Operations",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "display_order",
+ "sort_order": "ASC",
+ "title_field": "category_name"
+}
