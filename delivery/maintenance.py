@@ -347,6 +347,42 @@ DEFAULT_CATEGORIES = [
 ]
 
 
+DELIVERY_DOCTYPE_MODULES = {
+    # doctype -> expected module (the orphan-doctype pass deletes any doctype
+    # whose controller import fails; a stale module field from a crashed sync
+    # would make it delete ours - repair the linkage after every migrate)
+    "DL Item Category": "Delivery Logistics",
+    "DL Menu Item": "Delivery Logistics",
+    "Delivery Order": "Delivery Logistics",
+    "Delivery Order Item": "Delivery Logistics",
+    "Parcel Request": "Delivery Logistics",
+    "Transport Request": "Delivery Logistics",
+    "Merchant": "Delivery Logistics",
+    "Delivery Driver": "Delivery Logistics",
+    "Logistics Settings": "Delivery Logistics",
+    "Delivery Zone": "Delivery Logistics",
+}
+
+
+def repair_doctype_module_links():
+    try:
+        fixed = []
+        for dt, expected in DELIVERY_DOCTYPE_MODULES.items():
+            try:
+                module = frappe.db.get_value("DocType", dt, "module")
+            except Exception:
+                continue
+            if module and module != expected:
+                frappe.db.set_value("DocType", dt, "module", expected)
+                fixed.append("{0}: {1} -> {2}".format(dt, module, expected))
+        if fixed:
+            frappe.db.commit()
+        return {"fixed": fixed}
+    except Exception as e:
+        frappe.log_error("Doctype module repair failed: {0}".format(e))
+        return {"fixed": [], "error": str(e)}
+
+
 def ensure_default_item_categories():
     """Seed the home-page categories once. Never allowed to break a migrate:
     guarded + fully wrapped - a seeding problem is logged, not fatal."""
