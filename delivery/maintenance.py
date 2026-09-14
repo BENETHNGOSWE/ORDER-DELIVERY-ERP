@@ -399,10 +399,29 @@ def _ensure_delivery_workspace():
     frappe.db.set_value("Workspace", DELIVERY_WS, "public", 1, update_modified=False)
 
 
+def _ensure_delivery_desktop_icon():
+    """Create the 'Delivery' desktop-grid icon + its Workspace Sidebar entry
+    (uses Frappe's own helper: creates Workspace Sidebar 'Delivery' with one
+    item linking to the workspace, plus the Desktop Icon)."""
+    from frappe.desk.doctype.desktop_icon import add_workspace_to_desktop
+
+    add_workspace_to_desktop(DELIVERY_WS)
+    # make sure the icon is standard so it renders for every user
+    frappe.db.set_value("Desktop Icon", {"label": DELIVERY_WS},
+                        {"standard": 1, "idx": 0, "icon": "tool"}, update_modified=False)
+
+
 def desk_show_delivery_only():
-    """Desk home shows the Delivery app only: stock Frappe/ERPNext workspaces
-    are hidden (public=0, is_hidden=1 - nothing is deleted). Idempotent; the
-    app also re-runs it automatically after every migrate (hooks.py)."""
+    """Desk home shows the Delivery app only.
+
+    1. Ensure the public Delivery workspace exists.
+    2. Hide other public workspaces (public=0, is_hidden=1 - nothing deleted).
+    3. Prune the Desktop Icon grid: delete every STANDARD icon that is not
+       the Delivery one (the v16 grid renders these records directly; stock
+       icons for Accounting/Stock/etc. are baked in at install time and do
+       not disappear when their workspaces are hidden).
+    Idempotent; re-runs automatically after every migrate (hooks.py).
+    """
     _ensure_delivery_workspace()
     hidden = []
     for name in frappe.get_all("Workspace", filters={"public": 1}, pluck="name"):
@@ -411,18 +430,48 @@ def desk_show_delivery_only():
         frappe.db.set_value("Workspace", name,
                             {"public": 0, "is_hidden": 1}, update_modified=False)
         hidden.append(name)
+
+    _ensure_delivery_desktop_icon()
+    removed = []
+    for row in frappe.get_all("Desktop Icon",
+                              filters={"standard": 1},
+                              fields=["name", "label"]):
+        if row.label == DELIVERY_WS:
+            continue
+        try:
+            frappe.delete_doc("Desktop Icon", row.name,
+                              ignore_permissions=True, force=True)
+            removed.append(row.label)
+        except Exception:
+            # last resort: hide it instead of deleting
+            frappe.db.set_value("Desktop Icon", row.name, "hidden", 1,
+                                update_modified=False)
+
     frappe.db.commit()
+    _clear_desk_caches()
+    return {"kept_public": [DELIVERY_WS],
+            "hidden_count": len(hidden), "hidden": hidden,
+            "icons_removed": len(removed), "icons": removed}
+
+
+def _clear_desk_caches():
+    """Desktop icons / bootinfo are cached aggressively; nuke all layers."""
+    try:
+        frappe.cache.delete_key("desktop_icons")
+        frappe.cache.delete_key("bootinfo")
+        from frappe.desk.doctype.desktop_icon import clear_desktop_icons_cache
+        clear_desktop_icons_cache()
+    except Exception:
+        pass
     try:
         frappe.clear_cache()
     except Exception:
         pass
-    return {"kept_public": [DELIVERY_WS],
-            "hidden_count": len(hidden), "hidden": hidden}
 
 
 def desk_show_all():
     """Undo desk_show_delivery_only: restore the standard Frappe/ERPNext
-    workspaces to public again."""
+    workspaces to public again and rebuild the default desktop icons."""
     restored = []
     for row in frappe.get_all("Workspace", filters={"public": 0, "is_hidden": 1},
                               fields=["name", "app"]):
@@ -431,9 +480,13 @@ def desk_show_all():
         frappe.db.set_value("Workspace", row.name,
                             {"public": 1, "is_hidden": 0}, update_modified=False)
         restored.append(row.name)
-    frappe.db.commit()
+
     try:
-        frappe.clear_cache()
+        from frappe.desk.doctype.desktop_icon import create_desktop_icons
+        create_desktop_icons()
     except Exception:
         pass
+
+    frappe.db.commit()
+    _clear_desk_caches()
     return {"restored_count": len(restored), "restored": restored}
