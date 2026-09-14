@@ -137,13 +137,17 @@ def order_query_conditions(user=None, doctype=None):
 
 def menu_item_query_conditions(user=None, doctype=None):
     """Merchants see only their own menu items in Desk; ops/admin see all."""
-    user = user or frappe.session.user
-    if _unrestricted(user):
-        return None
-    merchants = _my_merchants(user)
-    if not merchants:
+    try:
+        user = user or frappe.session.user
+        if _unrestricted(user):
+            return None
+        merchants = _my_merchants(user)
+        if not merchants:
+            return "1=0"
+        return _in_sql("`tabDL Menu Item`.`merchant`", merchants)
+    except Exception:
+        frappe.log_error("menu_item_query_conditions failed")
         return "1=0"
-    return _in_sql("`tabDL Menu Item`.`merchant`", merchants)
 
 
 def parcel_query_conditions(user=None, doctype=None):

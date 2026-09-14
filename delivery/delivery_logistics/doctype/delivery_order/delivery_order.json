@@ -402,8 +402,7 @@
       "in_standard_filter": 1,
       "label": "Workflow State",
       "options": "REQUESTED\nUNDER_REVIEW\nPRICE_AGREED\nPENDING\nACCEPTED\nPREPARING\nREADY_FOR_DELIVERY\nDRIVER_ASSIGNED\nPICKED_UP\nCOMPLETED\nCANCELLED",
-      "reqd": 1,
-      "permlevel": 1
+      "reqd": 1
     },
     {
       "fieldname": "status_history",
@@ -434,7 +433,7 @@
     }
   ],
   "links": [],
-  "modified": "2026-09-14 10:00:06.578682",
+  "modified": "2026-09-14 10:10:55.182135",
   "modified_by": "Administrator",
   "module": "Delivery Logistics",
   "name": "Delivery Order",

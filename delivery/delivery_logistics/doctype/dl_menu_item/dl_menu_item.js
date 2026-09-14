@@ -4,8 +4,8 @@
 //   see the name); attachments on new items stay permitted.
 // - admins/operations: normal dropdown, free to pick any merchant.
 frappe.ui.form.on("DL Menu Item", {
-	onload(frm) { lock_merchant_field(frm); prefill_own_merchant(frm); },
 	setup(frm) { lock_merchant_field(frm); },
+	onload(frm) { prefill_own_merchant(frm); },
 	refresh(frm) { lock_merchant_field(frm); prefill_own_merchant(frm); },
 });
 
@@ -19,7 +19,10 @@ function is_merchant_only() {
 function lock_merchant_field(frm) {
 	if (is_merchant_only()) {
 		frm.set_df_property("merchant", "read_only", 1);
-		frm.set_intro(__("New items are automatically added to your shop."), false);
+		if (!frm._intro_set) {
+			frm.set_intro(__("New items are automatically added to your shop."), false);
+			frm._intro_set = 1;
+		}
 	}
 }
 

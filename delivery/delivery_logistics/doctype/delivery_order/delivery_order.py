@@ -10,11 +10,38 @@ from delivery.delivery_logistics.base import ServiceDocument
 class DeliveryOrder(ServiceDocument):
     AMOUNT_FIELD = "grand_total"
 
+    #: the ONLY move a merchant may make on workflow_state from Desk
+    MERCHANT_STATE_MOVES = (("ACCEPTED", "READY_FOR_DELIVERY"),
+                            ("PREPARING", "READY_FOR_DELIVERY"))
+
     def service(self):
         return self.get("order_type") or "Food"
 
+    def _guard_merchant_state_change(self):
+        """Merchants may set Workflow State to READY_FOR_DELIVERY (so ops can
+        dispatch); every other state change stays admin/ops-only."""
+        roles = set(frappe.get_roles())
+        if {"System Manager", "Delivery Operations"} & roles:
+            return
+        if "Merchant User" not in roles:
+            return
+        if self.is_new() or not self.get("workflow_state"):
+            return
+        old = frappe.db.get_value("Delivery Order", self.name, "workflow_state")
+        if not old or old == self.workflow_state:
+            return
+        if (old, self.workflow_state) not in self.MERCHANT_STATE_MOVES:
+            frappe.throw(_("Merchants can only move an accepted/preparing order "
+                           "to READY FOR DELIVERY."), frappe.PermissionError)
+        # route through the state machine so the audit trail is written
+        self.workflow_state = old
+        state_machine.set_state(self, "READY_FOR_DELIVERY",
+                                note=_("Merchant marked the order ready for delivery"))
+
     # -- lifecycle --------------------------------------------------------
     def validate(self):
+        self._guard_merchant_state_change()
+
         # Stock is only drawn down once, when the order is first created.
         billing.food_retail_totals(self, adjust_stock=self.is_new())
 

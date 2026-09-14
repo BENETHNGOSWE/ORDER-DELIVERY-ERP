@@ -532,3 +532,38 @@ def desk_show_all():
     frappe.db.commit()
     _clear_desk_caches()
     return {"restored_count": len(restored), "restored": restored}
+
+
+def link_merchant_user(merchant=None, user=None):
+    """Link a Merchant record to a login so that user can use the merchant
+    portal / Desk merchant features. If merchant is omitted, the user is
+    linked to the only existing Merchant (or you are asked to specify).
+
+        bench --site <s> execute delivery.maintenance.link_merchant_user \
+            --kwargs '{"user": "merchant3@demo.com"}'
+    """
+    if not user:
+        frappe.throw("Pass the login: --kwargs '{{\"user\": \"merchant3@demo.com\"}}'")
+    if not frappe.db.exists("User", user):
+        frappe.throw("No such User: {0}".format(user))
+    if merchant:
+        if not frappe.db.exists("Merchant", merchant):
+            frappe.throw("No such Merchant: {0}".format(merchant))
+    else:
+        unlinked = frappe.get_all("Merchant",
+                                  filters=[["portal_user", "in", ("", None)]],
+                                  pluck="name")
+        if len(unlinked) == 1:
+            merchant = unlinked[0]
+        else:
+            frappe.throw("Pass the merchant too: --kwargs "
+                         "'{{\"merchant\": \"MERCHANT-NAME\", \"user\": \"...\"}}' "
+                         "(candidates: {0})".format(", ".join(unlinked)))
+    frappe.db.set_value("Merchant", merchant, "portal_user", user,
+                        update_modified=False)
+    frappe.db.commit()
+    try:
+        frappe.clear_cache()
+    except Exception:
+        pass
+    return {"merchant": merchant, "portal_user": user}
