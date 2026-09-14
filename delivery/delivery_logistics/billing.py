@@ -133,6 +133,11 @@ def service_fee_for(item, amount):
     return r2(flt(amount) * flt(item.get("service_charge_pct") or 0) / 100.0)
 
 
+def flat_service_fee_for(item, qty):
+    """Flat per-item service fee (TZS), independent of the % service charge."""
+    return r2(flt(item.get("service_fee") or 0) * flt(qty or 1))
+
+
 def driver_fee_share_pct():
     """% of the delivery fee that belongs to the driver (settings, default 70)."""
     try:
@@ -169,8 +174,9 @@ def food_retail_totals(order, adjust_stock=False):
         line.qty = flt(line.qty) or 1
         line.amount = r2(line.rate * line.qty)
         line.service_fee = service_fee_for(item, line.amount)
+        line.flat_service_fee = flat_service_fee_for(item, line.qty)
         items_total += line.amount
-        service_total += line.service_fee
+        service_total += line.service_fee + line.flat_service_fee
 
         if adjust_stock and item.track_stock:
             item.available_stock = int(flt(item.available_stock) - line.qty)
@@ -196,7 +202,8 @@ def food_retail_totals(order, adjust_stock=False):
     order.cod_fee = r2(cod) if (order.get("payment_method") == "Cash On Delivery"
                                 and _cfg("cod_enabled", 1)) else 0.0
 
-    order.grand_total = r2(items_total + order.delivery_fee
+    order.grand_total = r2(items_total + order.service_fee_total
+                           + order.delivery_fee
                            + order.small_order_fee + order.cod_fee
                            + order.tax_amount)
 

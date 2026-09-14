@@ -107,17 +107,19 @@
         item: item, item_name: name, rate: Number(rate), qty: Number(qty || 1),
         svc_pct: Number(svc.pct || 0), svc_fee: Number(svc.fee || 0),
         eff_rate: Number(svc.eff || rate),
+        flat_fee: Number(svc.flat || 0),
       });
       this.saveCart();
       this.toast(name + " added to cart", "success");
     },
     cartTotals: function () {
-      var t = { base: 0, service: 0, grand: 0 };
+      var t = { base: 0, service: 0, flat: 0, grand: 0 };
       this.cart.forEach(function (l) {
         t.base += l.rate * l.qty;
         t.service += (l.svc_fee || 0) * l.qty;
+        t.flat += (l.flat_fee || 0) * l.qty;
       });
-      t.grand = t.base + t.service;
+      t.grand = t.base + t.service + t.flat;
       return t;
     },
     cartTotal: function () {

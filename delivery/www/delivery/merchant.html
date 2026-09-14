@@ -42,6 +42,8 @@
     </label>
     <input id="new-svcpct" class="dl-input" type="number" step="0.1" min="0" max="100"
            placeholder="Service %" style="display:none; max-width:110px">
+    <input id="new-svcfee" class="dl-input" type="number" step="1" min="0"
+           placeholder="Service fee (TZS)" style="max-width:140px">
     <button id="add" class="dl-btn"><i class="fa-solid fa-plus"></i> Add item</button>
   </div>
 </div>
@@ -217,6 +219,9 @@
               ? "<br><span class='dl-mut' style='font-size:12px'>+" + (i.service_charge_pct || 0) +
                 "% svc &rarr; " + DELIVERY.fmt(i.standard_rate * (1 + (i.service_charge_pct || 0) / 100)) + "</span>"
               : "") +
+            ((i.service_fee || 0) > 0
+              ? "<br><span class='dl-mut' style='font-size:12px'>+" + DELIVERY.fmt(i.service_fee) + " service fee/item</span>"
+              : "") +
           "</td>" +
           '<td><input class="dl-input stk" data-item="' + i.name +
             '" style="max-width:90px; height:38px" value="' + (i.available_stock || 0) + '"></td>' +
@@ -266,6 +271,7 @@
       prep_minutes: Number(document.getElementById("new-prep").value || 0),
       apply_service_charge: svc,
       service_charge_pct: svc ? svcPct : 0,
+      service_fee: Number(document.getElementById("new-svcfee").value || 0),
       published: 1
     }).then(function () {
       DELIVERY.toast("Item added", "success"); catalogue(); stats();
@@ -276,6 +282,7 @@
       document.getElementById("new-svc").checked = false;
       document.getElementById("new-svcpct").value = "";
       document.getElementById("new-svcpct").style.display = "none";
+      document.getElementById("new-svcfee").value = "";
     })
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
   });

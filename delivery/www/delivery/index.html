@@ -672,8 +672,9 @@
         var it=list[Number(b.dataset.i)];
         DELIVERY.addToCart(it.merchant, it.name, it.item_name, it.rate, 1, {
           pct: it.apply_service_charge ? (it.service_charge_pct||0) : 0,
-          fee: it.service_fee||0,
-          eff: it.effective_rate||0
+          fee: it.service_charge||it.service_fee||0,
+          eff: it.effective_rate||0,
+          flat: it.service_fee_flat||0
         });
         DELIVERY.saveCart(); renderCart();
       });
@@ -718,9 +719,9 @@
         '<button class="x-rm" data-rm="'+i+'">×</button></div>';
     }).join("");
     var t=DELIVERY.cartTotals();
-    document.getElementById("c-sub").textContent=money(t.base);
-    document.getElementById("c-svc").textContent=money(t.service);
-    document.getElementById("c-svc-row").style.display=t.service>0?"flex":"none";
+    document.getElementById("c-sub").textContent=money(t.base+t.service);
+    document.getElementById("c-svc").textContent=money(t.flat);
+    document.getElementById("c-svc-row").style.display=t.flat>0?"flex":"none";
     document.getElementById("mbar-total").textContent=money(t.grand);
     document.getElementById("c-fee").textContent="…";
     DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:null, distance_km:0, items_total:t.base})
@@ -885,9 +886,9 @@
     host.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=function(){ lines.splice(+b.dataset.rm,1); if(!lines.length)DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart(); renderCheckout(); }; });
 
     var t=DELIVERY.cartTotals();
-    document.getElementById("ck-sub").textContent=money(t.base);
-    document.getElementById("ck-svc").textContent=money(t.service);
-    document.getElementById("ck-svc-row").style.display=t.service>0?"flex":"none";
+    document.getElementById("ck-sub").textContent=money(t.base+t.service);
+    document.getElementById("ck-svc").textContent=money(t.flat);
+    document.getElementById("ck-svc-row").style.display=t.flat>0?"flex":"none";
     document.getElementById("ck-fee").textContent="…";
     DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:document.getElementById("ck-zone").value, distance_km:0, items_total:t.base})
       .then(function(f){ var fee=f.delivery_fee||0;

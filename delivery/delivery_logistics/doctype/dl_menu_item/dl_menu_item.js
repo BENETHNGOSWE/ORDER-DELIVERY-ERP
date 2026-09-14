@@ -58,6 +58,7 @@ function svc_price_preview(frm) {
 	const base = flt(frm.doc.standard_rate);
 	const on = cint(frm.doc.apply_service_charge);
 	const pct = flt(frm.doc.service_charge_pct);
+	const flat = flt(frm.doc.service_fee);
 	let txt = __("Added on top of the item price; shown to the customer as part of the total.");
 	if (on && pct > 0 && base > 0) {
 		const svc = Math.round(base * pct) / 100;
@@ -67,6 +68,9 @@ function svc_price_preview(frm) {
 		txt = __("Enter the item price to preview the customer total.");
 	} else if (on) {
 		txt = __("Enter the service percentage (e.g. 3 for 3%).");
+	}
+	if (flat > 0) {
+		txt += " " + __("Plus a flat {0} service fee per item at checkout.", [money(flat)]);
 	}
 	frm.set_df_property("service_charge_pct", "description", txt);
 }

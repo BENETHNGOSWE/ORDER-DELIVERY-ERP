@@ -75,6 +75,7 @@
                 '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + base + '"' +
                 ' data-svcpct="' + (i.apply_service_charge ? (i.service_charge_pct || 0) : 0) + '"' +
                 ' data-svcfee="' + svc + '" data-eff="' + eff + '"' +
+                ' data-flat="' + (i.service_fee_flat || 0) + '"' +
                 (out ? " disabled" : "") + "><i class=\"fa-solid fa-cart-plus\"></i> " +
                 (out ? "Sold out" : "Add") + "</button>" +
             "</div>" +
@@ -87,6 +88,7 @@
               pct: Number(b.dataset.svcpct || 0),
               fee: Number(b.dataset.svcfee || 0),
               eff: Number(b.dataset.eff || 0),
+              flat: Number(b.dataset.flat || 0),
             });
           });
         });
