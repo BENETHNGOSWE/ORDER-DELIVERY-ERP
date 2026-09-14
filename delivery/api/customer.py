@@ -7,6 +7,8 @@ surface verbatim.
 
 Route prefix: /api/method/delivery.api.customer.*
 """
+import re
+
 import frappe
 from frappe import _
 from frappe.utils import flt
@@ -21,6 +23,53 @@ def _require_login():
     if frappe.session.user in ("", "Guest"):
         frappe.throw(_("Please log in."), frappe.AuthenticationError)
     return frappe.session.user
+
+
+GUEST_DOMAIN = "guests.kodatechnologies.co.tz"
+
+
+def _customer_identity(customer_name=None, phone=None):
+    """User link to put on a customer document.
+
+    Logged-in customers use their own user. Guests get a phone-keyed
+    PASSWORDLESS User record (created here, never able to log in) so every
+    order still has a stable customer identity - tracking, payment and
+    support keep working - while the customer never has to sign up or
+    log in. Same phone number = same customer record.
+    """
+    user = frappe.session.user
+    if user not in ("", "Guest"):
+        return user
+    digits = re.sub(r"\D", "", phone or "")
+    if len(digits) < 7:
+        frappe.throw(_("A valid phone number is required to order without an account."),
+                     title=_("Phone Required"))
+    email = "guest-{}@{}".format(digits, GUEST_DOMAIN)
+    if frappe.db.exists("User", email):
+        return email
+    full = (customer_name or "Guest " + digits[-4:]).strip() or "Guest"
+    doc = frappe.new_doc("User")
+    doc.email = email
+    doc.first_name = full[:140]
+    doc.user_type = "Website User"
+    doc.send_welcome_email = 0
+    doc.insert(ignore_permissions=True)
+    try:
+        doc.add_roles("Delivery Customer")
+    except Exception:
+        pass
+    return email
+
+
+def _guest_owned_guard(doctype, reference):
+    """Guests may pay/approve only documents they created as guests
+    (customer is a guest-* user). Logged-in users are unaffected."""
+    if frappe.session.user not in ("", "Guest"):
+        return
+    customer = frappe.db.get_value(doctype, reference, "customer") or ""
+    if not str(customer).startswith("guest-"):
+        frappe.throw(_("Please log in to manage this request."),
+                     frappe.AuthenticationError)
 
 
 def _my_merchant_ids():
@@ -256,7 +305,7 @@ def search_places(query, lat=None, lng=None, limit=8):
 		return []
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def place_order(merchant, items, delivery_address, order_type="Food",
                 delivery_zone=None, delivery_distance_km=0,
                 payment_method="Cash On Delivery", phone=None,
@@ -268,7 +317,7 @@ def place_order(merchant, items, delivery_address, order_type="Food",
     ``items`` is a JSON list of {"item": "<DL Menu Item>", "qty": n}.
     """
     import json
-    user = _require_login()
+    customer = _customer_identity(customer_name, phone)
     if isinstance(items, str):
         items = json.loads(items)
     if not items:
@@ -282,8 +331,8 @@ def place_order(merchant, items, delivery_address, order_type="Food",
     order = frappe.get_doc({
         "doctype": "Delivery Order",
         "order_type": order_type,
-        "customer": user,
-        "customer_name": customer_name or frappe.db.get_value("User", user, "full_name"),
+        "customer": customer,
+        "customer_name": customer_name or frappe.db.get_value("User", customer, "full_name") or "Guest",
         "customer_phone": phone,
         "merchant": merchant,
         "delivery_address": delivery_address,
@@ -482,21 +531,21 @@ def _billing_currency():
 # ---------------------------------------------------------------------------
 # parcel
 # ---------------------------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def place_parcel_request(pickup_address, dropoff_address, parcel_description,
                          weight_kg, length_cm=0, width_cm=0, height_cm=0,
                          is_fragile=0, distance_km=0, declared_value=0,
                          payment_method="Cash On Delivery", phone=None,
                          pickup_zone=None, dropoff_zone=None, customer_name=None):
     """SRS 3.2: point-to-point parcel with physical attribute logging."""
-    user = _require_login()
+    customer = _customer_identity(customer_name, phone)
     if payment_method not in payments.enabled_methods():
         frappe.throw(_("That payment method is not available."))
 
     parcel = frappe.get_doc({
         "doctype": "Parcel Request",
-        "customer": user,
-        "customer_name": customer_name or frappe.db.get_value("User", user, "full_name"),
+        "customer": customer,
+        "customer_name": customer_name or frappe.db.get_value("User", customer, "full_name") or "Guest",
         "customer_phone": phone,
         "pickup_address": pickup_address,
         "dropoff_address": dropoff_address,
@@ -532,7 +581,7 @@ def place_parcel_request(pickup_address, dropoff_address, parcel_description,
 # ---------------------------------------------------------------------------
 # transport
 # ---------------------------------------------------------------------------
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def place_transport_request(stops, trip_type="Passenger", vehicle_type="Car",
                             passengers=1, luggage_pieces=0, phone=None,
                             departure_datetime=None, special_requirements=None,
@@ -542,7 +591,7 @@ def place_transport_request(stops, trip_type="Passenger", vehicle_type="Car",
     ``stops`` is a JSON list of {idx_label, address, stop_type, distance_from_prev_km}.
     """
     import json
-    user = _require_login()
+    customer = _customer_identity(customer_name, phone)
     if isinstance(stops, str):
         stops = json.loads(stops)
     if len(stops) < 2:
@@ -554,8 +603,8 @@ def place_transport_request(stops, trip_type="Passenger", vehicle_type="Car",
 
     req = frappe.get_doc({
         "doctype": "Transport Request",
-        "customer": user,
-        "customer_name": customer_name or frappe.db.get_value("User", user, "full_name"),
+        "customer": customer,
+        "customer_name": customer_name or frappe.db.get_value("User", customer, "full_name") or "Guest",
         "customer_phone": phone,
         "trip_type": trip_type,
         "vehicle_type": vehicle_type,
@@ -579,35 +628,35 @@ def place_transport_request(stops, trip_type="Passenger", vehicle_type="Car",
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def approve_transport_quote(reference):
     """SRS 3.3 step 5: customer approves the agreed quote."""
-    _require_login()
+    _guest_owned_guard("Transport Request", reference)
     req = frappe.get_doc("Transport Request", reference)
     req.approve_quote()
     return {"request": req.name, "state": req.workflow_state,
             "agreed_price": flt(req.agreed_price, 2)}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def pay_transport(reference, method=None, phone=None):
     """SRS 3.3 step 5: checkout after approving the quote."""
-    _require_login()
+    _guest_owned_guard("Transport Request", reference)
     req = frappe.get_doc("Transport Request", reference)
     return req.make_payment(method=method, phone=phone)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def pay_order(reference, method, phone=None):
     """Pay an existing Delivery Order (mobile money / card)."""
-    _require_login()
+    _guest_owned_guard("Delivery Order", reference)
     order = frappe.get_doc("Delivery Order", reference)
     return order.make_payment(method=method, phone=phone)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def pay_parcel(reference, method, phone=None):
-    _require_login()
+    _guest_owned_guard("Parcel Request", reference)
     parcel = frappe.get_doc("Parcel Request", reference)
     return parcel.make_payment(method=method, phone=phone)
 

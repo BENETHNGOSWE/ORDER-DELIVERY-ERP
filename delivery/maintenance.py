@@ -5,8 +5,10 @@ One-off maintenance helpers for the delivery install.
     bench --site <site> execute delivery.maintenance.unpublish_broken_pages
     bench --site <site> execute delivery.maintenance.recent_errors
 """
+import json
 import os
 import re
+import uuid
 
 import frappe
 
@@ -329,3 +331,109 @@ def bulk_attach_images(folder="/home/frappe/product-images", match_by=None):
 	if missing:
 		print("No image file for: " + ", ".join(missing))
 	return {"updated": updated, "skipped": skipped, "missing": missing}
+
+
+# ---------------------------------------------------------------------------
+# Desk cleanup: show ONLY the Delivery app on the Desk home.
+# The client does not use the stock ERPNext/Frappe modules, so their
+# workspaces are hidden (not deleted) and a single public "Delivery"
+# workspace takes the home screen. Fully reversible via desk_show_all().
+# ---------------------------------------------------------------------------
+
+DELIVERY_WS = "Delivery"
+
+_WS_SHORTCUTS = [
+    ("Delivery Orders", "Delivery Order"),
+    ("Parcels", "Parcel Request"),
+    ("Transport Trips", "Transport Request"),
+    ("Merchants", "Merchant"),
+    ("Drivers", "Delivery Driver"),
+    ("Menu Items", "DL Menu Item"),
+    ("Home Banners", "Home Banner"),
+    ("Logistics Settings", "Logistics Settings"),
+]
+
+
+def _ws_block(btype, **data):
+    return {"id": uuid.uuid4().hex[:10], "type": btype, "data": data}
+
+
+def _ensure_delivery_workspace():
+    """Create (or re-publish) the public Delivery workspace with shortcuts."""
+    if frappe.db.exists("Workspace", DELIVERY_WS):
+        frappe.db.set_value("Workspace", DELIVERY_WS,
+                            {"public": 1, "is_hidden": 0}, update_modified=False)
+        return
+
+    ws = frappe.new_doc("Workspace")
+    ws.label = DELIVERY_WS
+    ws.title = "Delivery"
+    ws.type = "Workspace"
+    ws.icon = "tool"
+    ws.indicator_color = "purple"
+    ws.module = "Delivery Logistics"
+    ws.app = "delivery"
+    ws.sequence_id = 1
+    ws.public = 1
+
+    blocks = [
+        _ws_block("header", col=12,
+                  text='<span class="h4"><b>Delivery &amp; Logistics</b></span>'),
+        _ws_block("paragraph", col=12,
+                  text="Run the whole delivery operation: orders, parcels, transport, "
+                       "merchants and drivers. The customer shop itself lives at /delivery."),
+    ]
+    for label, link_to in _WS_SHORTCUTS:
+        ws.append("shortcut", {"label": label, "type": "DocType",
+                               "link_to": link_to, "doc_view": "List"})
+        blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
+    ws.content = json.dumps(blocks)
+
+    ws.append("links", {"type": "Card Break", "label": "Deliveries", "icon": "tool"})
+    for label, link_to in _WS_SHORTCUTS[:5]:
+        ws.append("links", {"type": "Link", "label": label,
+                            "link_type": "DocType", "link_to": link_to})
+
+    ws.insert(ignore_permissions=True)
+    # belt & braces: make sure public sticks regardless of form-level defaults
+    frappe.db.set_value("Workspace", DELIVERY_WS, "public", 1, update_modified=False)
+
+
+def desk_show_delivery_only():
+    """Desk home shows the Delivery app only: stock Frappe/ERPNext workspaces
+    are hidden (public=0, is_hidden=1 - nothing is deleted). Idempotent; the
+    app also re-runs it automatically after every migrate (hooks.py)."""
+    _ensure_delivery_workspace()
+    hidden = []
+    for name in frappe.get_all("Workspace", filters={"public": 1}, pluck="name"):
+        if name == DELIVERY_WS:
+            continue
+        frappe.db.set_value("Workspace", name,
+                            {"public": 0, "is_hidden": 1}, update_modified=False)
+        hidden.append(name)
+    frappe.db.commit()
+    try:
+        frappe.clear_cache()
+    except Exception:
+        pass
+    return {"kept_public": [DELIVERY_WS],
+            "hidden_count": len(hidden), "hidden": hidden}
+
+
+def desk_show_all():
+    """Undo desk_show_delivery_only: restore the standard Frappe/ERPNext
+    workspaces to public again."""
+    restored = []
+    for row in frappe.get_all("Workspace", filters={"public": 0, "is_hidden": 1},
+                              fields=["name", "app"]):
+        if row.name == DELIVERY_WS or (row.app or "") not in ("frappe", "erpnext"):
+            continue
+        frappe.db.set_value("Workspace", row.name,
+                            {"public": 1, "is_hidden": 0}, update_modified=False)
+        restored.append(row.name)
+    frappe.db.commit()
+    try:
+        frappe.clear_cache()
+    except Exception:
+        pass
+    return {"restored_count": len(restored), "restored": restored}
