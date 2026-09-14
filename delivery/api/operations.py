@@ -303,58 +303,6 @@ def update_settings(**changes):
 
 
 # ---------------------------------------------------------------------------
-# home-page categories (Item Category)
-# ---------------------------------------------------------------------------
-@frappe.whitelist()
-def category_add(category_name, match_type="Words", match_value=None,
-                 fontawesome_icon=None, display_order=0):
-    """Add a home-page category tile (Website -> Shop by category)."""
-    _require_ops()
-    category_name = (category_name or "").strip()
-    if not category_name:
-        frappe.throw(_("Category name is required."))
-    if frappe.db.exists("DL Item Category", category_name):
-        frappe.throw(_("Category {0} already exists.").format(category_name))
-    if match_type not in ("Words", "Offers"):
-        frappe.throw(_("Match type must be Words or Offers."))
-    doc = frappe.get_doc({
-        "doctype": "DL Item Category",
-        "category_name": category_name,
-        "match_type": match_type,
-        "match_value": (match_value or "").strip() if match_type == "Words" else "",
-        "fontawesome_icon": (fontawesome_icon or "fa-tag").strip(),
-        "display_order": int(flt(display_order)),
-        "is_active": 1,
-    }).insert(ignore_permissions=True)
-    frappe.db.commit()
-    return {"category": doc.name, "ok": True}
-
-
-@frappe.whitelist()
-def category_toggle(category_name, is_active=None):
-    _require_ops()
-    cur = frappe.db.get_value("DL Item Category", category_name, "is_active")
-    if cur is None:
-        frappe.throw(_("No category named {0}.").format(category_name),
-                     frappe.DoesNotExistError)
-    val = int(bool(flt(is_active))) if is_active is not None else (0 if int(cur) else 1)
-    frappe.db.set_value("DL Item Category", category_name, "is_active", val)
-    frappe.db.commit()
-    return {"category": category_name, "is_active": val}
-
-
-@frappe.whitelist()
-def category_delete(category_name):
-    _require_ops()
-    if not frappe.db.exists("DL Item Category", category_name):
-        frappe.throw(_("No category named {0}.").format(category_name),
-                     frappe.DoesNotExistError)
-    frappe.delete_doc("DL Item Category", category_name, ignore_permissions=True)
-    frappe.db.commit()
-    return {"deleted": category_name}
-
-
-# ---------------------------------------------------------------------------
 # reports (admin dashboard box 9)
 # ---------------------------------------------------------------------------
 @frappe.whitelist()

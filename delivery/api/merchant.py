@@ -123,7 +123,7 @@ def catalog(merchant=None, published=None):
 
 
 @frappe.whitelist()
-def add_item(merchant, item_name, item_type="Food", category=None,
+def add_item(merchant, item_name, item_type="Restaurant", category=None,
              standard_rate=0, description=None, prep_minutes=0,
              available_stock=0, track_stock=0, published=1, item_code=None,
              apply_service_charge=0, service_charge_pct=0, service_fee=0):

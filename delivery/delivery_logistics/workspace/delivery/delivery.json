@@ -1,5 +1,5 @@
 {
- "content": "[{\"id\": \"a76a046b6c\", \"type\": \"header\", \"data\": {\"col\": 12, \"text\": \"<span class=\\\"h4\\\"><b>Delivery &amp; Logistics</b></span>\"}}, {\"id\": \"35cbabc8de\", \"type\": \"paragraph\", \"data\": {\"col\": 12, \"text\": \"Run the whole delivery operation: orders, parcels, transport, merchants and drivers. The customer shop itself lives at /delivery.\"}}, {\"id\": \"1e620687d5\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Delivery Orders\"}}, {\"id\": \"82137d40c4\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Menu Items\"}}, {\"id\": \"7e1339715f\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Item Categories\"}}, {\"id\": \"675dac1d0f\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Merchants\"}}, {\"id\": \"f49a96a672\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Drivers\"}}, {\"id\": \"59669358fd\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Parcels\"}}, {\"id\": \"a63a242435\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Transport Trips\"}}, {\"id\": \"cf8b9e63a2\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Home Banners\"}}, {\"id\": \"3a530b9e80\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Reports\"}}, {\"id\": \"c8475ddb97\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Logistics Settings\"}}]",
+ "content": "[{\"id\": \"a76a046b6c\", \"type\": \"header\", \"data\": {\"col\": 12, \"text\": \"<span class=\\\"h4\\\"><b>Delivery &amp; Logistics</b></span>\"}}, {\"id\": \"35cbabc8de\", \"type\": \"paragraph\", \"data\": {\"col\": 12, \"text\": \"Run the whole delivery operation: orders, parcels, transport, merchants and drivers. The customer shop itself lives at /delivery.\"}}, {\"id\": \"1e620687d5\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Delivery Orders\"}}, {\"id\": \"82137d40c4\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Menu Items\"}}, {\"id\": \"675dac1d0f\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Merchants\"}}, {\"id\": \"f49a96a672\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Drivers\"}}, {\"id\": \"59669358fd\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Parcels\"}}, {\"id\": \"a63a242435\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Transport Trips\"}}, {\"id\": \"cf8b9e63a2\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Home Banners\"}}, {\"id\": \"3a530b9e80\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Reports\"}}, {\"id\": \"c8475ddb97\", \"type\": \"shortcut\", \"data\": {\"col\": 3, \"shortcut_name\": \"Logistics Settings\"}}]",
  "docstatus": 0,
  "doctype": "Workspace",
  "icon": "tool",
@@ -60,12 +60,6 @@
    "label": "Menu Items",
    "type": "DocType",
    "link_to": "DL Menu Item",
-   "doc_view": "List"
-  },
-  {
-   "label": "Item Categories",
-   "type": "DocType",
-   "link_to": "DL Item Category",
    "doc_view": "List"
   },
   {

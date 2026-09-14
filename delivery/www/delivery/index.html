@@ -589,37 +589,17 @@
   document.getElementById("chips").innerHTML = CATS.map(function(c){
     return '<button class="x-chip'+(c.k==="all"?" active":"")+'" data-cat="'+c.k+'">'+c.label+'</button>';
   }).join("");
-  var TILES = [["food","fa-burger","Food"],["retail","fa-cart-shopping","Groceries"],["drinks","fa-glass-water","Drinks"],["bakery","fa-bread-slice","Bakery"],
-               ["snacks","fa-cookie","Snacks"],["offers","fa-tag","Offers"]];
+  var TILES = [
+    ["restaurant","fa-utensils","Restaurant"],
+    ["groceries","fa-cart-shopping","Groceries"],
+    ["drinks","fa-glass-water","Drinks"],
+    ["pharmacy","fa-prescription-bottle-medical","Pharmacy & Cosmetics"],
+    ["shopping","fa-bag-shopping","Shopping"],
+    ["others","fa-shapes","Others"]
+  ];
   document.getElementById("cats").innerHTML = TILES.map(function(t){
     return '<div class="x-cat" data-cat="'+t[0]+'"><div class="ic">'+fa(t[1])+'</div><div class="lb">'+t[2]+'</div></div>';
   }).join("");
-
-  // ---------- admin-managed categories (Item Category doctype) ----------
-  var CATDEF = {};                 // key -> {mt: match_type, mv: match words}
-  function keyOf(n){ return (n||"").toLowerCase().replace(/\s+/g,""); }
-  function buildCats(rows){
-    CATDEF = {};
-    var chips=[{k:"all",label:fa("fa-grip")+" All"}], tiles=[];
-    rows.forEach(function(r){
-      var k=keyOf(r.key) || keyOf(r.category_name);
-      if(!k || k==="all" || CATDEF[k]) return;
-      CATDEF[k]={mt:r.match_type||"Words", mv:r.match_value||""};
-      chips.push({k:k,label:fa(r.icon||"fa-tag")+" "+DELIVERY.esc(r.category_name)});
-      tiles.push([k,r.icon||"fa-tag",DELIVERY.esc(r.category_name)]);
-    });
-    if(!tiles.length) return;
-    document.getElementById("chips").innerHTML=chips.map(function(c){
-      return '<button class="x-chip'+(c.k==="all"?" active":"")+'" data-cat="'+c.k+'">'+c.label+'</button>';
-    }).join("");
-    document.getElementById("cats").innerHTML=tiles.map(function(t){
-      return '<div class="x-cat" data-cat="'+t[0]+'"><div class="ic">'+fa(t[1])+'</div><div class="lb">'+t[2]+'</div></div>';
-    }).join("");
-    if(cat!=="all" && !CATDEF[cat]) setCat("all");
-  }
-  DELIVERY.call("delivery.api.customer.categories").then(function(rows){
-    if(rows && rows.length) buildCats(rows);
-  }).catch(function(){});
 
   function setCat(k){
     cat = k;
@@ -643,24 +623,17 @@
 
   function matchCat(it){
     if(cat==="all") return true;
-    var def=CATDEF[cat];
-    if(!def){                      // pre-load / legacy keys
-      var c=(it.category||"").toLowerCase();
-      switch(cat){
-        case "food":   return it.item_type==="Food";
-        case "retail": return it.item_type==="Retail" || c.indexOf("grocer")>=0 || c.indexOf("household")>=0;
-        case "drinks": return c.indexOf("drink")>=0;
-        case "snacks": return c.indexOf("snack")>=0;
-        case "bakery": return c.indexOf("baker")>=0 || c.indexOf("bread")>=0;
-        case "offers": return it.discount_rate>0;
-        default: return true;
-      }
+    var t=(it.item_type||"");
+    switch(cat){
+      case "restaurant": return t==="Restaurant" || t==="Food";
+      case "groceries":  return t==="Groceries" || t==="Retail" || t==="Grocery";
+      case "drinks":     return t==="Drinks";
+      case "pharmacy":   return t==="Pharmacy & Cosmetics";
+      case "shopping":   return t==="Shopping";
+      case "others":     return t==="Others";
+      case "offers":     return it.discount_rate>0;
+      default: return true;
     }
-    if(def.mt==="Offers") return it.discount_rate>0;
-    var words=(def.mv||"").toLowerCase().split(",").map(function(s){return s.trim();}).filter(Boolean);
-    if(!words.length) return true;
-    var t=(it.item_type||"").toLowerCase(), c2=(it.category||"").toLowerCase();
-    return words.some(function(w){ return t===w || c2.indexOf(w)>=0; });
   }
 
   // ---------- items ----------
@@ -681,7 +654,7 @@
       if(sort==="name") return (a.item_name||"").localeCompare(b.item_name||"");
       return (b.featured?1:0)-(a.featured?1:0) || a.rate-b.rate;
     });
-    var labelMap={all:"Available now",food:"Food",retail:"Groceries",drinks:"Drinks",snacks:"Snacks",bakery:"Bakery",offers:"Offers"};
+    var labelMap={all:"Available now",restaurant:"Restaurant",groceries:"Groceries",drinks:"Drinks",shopping:"Shopping",pharmacy:"Pharmacy & Cosmetics",others:"Others",offers:"Offers"};
     document.getElementById("items-title").textContent=(labelMap[cat]||"Available now")+" ("+list.length+")";
     var host=document.getElementById("grid");
     if(!list.length){ host.innerHTML='<div class="x-empty">No items match. Try another search or category.</div>'; return; }
@@ -861,7 +834,7 @@
     .catch(function(){ document.getElementById("merchants").innerHTML='<div class="x-empty">Could not load merchants.</div>'; });
   DELIVERY.call("delivery.api.customer.browse_items",{sort:"featured",limit:300}).then(function(rows){
     ALL=rows||[]; renderItems(); renderOffers(); renderCart();
-  }).catch(function(){ document.getElementById("grid").innerHTML='<div class="x-empty">Could not load items.</div>'; });
+  }).catch(function(e){ document.getElementById("grid").innerHTML='<div class="x-empty">Could not load items.<br><small>'+DELIVERY.esc((e&&e.message)||"")+'</small></div>'; });
 
   // account name
   fetch("/api/method/frappe.auth.get_logged_user",{credentials:"same-origin"})

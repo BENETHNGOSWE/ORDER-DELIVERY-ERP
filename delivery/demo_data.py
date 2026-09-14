@@ -154,7 +154,7 @@ def _make_merchant(spec):
             "item_code": code,
             "item_name": name,
             "merchant": doc.name,
-            "item_type": "Food" if spec["service_type"] != "Retail" else "Retail",
+            "item_type": "Restaurant" if spec["service_type"] != "Retail" else "Groceries",
             "category": category,
             "standard_rate": flt(rate),
             "prep_minutes": prep,

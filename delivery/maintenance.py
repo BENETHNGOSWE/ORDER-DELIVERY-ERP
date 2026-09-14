@@ -334,100 +334,38 @@ def bulk_attach_images(folder="/home/frappe/product-images", match_by=None):
 
 
 # ---------------------------------------------------------------------------
-# Default home-page categories ("Shop by category") - seeded once, then the
-# admin manages them from Desk -> Item Category.
+# One-time item-type remapping for the new category list
+# (Restaurant / Groceries / Drinks / Pharmacy & Cosmetics / Shopping / Others)
 # ---------------------------------------------------------------------------
-DEFAULT_CATEGORIES = [
-    ("Food", "Words", "food", "fa-burger", 1),
-    ("Groceries", "Words", "grocer,household,retail", "fa-cart-shopping", 2),
-    ("Drinks", "Words", "drink,beverage,juice,soda", "fa-glass-water", 3),
-    ("Snacks", "Words", "snack", "fa-cookie", 4),
-    ("Bakery", "Words", "baker,bread,pastry,cake", "fa-bread-slice", 5),
-    ("Offers", "Offers", "", "fa-tag", 6),
-]
-
-
-DELIVERY_DOCTYPE_MODULES = {
-    # doctype -> expected module (the orphan-doctype pass deletes any doctype
-    # whose controller import fails; a stale module field from a crashed sync
-    # would make it delete ours - repair the linkage after every migrate)
-    "DL Item Category": "Delivery Logistics",
-    "DL Menu Item": "Delivery Logistics",
-    "Delivery Order": "Delivery Logistics",
-    "Delivery Order Item": "Delivery Logistics",
-    "Parcel Request": "Delivery Logistics",
-    "Transport Request": "Delivery Logistics",
-    "Merchant": "Delivery Logistics",
-    "Delivery Driver": "Delivery Logistics",
-    "Logistics Settings": "Delivery Logistics",
-    "Delivery Zone": "Delivery Logistics",
+ITEM_TYPE_REMAP = {
+    "Food": "Restaurant",
+    "Retail": "Groceries",
+    "Grocery": "Groceries",
+    "Bakery": "Pharmacy & Cosmetics",
+    "Snacks": "Shopping",
 }
 
 
-def repair_doctype_module_links():
-    """Heal poisoned doctype rows. A row written by an interrupted sync can
-    carry a stale module AND a modified timestamp equal to our JSON's - the
-    normal sync then skips the file ('unchanged'), and the orphan-doctype
-    pass deletes the row because its controller import fails. Force-reimport
-    our JSON (timestamp-independent) whenever the row is missing or wrong."""
-    import os
+def remap_item_types():
+    """Idempotent: only touches rows still carrying an old type value."""
     try:
-        from frappe.modules.import_file import import_file_by_path
-        app_path = frappe.get_app_path("delivery")
-        fixed = []
-        for dt, expected in DELIVERY_DOCTYPE_MODULES.items():
-            try:
-                module = frappe.db.get_value("DocType", dt, "module")
-            except Exception:
-                module = None
-            if module == expected:
-                continue
-            path = os.path.join(app_path, "delivery_logistics", "doctype",
-                                frappe.scrub(dt), frappe.scrub(dt) + ".json")
-            if not os.path.exists(path):
-                continue
-            try:
-                import_file_by_path(path, force=True, reset_permissions=True)
-                fixed.append("{0} (was: {1})".format(dt, module))
-            except Exception as e2:
-                frappe.log_error("Reimport {0} failed: {1}".format(dt, e2))
-                print("Reimport {0} FAILED: {1}".format(dt, e2))
-        if fixed:
+        changed = []
+        for old, new in ITEM_TYPE_REMAP.items():
+            rows = frappe.get_all("DL Menu Item",
+                                  filters={"item_type": old}, pluck="name")
+            for n in rows:
+                frappe.db.set_value("DL Menu Item", n, "item_type", new,
+                                    update_modified=False)
+            if rows:
+                changed.append("{0}->{1} ({2})".format(old, new, len(rows)))
+        if changed:
             frappe.db.commit()
-            print("Repaired doctype rows:", ", ".join(fixed))
-        return {"fixed": fixed}
+            print("Item types remapped:", ", ".join(changed))
+        return {"changed": changed}
     except Exception as e:
-        frappe.log_error("Doctype module repair failed: {0}".format(e))
-        print("Doctype module repair failed:", e)
-        return {"fixed": [], "error": str(e)}
-
-
-def ensure_default_item_categories():
-    """Seed the home-page categories once. Never allowed to break a migrate:
-    guarded + fully wrapped - a seeding problem is logged, not fatal."""
-    try:
-        if not frappe.db.exists("DocType", "DL Item Category"):
-            print("DL Item Category missing - skipping category seeding")
-            return {"seeded": 0}
-        if frappe.db.count("DL Item Category"):
-            return {"seeded": 0}
-        for name, mt, mv, icon, order in DEFAULT_CATEGORIES:
-            if not frappe.db.exists("DL Item Category", name):
-                frappe.get_doc({
-                    "doctype": "DL Item Category",
-                    "category_name": name,
-                    "match_type": mt,
-                    "match_value": mv,
-                    "fontawesome_icon": icon,
-                    "display_order": order,
-                    "is_active": 1,
-                }).insert(ignore_permissions=True)
-        frappe.db.commit()
-        return {"seeded": len(DEFAULT_CATEGORIES)}
-    except Exception as e:
-        frappe.log_error("Category seeding failed: {0}".format(e))
-        print("Category seeding skipped:", e)
-        return {"seeded": 0, "error": str(e)}
+        frappe.log_error("Item type remap failed: {0}".format(e))
+        print("Item type remap skipped:", e)
+        return {"changed": [], "error": str(e)}
 
 
 # ---------------------------------------------------------------------------
@@ -443,7 +381,6 @@ _WS_SHORTCUTS = [
     # client-approved order (top of Desk grid first)
     ("Delivery Orders", "Delivery Order"),
     ("Menu Items", "DL Menu Item"),
-    ("Item Categories", "DL Item Category"),
     ("Merchants", "Merchant"),
     ("Drivers", "Delivery Driver"),
     ("Parcels", "Parcel Request"),

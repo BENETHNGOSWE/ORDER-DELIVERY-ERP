@@ -34,6 +34,10 @@
   <h3><i class="fa-solid fa-plus"></i> Add a new item</h3>
   <div class="dl-row">
     <input id="new-name" class="dl-input" style="flex:2; min-width:170px" placeholder="Item name">
+    <select id="new-type" class="dl-select" style="max-width:180px">
+      <option>Restaurant</option><option>Groceries</option><option>Drinks</option>
+      <option>Pharmacy &amp; Cosmetics</option><option>Shopping</option><option>Others</option>
+    </select>
     <input id="new-cat" class="dl-input" style="flex:1; min-width:120px" placeholder="Category">
     <input id="new-rate" class="dl-input" style="flex:1; min-width:110px" type="number" placeholder="Price (TZS)">
     <input id="new-prep" class="dl-input" style="flex:1; min-width:120px" type="number" placeholder="Prep minutes">
@@ -266,6 +270,7 @@
     DELIVERY.call("delivery.api.merchant.add_item", {
       merchant: ME,
       item_name: document.getElementById("new-name").value,
+      item_type: document.getElementById("new-type").value,
       category: document.getElementById("new-cat").value || "General",
       standard_rate: Number(document.getElementById("new-rate").value || 0),
       prep_minutes: Number(document.getElementById("new-prep").value || 0),
@@ -276,6 +281,7 @@
     }).then(function () {
       DELIVERY.toast("Item added", "success"); catalogue(); stats();
       document.getElementById("new-name").value = "";
+      document.getElementById("new-type").value = "Restaurant";
       document.getElementById("new-cat").value = "";
       document.getElementById("new-rate").value = "";
       document.getElementById("new-prep").value = "";
