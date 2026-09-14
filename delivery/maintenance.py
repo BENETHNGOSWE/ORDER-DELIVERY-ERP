@@ -348,21 +348,31 @@ DEFAULT_CATEGORIES = [
 
 
 def ensure_default_item_categories():
-    if frappe.db.count("Item Category"):
-        return {"seeded": 0}
-    for name, mt, mv, icon, order in DEFAULT_CATEGORIES:
-        if not frappe.db.exists("Item Category", name):
-            frappe.get_doc({
-                "doctype": "Item Category",
-                "category_name": name,
-                "match_type": mt,
-                "match_value": mv,
-                "fontawesome_icon": icon,
-                "display_order": order,
-                "is_active": 1,
-            }).insert(ignore_permissions=True)
-    frappe.db.commit()
-    return {"seeded": len(DEFAULT_CATEGORIES)}
+    """Seed the home-page categories once. Never allowed to break a migrate:
+    guarded + fully wrapped - a seeding problem is logged, not fatal."""
+    try:
+        if not frappe.db.exists("DocType", "DL Item Category"):
+            print("DL Item Category missing - skipping category seeding")
+            return {"seeded": 0}
+        if frappe.db.count("DL Item Category"):
+            return {"seeded": 0}
+        for name, mt, mv, icon, order in DEFAULT_CATEGORIES:
+            if not frappe.db.exists("DL Item Category", name):
+                frappe.get_doc({
+                    "doctype": "DL Item Category",
+                    "category_name": name,
+                    "match_type": mt,
+                    "match_value": mv,
+                    "fontawesome_icon": icon,
+                    "display_order": order,
+                    "is_active": 1,
+                }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        return {"seeded": len(DEFAULT_CATEGORIES)}
+    except Exception as e:
+        frappe.log_error("Category seeding failed: {0}".format(e))
+        print("Category seeding skipped:", e)
+        return {"seeded": 0, "error": str(e)}
 
 
 # ---------------------------------------------------------------------------
@@ -378,7 +388,7 @@ _WS_SHORTCUTS = [
     # client-approved order (top of Desk grid first)
     ("Delivery Orders", "Delivery Order"),
     ("Menu Items", "DL Menu Item"),
-    ("Item Categories", "Item Category"),
+    ("Item Categories", "DL Item Category"),
     ("Merchants", "Merchant"),
     ("Drivers", "Delivery Driver"),
     ("Parcels", "Parcel Request"),

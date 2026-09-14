@@ -313,12 +313,12 @@ def category_add(category_name, match_type="Words", match_value=None,
     category_name = (category_name or "").strip()
     if not category_name:
         frappe.throw(_("Category name is required."))
-    if frappe.db.exists("Item Category", category_name):
+    if frappe.db.exists("DL Item Category", category_name):
         frappe.throw(_("Category {0} already exists.").format(category_name))
     if match_type not in ("Words", "Offers"):
         frappe.throw(_("Match type must be Words or Offers."))
     doc = frappe.get_doc({
-        "doctype": "Item Category",
+        "doctype": "DL Item Category",
         "category_name": category_name,
         "match_type": match_type,
         "match_value": (match_value or "").strip() if match_type == "Words" else "",
@@ -333,12 +333,12 @@ def category_add(category_name, match_type="Words", match_value=None,
 @frappe.whitelist()
 def category_toggle(category_name, is_active=None):
     _require_ops()
-    cur = frappe.db.get_value("Item Category", category_name, "is_active")
+    cur = frappe.db.get_value("DL Item Category", category_name, "is_active")
     if cur is None:
         frappe.throw(_("No category named {0}.").format(category_name),
                      frappe.DoesNotExistError)
     val = int(bool(flt(is_active))) if is_active is not None else (0 if int(cur) else 1)
-    frappe.db.set_value("Item Category", category_name, "is_active", val)
+    frappe.db.set_value("DL Item Category", category_name, "is_active", val)
     frappe.db.commit()
     return {"category": category_name, "is_active": val}
 
@@ -346,10 +346,10 @@ def category_toggle(category_name, is_active=None):
 @frappe.whitelist()
 def category_delete(category_name):
     _require_ops()
-    if not frappe.db.exists("Item Category", category_name):
+    if not frappe.db.exists("DL Item Category", category_name):
         frappe.throw(_("No category named {0}.").format(category_name),
                      frappe.DoesNotExistError)
-    frappe.delete_doc("Item Category", category_name, ignore_permissions=True)
+    frappe.delete_doc("DL Item Category", category_name, ignore_permissions=True)
     frappe.db.commit()
     return {"deleted": category_name}
 

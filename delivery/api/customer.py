@@ -146,7 +146,7 @@ def merchant_catalog(merchant, item_type=None, category=None, search=None):
 def categories():
     """Active home-page category tiles ("Shop by category"), admin-managed
     via the Item Category doctype."""
-    rows = frappe.get_all("Item Category",
+    rows = frappe.get_all("DL Item Category",
                           filters={"is_active": 1},
                           fields=["category_name", "match_type", "match_value",
                                   "fontawesome_icon", "display_order"],
