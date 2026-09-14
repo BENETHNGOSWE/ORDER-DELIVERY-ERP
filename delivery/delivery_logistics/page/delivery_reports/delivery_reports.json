@@ -1,0 +1,17 @@
+{
+ "doctype": "Page",
+ "name": "delivery-reports",
+ "page_name": "delivery-reports",
+ "title": "Delivery Reports",
+ "module": "Delivery Logistics",
+ "standard": "Yes",
+ "system_page": 0,
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Delivery Operations"
+  }
+ ]
+}

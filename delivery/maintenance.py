@@ -351,12 +351,28 @@ _WS_SHORTCUTS = [
     ("Parcels", "Parcel Request"),
     ("Transport Trips", "Transport Request"),
     ("Home Banners", "Home Banner"),
+    ("Reports", "page:delivery-reports"),
     ("Logistics Settings", "Logistics Settings"),
 ]
 
 
 def _ws_block(btype, **data):
     return {"id": uuid.uuid4().hex[:10], "type": btype, "data": data}
+
+
+def _ws_shortcut_row(label, target):
+    if target.startswith("page:"):
+        meta = frappe.get_meta("Workspace Shortcut")
+        field = meta.get_field("type")
+        opts = [o for o in (field.options or "").split("\n") if o] if field else []
+        if opts and "Page" not in opts:
+            # this build's Workspace Shortcut does not support Page tiles -
+            # skip rather than crash the whole workspace sync (recovered next
+            # migrate after an app update that adds support)
+            print("Skipping Desk shortcut {0}: Page type not supported".format(label))
+            return None
+        return {"label": label, "type": "Page", "link_to": target[5:]}
+    return {"label": label, "type": "DocType", "link_to": target, "doc_view": "List"}
 
 
 def _workspace_content():
@@ -369,9 +385,6 @@ def _workspace_content():
     ]
     for label, _link_to in _WS_SHORTCUTS:
         blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
-    blocks.append(_ws_block("paragraph", col=12,
-        text='Open the <a href="/delivery/operations"><b>End-of-Day Reports</b></a>'
-             ' (merchant payables, platform revenue, per-driver payouts).'))
     return json.dumps(blocks)
 
 
@@ -385,8 +398,9 @@ def _ensure_delivery_workspace():
         ws.is_hidden = 0
         ws.set("shortcuts", [])
         for label, link_to in _WS_SHORTCUTS:
-            ws.append("shortcuts", {"label": label, "type": "DocType",
-                                    "link_to": link_to, "doc_view": "List"})
+            row = _ws_shortcut_row(label, link_to)
+            if row:
+                ws.append("shortcuts", row)
         ws.content = _workspace_content()
         ws.flags.ignore_permissions = True
         ws.save(ignore_permissions=True)
@@ -405,8 +419,9 @@ def _ensure_delivery_workspace():
     ws.content = _workspace_content()
 
     for label, link_to in _WS_SHORTCUTS:
-        ws.append("shortcuts", {"label": label, "type": "DocType",
-                                "link_to": link_to, "doc_view": "List"})
+        row = _ws_shortcut_row(label, link_to)
+        if row:
+            ws.append("shortcuts", row)
     ws.append("links", {"type": "Card Break", "label": "Deliveries", "icon": "tool"})
     for label, link_to in _WS_SHORTCUTS[:5]:
         ws.append("links", {"type": "Link", "label": label,

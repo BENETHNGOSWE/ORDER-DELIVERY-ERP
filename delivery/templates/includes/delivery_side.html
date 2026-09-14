@@ -19,7 +19,6 @@
       <div class="grp">My workspace</div>
       <a href="/delivery/me"{% if here == '/delivery/me' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
       {% if is_merchant %}<a href="/delivery/merchant"{% if here == '/delivery/merchant' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-shop"></i></span> Merchant</a>{% endif %}
-      {% if is_ops or is_admin %}<a href="/delivery/operations"{% if here == '/delivery/operations' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-gauge-high"></i></span> Operations</a>{% endif %}
       {% if is_driver %}<a href="/delivery/driver"{% if here == '/delivery/driver' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-helmet-safety"></i></span> Driver</a>{% endif %}
       <div class="grp">Account</div>
       <a href="/api/method/logout"><span class="ni"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Log out</a>
