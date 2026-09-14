@@ -120,11 +120,19 @@
       '<div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading items&hellip;</div>';
     document.getElementById("pick-modal").style.display = "flex";
     DELIVERY.call("delivery.api.driver.job_items", { reference: ref }).then(function (d) {
-      document.getElementById("pick-meta").innerHTML =
-        "<b>" + DELIVERY.esc(ref) + "</b> &middot; " + DELIVERY.esc(d.customer_name || "") +
-        "<br>" + DELIVERY.esc(d.delivery_address || "") +
-        ' &middot; <span class="pill ' + (d.payment_status === "Paid" ? "s-don" : "s-pen") + '">' +
+      var meta = "<b>" + DELIVERY.esc(ref) + "</b> &middot; " + DELIVERY.esc(d.customer_name || "");
+      if (d.customer_phone)
+        meta += ' &middot; <a href="tel:' + DELIVERY.esc(d.customer_phone) +
+          '" style="color:var(--purple); font-weight:600"><i class="fa-solid fa-phone"></i> ' +
+          DELIVERY.esc(d.customer_phone) + "</a>";
+      meta += "<br>" + DELIVERY.esc(d.delivery_address || "") +
+        mapLink(d.delivery_latitude, d.delivery_longitude, d.delivery_address);
+      if (d.delivery_instructions)
+        meta += '<br><i class="fa-solid fa-note-sticky" style="color:var(--purple)"></i> ' +
+          DELIVERY.esc(d.delivery_instructions);
+      meta += ' &middot; <span class="pill ' + (d.payment_status === "Paid" ? "s-don" : "s-pen") + '">' +
         DELIVERY.esc(d.payment_status || "") + " &middot; " + DELIVERY.esc(d.payment_method || "") + "</span>";
+      document.getElementById("pick-meta").innerHTML = meta;
       document.getElementById("pick-items").innerHTML = itemsTableHTML(d);
     }).catch(function (e) {
       document.getElementById("pick-items").innerHTML =
@@ -142,6 +150,41 @@
       .then(function (r) { DELIVERY.toast(r.reference + " picked up", "success"); jobs(); earnings(); })
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
   });
+
+  // ---- customer + route info on a job card ----
+  function mapLink(lat, lng, addr) {
+    var q = (lat && lng) ? lat + "," + lng : addr || "";
+    if (!q) return "";
+    return ' <a href="https://www.google.com/maps?q=' + encodeURIComponent(q) +
+      '" target="_blank" rel="noopener" style="color:var(--purple); font-weight:600; white-space:nowrap">' +
+      '<i class="fa-solid fa-diamond-turn-right"></i> Map</a>';
+  }
+  function jobInfoHTML(j) {
+    var h = "";
+    if (j.from_addr)
+      h += '<div class="dl-mut" style="margin-top:8px"><i class="fa-solid fa-store" style="color:var(--purple); width:17px"></i> <b>From:</b> ' +
+        DELIVERY.esc(j.from_addr) + "</div>";
+    var dest = j.to_addr || j.address || "";
+    if (dest)
+      h += '<div class="dl-mut" style="margin-top:4px"><i class="fa-solid fa-location-dot" style="color:var(--purple); width:17px"></i> <b>To:</b> ' +
+        DELIVERY.esc(dest) + mapLink(j.lat, j.lng, dest) + "</div>";
+    if (j.customer_name || j.phone) {
+      h += '<div class="dl-mut" style="margin-top:4px"><i class="fa-solid fa-user" style="color:var(--purple); width:17px"></i> ' +
+        DELIVERY.esc(j.customer_name || "");
+      if (j.phone)
+        h += ' &middot; <a href="tel:' + DELIVERY.esc(j.phone) +
+          '" style="color:var(--purple); font-weight:600; white-space:nowrap"><i class="fa-solid fa-phone"></i> ' +
+          DELIVERY.esc(j.phone) + "</a>";
+      h += "</div>";
+    }
+    if (j.instructions)
+      h += '<div class="dl-mut" style="margin-top:4px"><i class="fa-solid fa-note-sticky" style="color:var(--purple); width:17px"></i> ' +
+        DELIVERY.esc(j.instructions) + "</div>";
+    if (!h && j.address)
+      h = '<div class="dl-mut" style="margin-top:8px"><i class="fa-solid fa-location-dot" style="color:var(--purple); width:17px"></i> ' +
+        DELIVERY.esc(j.address) + "</div>";
+    return h;
+  }
 
   function jobs() {
     DELIVERY.call("delivery.api.driver.my_jobs").then(function (rows) {
@@ -174,9 +217,9 @@
             '<span class="dl-stat-ic"><i class="fa-solid ' +
               (j.service === "Transport" ? "fa-car-side" : "fa-box") + '"></i></span>' +
             '<div style="min-width:0"><b>' + j.reference + '</b> <span class="dl-mut">&middot; ' +
-              DELIVERY.esc(j.service) + "</span><br>" +
-            '<span class="dl-mut">' + DELIVERY.esc(j.address || "") + "</span></div></div>" +
+              DELIVERY.esc(j.service) + "</span></div></div>" +
           DELIVERY.statePill(j.state) + "</div>" +
+          jobInfoHTML(j) +
           '<div class="dl-between" style="margin-top:12px">' +
             '<span class="dl-price">' + DELIVERY.fmt(j.amount) + " &middot; " +
               DELIVERY.esc(j.payment_status || "") + "</span><span>" + actions + "</span></div>" +

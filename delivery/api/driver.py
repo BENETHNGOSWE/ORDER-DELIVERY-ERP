@@ -112,6 +112,9 @@ def my_jobs(state=None, limit=30):
         filters["workflow_state"] = state or ["in", active + ["ACCEPTED", "PREPARING"]]
         fields = (["name", "workflow_state", "creation", "currency",
                    "payment_status", amount_field] + list(ADDRESS_COLS[dt]))
+        if dt == "Delivery Order":
+            fields += ["customer_name", "customer_phone", "delivery_latitude",
+                       "delivery_longitude", "delivery_instructions", "merchant_name_f"]
 
         rows = frappe.get_all(dt, filters=filters, fields=fields,
                               order_by="creation asc", limit=int(limit))
@@ -127,11 +130,25 @@ def my_jobs(state=None, limit=30):
                     {"parent": r.name, "parenttype": "Transport Request"},
                     "address", order_by="idx asc")
 
+            extra = {}
+            if dt == "Delivery Order":
+                address = r.get("delivery_address") or address
+                extra = {"customer_name": r.get("customer_name"),
+                         "phone": r.get("customer_phone"),
+                         "lat": r.get("delivery_latitude"),
+                         "lng": r.get("delivery_longitude"),
+                         "instructions": r.get("delivery_instructions"),
+                         "from_addr": r.get("merchant_name_f") or r.get("pickup_address"),
+                         "to_addr": r.get("delivery_address")}
+            elif dt == "Parcel Request":
+                extra = {"from_addr": r.get("pickup_address"),
+                         "to_addr": r.get("dropoff_address")}
+
             service = SERVICE_LABEL[dt]
             if dt == "Delivery Order":
                 service = frappe.db.get_value(dt, r.name, "order_type") or "Food"
 
-            jobs.append({
+            job = {
                 "reference": r.name,
                 "doctype": dt,
                 "service": service,
@@ -141,7 +158,9 @@ def my_jobs(state=None, limit=30):
                 "payment_status": r.payment_status,
                 "address": address,
                 "created": str(r.creation),
-            })
+            }
+            job.update(extra)
+            jobs.append(job)
 
     jobs.sort(key=lambda j: j["created"])
     return jobs
@@ -324,7 +343,10 @@ def job_items(reference):
             total = frappe.db.get_value("Delivery Order", reference,
                                         ["items_total", "grand_total",
                                          "payment_status", "payment_method",
-                                         "customer_name", "delivery_address"],
+                                         "customer_name", "customer_phone",
+                                         "delivery_address", "delivery_latitude",
+                                         "delivery_longitude",
+                                         "delivery_instructions"],
                                         as_dict=True)
             return {"service": "Delivery Order", "items": rows,
                     "items_total": total.get("items_total"),
@@ -332,7 +354,11 @@ def job_items(reference):
                     "payment_status": total.get("payment_status"),
                     "payment_method": total.get("payment_method"),
                     "customer_name": total.get("customer_name"),
-                    "delivery_address": total.get("delivery_address")}
+                    "customer_phone": total.get("customer_phone"),
+                    "delivery_address": total.get("delivery_address"),
+                    "delivery_latitude": total.get("delivery_latitude"),
+                    "delivery_longitude": total.get("delivery_longitude"),
+                    "delivery_instructions": total.get("delivery_instructions")}
     frappe.throw(_("Not found: {0}").format(reference), frappe.DoesNotExistError)
 
 
