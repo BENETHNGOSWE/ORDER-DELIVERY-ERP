@@ -80,6 +80,7 @@ get_website_user_home_page = "delivery.portal.get_website_user_home_page"
 # ---------------------------------------------------------------------------
 has_permission = {
     "Delivery Order": "delivery.permissions.order_permission",
+    "DL Menu Item": "delivery.permissions.menu_item_permission",
     "Parcel Request": "delivery.permissions.parcel_permission",
     "Transport Request": "delivery.permissions.transport_permission",
     "Payment Transaction": "delivery.permissions.payment_permission",

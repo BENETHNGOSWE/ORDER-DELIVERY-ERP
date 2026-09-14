@@ -167,3 +167,14 @@ def transport_query_conditions(user=None, doctype=None):
     if drivers:
         parts.append(_in_sql("`tabTransport Request`.`assigned_driver`", drivers))
     return "(" + " or ".join(parts) + ")"
+
+
+def menu_item_permission(doc, user=None, permission_type=None):
+    """DL Menu Item: merchants may only read/write their own items;
+    ops/admin unrestricted. (DocType perms already exclude other roles.)"""
+    user = user or frappe.session.user
+    if _unrestricted(user):
+        return True
+    if "Merchant User" in frappe.get_roles(user):
+        return doc.get("merchant") in _my_merchants(user)
+    return False

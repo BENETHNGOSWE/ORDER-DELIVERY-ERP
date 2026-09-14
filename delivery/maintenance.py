@@ -343,12 +343,13 @@ def bulk_attach_images(folder="/home/frappe/product-images", match_by=None):
 DELIVERY_WS = "Delivery"
 
 _WS_SHORTCUTS = [
+    # client-approved order (top of Desk grid first)
     ("Delivery Orders", "Delivery Order"),
-    ("Parcels", "Parcel Request"),
-    ("Transport Trips", "Transport Request"),
+    ("Menu Items", "DL Menu Item"),
     ("Merchants", "Merchant"),
     ("Drivers", "Delivery Driver"),
-    ("Menu Items", "DL Menu Item"),
+    ("Parcels", "Parcel Request"),
+    ("Transport Trips", "Transport Request"),
     ("Home Banners", "Home Banner"),
     ("Logistics Settings", "Logistics Settings"),
 ]
@@ -358,11 +359,34 @@ def _ws_block(btype, **data):
     return {"id": uuid.uuid4().hex[:10], "type": btype, "data": data}
 
 
+def _workspace_content():
+    blocks = [
+        _ws_block("header", col=12,
+                  text='<span class="h4"><b>Delivery &amp; Logistics</b></span>'),
+        _ws_block("paragraph", col=12,
+                  text="Run the whole delivery operation: orders, parcels, transport, "
+                       "merchants and drivers. The customer shop itself lives at /delivery."),
+    ]
+    for label, _link_to in _WS_SHORTCUTS:
+        blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
+    return json.dumps(blocks)
+
+
 def _ensure_delivery_workspace():
-    """Create (or re-publish) the public Delivery workspace with shortcuts."""
+    """Create the public Delivery workspace, or SYNC an existing one to the
+    current definition (shortcut order/list can change between releases -
+    existing sites must pick the new layout up on the next migrate/run)."""
     if frappe.db.exists("Workspace", DELIVERY_WS):
-        frappe.db.set_value("Workspace", DELIVERY_WS,
-                            {"public": 1, "is_hidden": 0}, update_modified=False)
+        ws = frappe.get_doc("Workspace", DELIVERY_WS)
+        ws.public = 1
+        ws.is_hidden = 0
+        ws.set("shortcuts", [])
+        for label, link_to in _WS_SHORTCUTS:
+            ws.append("shortcuts", {"label": label, "type": "DocType",
+                                    "link_to": link_to, "doc_view": "List"})
+        ws.content = _workspace_content()
+        ws.flags.ignore_permissions = True
+        ws.save(ignore_permissions=True)
         return
 
     ws = frappe.new_doc("Workspace")
@@ -375,20 +399,11 @@ def _ensure_delivery_workspace():
     ws.app = "delivery"
     ws.sequence_id = 1
     ws.public = 1
+    ws.content = _workspace_content()
 
-    blocks = [
-        _ws_block("header", col=12,
-                  text='<span class="h4"><b>Delivery &amp; Logistics</b></span>'),
-        _ws_block("paragraph", col=12,
-                  text="Run the whole delivery operation: orders, parcels, transport, "
-                       "merchants and drivers. The customer shop itself lives at /delivery."),
-    ]
     for label, link_to in _WS_SHORTCUTS:
         ws.append("shortcuts", {"label": label, "type": "DocType",
-                               "link_to": link_to, "doc_view": "List"})
-        blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
-    ws.content = json.dumps(blocks)
-
+                                "link_to": link_to, "doc_view": "List"})
     ws.append("links", {"type": "Card Break", "label": "Deliveries", "icon": "tool"})
     for label, link_to in _WS_SHORTCUTS[:5]:
         ws.append("links", {"type": "Link", "label": label,

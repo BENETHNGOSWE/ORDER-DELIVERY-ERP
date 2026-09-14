@@ -168,7 +168,7 @@
   ],
   "image_field": "item_image",
   "links": [],
-  "modified": "2026-09-14 09:03:01.070811",
+  "modified": "2026-09-14 09:25:03.516340",
   "modified_by": "Administrator",
   "module": "Delivery Logistics",
   "name": "DL Menu Item",
@@ -193,7 +193,9 @@
     },
     {
       "read": 1,
-      "role": "Merchant User"
+      "role": "Merchant User",
+      "create": 1,
+      "write": 1
     }
   ],
   "search_fields": "item_name,category",
