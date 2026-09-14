@@ -646,3 +646,82 @@ def list_merchant_logins():
         out.append({"merchant": m.name, "merchant_name": m.merchant_name,
                     "login": m.portal_user or "NOT LINKED"})
     return out
+
+
+def ensure_driver_user(email, password=None, driver=None, first_name=None,
+                       vehicle_type="Car", max_load_kg=300, phone=None):
+    """One-step driver onboarding: creates/updates the User (Driver role +
+    Desk access), creates or links the Delivery Driver record.
+
+        bench --site <s> execute delivery.maintenance.ensure_driver_user \
+            --kwargs '{"email": "driver@yourdomain.tz", "password": "..."}'
+    """
+    from frappe.utils.password import update_password
+
+    email = (email or "").strip().lower()
+    if not email or "@" not in email:
+        frappe.throw("Pass a valid email: --kwargs '{{\"email\": \"...\", "
+                     "\"password\": \"...\"}}'")
+
+    if frappe.db.exists("User", email):
+        user_doc = frappe.get_doc("User", email)
+        if user_doc.user_type != "System User":
+            user_doc.user_type = "System User"
+            user_doc.save(ignore_permissions=True)
+    else:
+        user_doc = frappe.new_doc("User")
+        user_doc.email = email
+        user_doc.first_name = first_name or email.split("@")[0].title()
+        user_doc.user_type = "System User"
+        user_doc.send_welcome_email = 0
+        user_doc.insert(ignore_permissions=True)
+
+    if "Driver" not in frappe.get_roles(email):
+        user_doc.add_roles("Driver")
+
+    # resolve the Delivery Driver record: explicit > linked > create new
+    if driver:
+        if not frappe.db.exists("Delivery Driver", driver):
+            frappe.throw("No such Delivery Driver: {0}".format(driver))
+    else:
+        linked = frappe.get_all("Delivery Driver", filters={"user": email},
+                                pluck="name")
+        if linked:
+            driver = linked[0]
+        else:
+            n = frappe.db.count("Delivery Driver") + 1
+            code = "DR-{0:03d}".format(n)
+            while frappe.db.exists("Delivery Driver", code):
+                n += 1
+                code = "DR-{0:03d}".format(n)
+            rec = frappe.new_doc("Delivery Driver")
+            rec.driver_code = code
+            rec.driver_name = first_name or email.split("@")[0].title()
+            rec.user = email
+            rec.vehicle_type = vehicle_type
+            rec.max_load_kg = max_load_kg
+            if phone:
+                rec.phone = phone
+            rec.insert(ignore_permissions=True)
+            driver = rec.name
+
+    frappe.db.set_value("Delivery Driver", driver, "user", email,
+                        update_modified=False)
+    if password:
+        update_password(email, password)
+
+    frappe.db.commit()
+    try:
+        frappe.clear_cache()
+    except Exception:
+        pass
+    return {"user": email, "driver": driver, "role": "Driver",
+            "password_set": bool(password)}
+
+
+def list_driver_logins():
+    """Show every Delivery Driver and which login (if any) operates it."""
+    return [{"driver": d.name, "driver_name": d.driver_name,
+             "login": d.user or "NOT LINKED"}
+            for d in frappe.get_all("Delivery Driver",
+                                    fields=["name", "driver_name", "user"])]
