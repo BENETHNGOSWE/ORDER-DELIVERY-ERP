@@ -354,6 +354,12 @@ _WS_SHORTCUTS = [
     ("Logistics Settings", "Logistics Settings"),
 ]
 
+_WS_URL_SHORTCUTS = [
+    # admin box 9: end-of-day reports (merchant payables, platform revenue,
+    # per-driver payouts) live in the Operations web console
+    ("Reports", "/delivery/operations"),
+]
+
 
 def _ws_block(btype, **data):
     return {"id": uuid.uuid4().hex[:10], "type": btype, "data": data}
@@ -368,6 +374,8 @@ def _workspace_content():
                        "merchants and drivers. The customer shop itself lives at /delivery."),
     ]
     for label, _link_to in _WS_SHORTCUTS:
+        blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
+    for label, _url in _WS_URL_SHORTCUTS:
         blocks.append(_ws_block("shortcut", col=3, shortcut_name=label))
     return json.dumps(blocks)
 
@@ -384,6 +392,8 @@ def _ensure_delivery_workspace():
         for label, link_to in _WS_SHORTCUTS:
             ws.append("shortcuts", {"label": label, "type": "DocType",
                                     "link_to": link_to, "doc_view": "List"})
+        for label, url in _WS_URL_SHORTCUTS:
+            ws.append("shortcuts", {"label": label, "type": "URL", "link_to": url})
         ws.content = _workspace_content()
         ws.flags.ignore_permissions = True
         ws.save(ignore_permissions=True)
@@ -404,6 +414,8 @@ def _ensure_delivery_workspace():
     for label, link_to in _WS_SHORTCUTS:
         ws.append("shortcuts", {"label": label, "type": "DocType",
                                 "link_to": link_to, "doc_view": "List"})
+    for label, url in _WS_URL_SHORTCUTS:
+        ws.append("shortcuts", {"label": label, "type": "URL", "link_to": url})
     ws.append("links", {"type": "Card Break", "label": "Deliveries", "icon": "tool"})
     for label, link_to in _WS_SHORTCUTS[:5]:
         ws.append("links", {"type": "Link", "label": label,
