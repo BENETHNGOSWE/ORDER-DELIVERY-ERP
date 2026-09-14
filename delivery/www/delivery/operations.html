@@ -13,34 +13,10 @@
     <span class="hic"><i class="fa-solid fa-gauge-high"></i></span>
     <div>
       <h1>Operations console</h1>
-      <p>Price what needs review, dispatch drivers and keep every delivery moving.</p>
+      <p>End-of-day reports: order totals, merchant payables, platform revenue and driver payouts.</p>
     </div>
   </div>
 </section>
-
-<div id="kpi" class="dl-kpi" style="margin-top:18px"></div>
-
-<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-clipboard-check"></i></span> Review queue</h2>
-<div class="pc-card">
-  <h3><i class="fa-solid fa-box"></i> Parcels needing a manual tariff</h3>
-  <div id="pq"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
-  <h3 style="margin-top:24px"><i class="fa-solid fa-car-side"></i> Transport awaiting review</h3>
-  <div id="tq"><div class="dl-empty"><i class="fa-solid fa-spinner fa-pulse"></i>Loading&hellip;</div></div>
-</div>
-
-<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-user-plus"></i></span> Dispatch</h2>
-<div class="pc-card">
-  <div class="dl-row">
-    <input id="ref" class="dl-input" style="flex:1; min-width:220px"
-           placeholder="Reference to assign, e.g. DL-ORD-2026-0001">
-    <select id="drv" class="dl-select" style="max-width:280px"></select>
-    <button id="assign" class="dl-btn"><i class="fa-solid fa-user-plus"></i> Assign driver</button>
-  </div>
-  <div class="dl-mut" style="margin-top:12px">
-    <i class="fa-solid fa-circle-info" style="color:var(--purple)"></i>
-    Assign when the merchant marks the order <b>Ready for delivery</b>. The customer's 4-digit handoff code is shown after assignment &mdash; share it with the customer for the final handoff.
-  </div>
-</div>
 
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-chart-pie"></i></span> Reports</h2>
 <div id="rep-boxes" class="dl-kpi dl-kpi-3"><div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-spinner fa-pulse"></i>Loading reports&hellip;</div></div>
@@ -87,94 +63,10 @@
       stat("fa-money-bill-wave", DELIVERY.fmt(d.orders.revenue + d.parcels.revenue + d.transport.revenue), "Revenue");
   }
 
-  function dash() {
-    DELIVERY.call("delivery.api.operations.dashboard").then(function (d) {
-      DELIVERY.currency = d.currency; kpi(d);
-    }).catch(function (e) {
-      document.getElementById("kpi").innerHTML =
-        '<div class="pc-card dl-empty" style="grid-column:1/-1"><i class="fa-solid fa-triangle-exclamation"></i>' +
-        DELIVERY.esc(e.message) + "</div>";
-    });
-  }
-
-  function queue() {
-    DELIVERY.call("delivery.api.operations.review_queue").then(function (q) {
-      document.getElementById("pq").innerHTML = q.parcels.length
-        ? '<table class="dl-table"><thead><tr><th>Parcel</th><th>Weight</th><th>Dims</th>' +
-          '<th>Why</th><th></th></tr></thead><tbody>' + q.parcels.map(function (p) {
-            var why = [p.is_heavy ? "heavy" : "", p.is_oversized ? "oversized" : "",
-                       p.weight_category ? "" : "no band"].filter(Boolean).join(", ") || "custom";
-            return "<tr><td>" + p.name + "<br><span class='dl-mut'>" +
-              DELIVERY.esc(p.customer_phone || "") + "</span></td>" +
-              "<td>" + p.weight_kg + " kg</td>" +
-              "<td>" + p.length_cm + "&times;" + p.width_cm + "&times;" + p.height_cm + "</td>" +
-              "<td>" + why + "</td>" +
-              '<td><button class="dl-btn sm" data-tariff="' + p.name +
-                '"><i class="fa-solid fa-tags"></i> Set tariff</button></td></tr>';
-          }).join("") + "</tbody></table>"
-        : '<div class="dl-empty"><i class="fa-regular fa-circle-check"></i>Nothing waiting.</div>';
-
-      document.getElementById("tq").innerHTML = q.transport.length
-        ? '<table class="dl-table"><thead><tr><th>Reference</th><th>Customer</th>' +
-          '<th>Route</th><th>Suggested</th><th></th></tr></thead><tbody>' +
-          q.transport.map(function (t) {
-            return "<tr><td>" + t.name + "</td><td>" + DELIVERY.esc(t.customer_name || "") +
-              "<br><span class='dl-mut'>" + DELIVERY.esc(t.customer_phone || "") + "</span></td>" +
-              "<td>" + t.total_distance_km + " km &middot; " + DELIVERY.esc(t.vehicle_type) + "</td>" +
-              "<td>" + DELIVERY.fmt(t.suggested_fare) + "</td>" +
-              '<td><button class="dl-btn sm" data-fare="' + t.name + '" data-phone="' +
-                DELIVERY.esc(t.customer_phone || "") +
-                '"><i class="fa-solid fa-handshake"></i> Agree fare</button></td></tr>';
-          }).join("") + "</tbody></table>"
-        : '<div class="dl-empty"><i class="fa-regular fa-circle-check"></i>Nothing waiting.</div>';
-
-      document.querySelectorAll("[data-tariff]").forEach(function (b) {
-        b.addEventListener("click", function () {
-          var amt = prompt("Agreed tariff for " + b.dataset.tariff);
-          if (amt === null) return;
-          DELIVERY.call("delivery.api.operations.set_parcel_tariff",
-                        { parcel: b.dataset.tariff, amount: Number(amt),
-                          note: "Agreed by operations" })
-            .then(function (r) { DELIVERY.toast(r.parcel + " priced at " + DELIVERY.fmt(r.tariff_amount), "success");
-                                 queue(); dash(); })
-            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
-        });
-      });
-      document.querySelectorAll("[data-fare]").forEach(function (b) {
-        b.addEventListener("click", function () {
-          var amt = prompt("Agreed fare for " + b.dataset.fare + " (call " + b.dataset.phone + ")");
-          if (amt === null) return;
-          DELIVERY.call("delivery.api.operations.log_agreed_price",
-                        { reference: b.dataset.fare, amount: Number(amt),
-                          note: "Agreed by phone" })
-            .then(function (r) { DELIVERY.toast(r.request + " fare set to " + DELIVERY.fmt(r.agreed_price), "success");
-                                 queue(); dash(); })
-            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
-        });
-      });
-    }).catch(function () {});
-  }
-
-  function drivers() {
-    DELIVERY.call("delivery.api.operations.available_drivers").then(function (rows) {
-      document.getElementById("drv").innerHTML = rows.length
-        ? rows.map(function (d) {
-            return '<option value="' + d.name + '">' + DELIVERY.esc(d.driver_name) +
-              " (" + DELIVERY.esc(d.vehicle_type) + ", " + d.max_load_kg + " kg)</option>";
-          }).join("")
-        : '<option value="">No free drivers right now</option>';
-    }).catch(function () {});
-  }
-
-  document.getElementById("assign").addEventListener("click", function () {
-    DELIVERY.call("delivery.api.operations.assign_driver",
-                  { reference: document.getElementById("ref").value.trim(),
-                    driver: document.getElementById("drv").value })
-      .then(function (r) { DELIVERY.toast(r.reference + " assigned to " + r.driver +
-                                           " (OTP " + r.otp_code + ")", "success"); dash(); })
-      .catch(function (e) { DELIVERY.toast(e.message, "error"); });
-  });
-
+  
+  
+  
+  
   function reports() {
     var money = function (n) { return DELIVERY.currency + " " + Number(n || 0).toLocaleString("en-US"); };
 
@@ -296,7 +188,7 @@
     });
   }
 
-  dash(); queue(); drivers(); reports();
+  reports();
 
 })();
 </script>
