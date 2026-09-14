@@ -85,6 +85,15 @@ has_permission = {
     "Payment Transaction": "delivery.permissions.payment_permission",
 }
 
+# List views: has_permission alone only guards opening a single document -
+# without query conditions the Desk LIST would show every merchant's records.
+permission_query_conditions = {
+    "Delivery Order": "delivery.permissions.order_query_conditions",
+    "DL Menu Item": "delivery.permissions.menu_item_query_conditions",
+    "Parcel Request": "delivery.permissions.parcel_query_conditions",
+    "Transport Request": "delivery.permissions.transport_query_conditions",
+}
+
 # ---------------------------------------------------------------------------
 # Scheduler - one job only; the SRS web scope needs no other background work
 # ---------------------------------------------------------------------------
