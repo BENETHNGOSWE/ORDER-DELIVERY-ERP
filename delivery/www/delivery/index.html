@@ -434,7 +434,6 @@
 
     <section class="x-hero carousel" id="hero-carousel" aria-label="Featured"></section>
 
-    <div class="x-chips" id="chips"></div>
 
     <div class="x-sec-head"><h2>Shop by category</h2><a href="#items">View all</a></div>
     <div class="x-cats" id="cats"></div>
@@ -574,21 +573,13 @@
                        snacks:"fa-cookie",bakery:"fa-bread-slice",offers:"fa-tag",all:"fa-grip"};
   function fa(name, extra){ return '<i class="fa-solid '+name+(extra?" "+extra:"")+'"></i>'; }
   function catIcon(cat){ return fa(CATEGORY_ICON[cat] || "fa-utensils"); }
-  var CATS = [
-    {k:"all",label:fa("fa-grip")+" All"},{k:"food",label:fa("fa-burger")+" Food"},{k:"retail",label:fa("fa-cart-shopping")+" Groceries"},
-    {k:"drinks",label:fa("fa-glass-water")+" Drinks"},{k:"snacks",label:fa("fa-cookie")+" Snacks"},{k:"bakery",label:fa("fa-bread-slice")+" Bakery"},
-    {k:"offers",label:fa("fa-tag")+" Offers"}
-  ];
   var grad = function(i){ return GRADS[i % GRADS.length]; };
   var iconFor = function(it){ return ITEM_ICON[it.category] || (it.item_type==="Retail"?"fa-cart-shopping":"fa-utensils"); };
   var emojiFor = function(it){ return fa(iconFor(it)); };
   var money = function(n){ return DELIVERY.fmt(n); };
   var itemById = {};
 
-  // ---------- category chips + tiles ----------
-  document.getElementById("chips").innerHTML = CATS.map(function(c){
-    return '<button class="x-chip'+(c.k==="all"?" active":"")+'" data-cat="'+c.k+'">'+c.label+'</button>';
-  }).join("");
+  // ---------- category tiles ----------
   var TILES = [
     ["restaurant","fa-utensils","Restaurant"],
     ["groceries","fa-cart-shopping","Groceries"],
@@ -608,9 +599,6 @@
     renderItems();
     document.getElementById("items").scrollIntoView({behavior:"smooth", block:"start"});
   }
-  document.getElementById("chips").addEventListener("click", function(e){
-    var b=e.target.closest(".x-chip"); if(b) setCat(b.dataset.cat);
-  });
   document.getElementById("cats").addEventListener("click", function(e){
     var t=e.target.closest(".x-cat[data-cat]"); if(t) setCat(t.dataset.cat);
   });
