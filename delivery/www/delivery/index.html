@@ -128,6 +128,31 @@
   .x-chip:hover{ border-color:var(--purple); color:var(--purple); }
   .x-chip.active{ background:var(--purple); color:#fff; border-color:var(--purple); }
   .x-cats{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:12px; }
+  /* mobile drawer sidebar */
+  .x-burger,.x-backdrop{ display:none; }
+  .x-burger{ align-items:center; justify-content:center; width:42px; height:42px; border:1.5px solid var(--line);
+    background:#fff; border-radius:12px; color:var(--ink); font-size:17px; cursor:pointer; flex:none; }
+  .x-drawer{ position:fixed; left:0; top:0; bottom:0; width:280px; max-width:85vw; background:#fff; z-index:9998;
+    transform:translateX(-105%); transition:transform .25s ease; overflow-y:auto; padding:18px 14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .x-drawer .dh{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; color:var(--ink);
+    padding:2px 8px 16px; }
+  .x-drawer .dh .lg{ width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
+    color:#fff; display:grid; place-items:center; font-size:17px; box-shadow:0 8px 18px rgba(91,43,224,.35); }
+  .x-drawer nav{ display:flex; flex-direction:column; gap:3px; }
+  .x-drawer nav .grp{ font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted,#9999A3); padding:12px 13px 4px; }
+  .x-drawer nav a{ display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:12px;
+    color:#6B6B75; font-weight:500; font-size:14px; text-decoration:none; cursor:pointer; }
+  .x-drawer nav a .ni{ width:22px; text-align:center; font-size:15px; color:var(--purple); }
+  .x-drawer nav a:hover{ background:#F6F4FE; color:var(--purple-dark); }
+  .x-backdrop{ position:fixed; inset:0; background:rgba(23,23,23,.45); opacity:0; pointer-events:none;
+    transition:.25s; z-index:9997; }
+  @media (max-width:960px){
+    .x-burger{ display:inline-flex; }
+    body.x-side-open .x-drawer{ transform:none; }
+    body.x-side-open .x-backdrop{ opacity:1; pointer-events:auto; }
+  }
   .x-cat{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 8px; text-align:center;
           cursor:pointer; transition:.15s; }
   .x-cat:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(0,0,0,.06); border-color:transparent; }
@@ -426,11 +451,34 @@
   <!-- CENTER -->
   <div class="x-col">
     <header class="x-top">
+      <button id="x-burger" class="x-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
       <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
       <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
       <div class="x-bell"><i class="fa-regular fa-bell"></i><span class="n" data-cart-count>0</span></div>
       <a class="x-acct" href="/delivery/me"><span class="av"><i class="fa-regular fa-user"></i></span><span id="acct-name">Hi, Guest</span> <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></a>
     </header>
+
+    <div id="x-backdrop" class="x-backdrop"></div>
+    <aside id="x-drawer" class="x-drawer">
+      <div class="dh"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Delivery</div>
+      <nav>
+        <a id="xd-home"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
+        <a id="xd-cat-restaurant"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
+        <a id="xd-cat-groceries"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
+        <a id="xd-cat-drinks"><span class="ni"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
+        <a id="xd-cat-pharmacy"><span class="ni"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Pharmacy &amp; Cosmetics</a>
+        <a id="xd-cat-shopping"><span class="ni"><i class="fa-solid fa-bag-shopping"></i></span> Shopping</a>
+        <a id="xd-cat-others"><span class="ni"><i class="fa-solid fa-shapes"></i></span> Others</a>
+        <div class="grp">Services</div>
+        <a href="/delivery/parcel"><span class="ni"><i class="fa-solid fa-box"></i></span> Send a Parcel</a>
+        <a href="/delivery/transport"><span class="ni"><i class="fa-solid fa-truck"></i></span> Transport</a>
+        <a href="/delivery/track"><span class="ni"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
+        <a href="/delivery/cart"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Cart</a>
+        <div class="grp">Account</div>
+        <a href="/delivery/me"><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
+        <a href="/login?redirect-to=/delivery"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
+      </nav>
+    </aside>
 
     <section class="x-hero carousel" id="hero-carousel" aria-label="Featured"></section>
 
@@ -608,6 +656,23 @@
   document.getElementById("nav-shops").addEventListener("click", function(){
     document.getElementById("shops").scrollIntoView({behavior:"smooth"});
   });
+
+  // ---------- mobile drawer ----------
+  (function(){
+    var drawer=document.getElementById("x-drawer");
+    if(!drawer) return;
+    function close(){ document.body.classList.remove("x-side-open"); }
+    document.getElementById("x-burger").addEventListener("click", function(){
+      document.body.classList.toggle("x-side-open");
+    });
+    document.getElementById("x-backdrop").addEventListener("click", close);
+    document.addEventListener("keydown", function(e){ if(e.key==="Escape") close(); });
+    drawer.querySelector("#xd-home").addEventListener("click", function(){ close(); setCat("all"); });
+    ["restaurant","groceries","drinks","pharmacy","shopping","others"].forEach(function(k){
+      var el=drawer.querySelector("#xd-cat-"+k);
+      if(el) el.addEventListener("click", function(){ close(); setCat(k); });
+    });
+  })();
 
   function matchCat(it){
     if(cat==="all") return true;
