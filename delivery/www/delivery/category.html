@@ -24,9 +24,11 @@
   .c-mtag{ position:absolute; top:9px; left:9px; background:rgba(0,0,0,.55); color:#fff; font-size:11px;
     font-weight:600; line-height:16px; padding:2px 9px; border-radius:8px; }
   .c-mbody{ padding:11px 12px 12px; }
+  .c-mrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .c-mbody .nm{ font-weight:700; font-size:14px; line-height:20px; text-transform:uppercase; color:var(--ink); }
+  .c-open{ background:#E8F9EE; color:#16A34A; font-weight:700; font-size:11px; line-height:16px;
+    padding:3px 10px; border-radius:999px; flex:none; white-space:nowrap; }
   .c-meta{ color:var(--sec); font-size:12.5px; line-height:18px; margin-top:3px; }
-  .c-mfree{ color:#16A34A; font-weight:600; font-size:11px; line-height:16px; margin-top:6px; display:inline-block; }
   /* items grid (same style as home) */
   .c-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; }
   .c-item{ background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;
@@ -114,16 +116,17 @@
   }
   function merchantCard(m) {
     var svc = (m.service_type || "").replace(" & ", "/");
-    var inner = m.logo
-      ? '<img src="' + esc(m.logo) + '" alt="">'
+    var pic = m.logo || m.thumb;
+    var inner = pic
+      ? '<img src="' + esc(pic) + '" alt="">'
       : '<i class="fa-solid fa-utensils" style="font-size:40px;color:#C9BFF5"></i>';
     return '<a class="c-mcard" href="/delivery/menu?merchant=' + encodeURIComponent(m.name) + '">' +
-      '<div class="c-mthumb" style="' + (m.logo ? 'background:#fff' : 'background:#F1ECFF') + '">' +
+      '<div class="c-mthumb" style="' + (pic ? 'background:#fff' : 'background:#F1ECFF') + '">' +
         '<span class="c-mtag">' + esc(svc) + '</span>' + inner + '</div>' +
-      '<div class="c-mbody"><div class="nm">' + esc(m.merchant_name) + '</div>' +
+      '<div class="c-mbody"><div class="c-mrow"><div class="nm">' + esc(m.merchant_name) + '</div>' +
+        '<span class="c-open"><i class="fa-solid fa-circle" style="font-size:6px"></i> Open</span></div>' +
       '<div class="c-meta"><i class="fa-solid fa-location-dot"></i> ' + esc(m.area || m.city || "Dar es Salaam") +
-      ' · <i class="fa-regular fa-clock"></i> ~' + Math.round(m.avg_prep_minutes || 20) + ' min</div>' +
-      '<span class="c-mfree">Free delivery · min ' + money(m.minimum_order_value || 0) + '</span></div></a>';
+      ' · <i class="fa-regular fa-clock"></i> ~' + Math.round(m.avg_prep_minutes || 20) + ' min</div></div></a>';
   }
   function wireButtons(host) {
     host.querySelectorAll("button[data-item]").forEach(function (b) {
