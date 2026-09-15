@@ -17,6 +17,7 @@
     color:var(--ink); letter-spacing:-.02em; padding:2px 8px 20px; text-decoration:none; }
   .pc-logo .lg{ width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
     color:#fff; display:grid; place-items:center; font-size:19px; box-shadow:0 8px 18px rgba(91,43,224,.35); }
+  .pc-burger, .pc-mbrand, .pc-backdrop{ display:none; }
   .pc-nav{ display:flex; flex-direction:column; gap:3px; }
   .pc-nav a{ display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:12px;
     color:var(--sec); font-weight:500; font-size:14px; text-decoration:none; transition:all .15s; }
@@ -142,10 +143,21 @@
   @media (max-width:1200px){ .pc-layout{ grid-template-columns:1fr; } .pc-rail{ display:grid; grid-template-columns:1fr 1fr; } }
   @media (max-width:960px){
     .pc-app{ grid-template-columns:1fr; }
-    .pc-side{ position:static; height:auto; flex-direction:row; flex-wrap:wrap; align-items:center;
-      border-right:0; border-bottom:1px solid var(--line); padding:14px 16px; }
-    .pc-logo{ padding:0 10px 0 0; }
-    .pc-nav{ flex-direction:row; flex-wrap:wrap; }
+    .pc-burger{ display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px;
+      border:1.5px solid var(--line); background:#fff; border-radius:12px; color:var(--ink);
+      font-size:17px; cursor:pointer; margin-right:10px; flex:none; }
+    .pc-mbrand{ display:inline-flex; align-items:center; gap:9px; font-weight:800; font-size:16.5px;
+      color:var(--ink); text-decoration:none; margin-right:auto; }
+    .pc-mbrand .lg{ width:34px; height:34px; border-radius:10px; background:var(--purple); color:#fff;
+      display:grid; place-items:center; font-size:14px; }
+    .pc-backdrop{ display:block; position:fixed; inset:0; background:rgba(23,23,23,.45); opacity:0;
+      pointer-events:none; transition:.25s; z-index:9997; }
+    .pc-side{ position:fixed; left:0; top:0; bottom:0; width:272px; max-width:84vw; height:100vh;
+      transform:translateX(-105%); transition:transform .25s ease; z-index:9998; overflow-y:auto;
+      box-shadow:none; }
+    body.pc-side-open .pc-side{ transform:none; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+    body.pc-side-open .pc-backdrop{ opacity:1; pointer-events:auto; }
+    .pc-nav{ flex-direction:column; flex-wrap:nowrap; align-items:stretch; }
     .pc-promo, .pc-sidehelp{ display:none; }
     .pc-row4{ grid-template-columns:1fr 1fr; }
     .pc-hero-art{ display:none; }
@@ -165,12 +177,14 @@
   <aside class="pc-side">
     <a class="pc-logo" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Delivery</a>
     <nav class="pc-nav">
-      <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Dashboard</a>
+      <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
+      <a href="/delivery/menu"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>
+      <a href="/delivery/cart"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Cart</a>
       <a href="/delivery/parcel"><span class="ni"><i class="fa-solid fa-box"></i></span> Send a Parcel</a>
-      <a href="/delivery/me"><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
       <a href="/delivery/transport" class="active"><span class="ni"><i class="fa-solid fa-truck"></i></span> Transport</a>
       <a href="/delivery/track"><span class="ni"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
-      <a href="mailto:support@delivery.co.tz"><span class="ni"><i class="fa-solid fa-circle-question"></i></span> Support</a>
+      <a href="/delivery/me"><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
+      <a href="tel:+255620484383"><span class="ni"><i class="fa-solid fa-circle-question"></i></span> Support</a>
     </nav>
     <div class="pc-promo">
       <h4>Need a vehicle?</h4>
@@ -188,7 +202,9 @@
 
   <main class="pc-main">
     <div class="pc-topbar">
-      <button class="pc-bell" type="button"><i class="fa-regular fa-bell"></i><span class="bdg">3</span></button>
+      <button id="pc-burger" class="pc-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+      <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Delivery</a>
+      <div id="pc-backdrop" class="pc-backdrop"></div>
       {% if is_logged_in %}
       <a class="pc-user" href="/delivery/me">
         <span class="av">{{ initials }}</span>
@@ -221,14 +237,16 @@
             <div class="pc-field"><label for="trip">Trip type</label>
               <select id="trip" class="pc-in"><option>Passenger</option><option>Goods</option></select></div>
             <div class="pc-field"><label for="veh">Vehicle</label>
-              <select id="veh" class="pc-in"><option>Car</option><option>Van</option>
-                <option>Pickup</option><option>Truck</option><option>Bus</option></select></div>
+              <select id="veh" class="pc-in">
+                <option value="Bus">(Bus) 20 people</option>
+                <option value="Van">(Taxi) 6 people</option>
+                <option value="Pickup">(Tuktuk) 2 people</option>
+                <option value="Car">(Bodaboda) 1 person</option>
+              </select></div>
             <div class="pc-field"><label for="pax">Passengers</label>
               <input id="pax" class="pc-in" type="number" value="1"></div>
-            <div class="pc-field"><label for="phone">Phone (required)</label>
-              <div class="pc-phone" style="display:flex;align-items:center;height:48px;border:1.5px solid var(--line);border-radius:12px;background:#fff;overflow:hidden">
-                <span style="display:flex;align-items:center;height:100%;padding:0 13px;border-right:1px solid var(--line);background:#FAFAFC;color:var(--purple-dark);font-size:14px;font-weight:700;white-space:nowrap"><i class="fa-solid fa-phone" style="font-size:13px;margin-right:6px"></i>+255</span>
-                <input id="phone" type="tel" placeholder="7XX XXX XXX" style="flex:1;min-width:0;height:100%;border:0;outline:none;padding:0 12px;font-size:14px;font-family:inherit;color:var(--ink)">
+            <div class="pc-field"><label for="phone">Phone <span style="color:var(--danger)">*</span></label>
+              <input id="phone" type="tel" placeholder="e.g. 0712 345 678 or +255 712 345 678" class="pc-in">
               </div>
             </div>
           </div>
@@ -258,7 +276,6 @@
             <div class="sh"><i class="fa-solid fa-handshake-angle"></i></div>
             <div><b>Agree before you pay.</b><span>Operations confirms the fare with you by phone — no surprise charges.</span></div>
           </div>
-          <div class="pc-safe-r">Fares are estimates in TZS<br>Subject to confirmation</div>
         </div>
       </div>
 
@@ -334,7 +351,7 @@
   document.getElementById("go").addEventListener("click", function () {
     var b = this; b.disabled = true;
     var phone = document.getElementById("phone").value.replace(/\s+/g, "");
-    if (phone) { if (phone.indexOf("+") !== 0) { phone = "+255" + phone.replace(/^0+/, ""); } }
+    if (!phone) { DELIVERY.toast("Phone number is required", "error"); b.disabled = false; return; }
     DELIVERY.call("delivery.api.customer.place_transport_request", {
       stops: JSON.stringify(collect()),
       trip_type: document.getElementById("trip").value,
@@ -347,6 +364,12 @@
       DELIVERY.toast(r.message, "success");
       setTimeout(function () { location.href = "/delivery/track?ref=" + r.request; }, 1400);
     }).catch(function (e) { DELIVERY.toast(e.message, "error"); b.disabled = false; });
+  });
+  var b = document.getElementById("pc-burger"), d = document.getElementById("pc-backdrop");
+  if (b) b.addEventListener("click", function () { document.body.classList.toggle("pc-side-open"); });
+  if (d) d.addEventListener("click", function () { document.body.classList.remove("pc-side-open"); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") document.body.classList.remove("pc-side-open");
   });
 })();
 </script>
