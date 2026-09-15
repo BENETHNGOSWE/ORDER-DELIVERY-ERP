@@ -169,8 +169,8 @@
   .x-mbody{ padding:11px 12px; }
   .x-mrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .x-mbody .nm{ font-weight:700; font-size:14px; line-height:20px; text-transform:uppercase; color:var(--ink); }
-  .x-open{ background:#E8F9EE; color:var(--success); font-weight:600; font-size:11px; line-height:16px;
-    padding:3px 10px; border-radius:999px; flex:none; white-space:nowrap; }
+  .x-view{ background:#E8F9EE; color:var(--success); font-weight:600; font-size:11px; line-height:16px;
+    padding:3px 10px; border-radius:999px; flex:none; white-space:nowrap; cursor:pointer; }
   .x-meta{ color:var(--sec); font-size:13px; font-weight:400; line-height:20px; margin-top:3px; }
   .x-mfree{ color:var(--success); font-weight:600; font-size:11px; line-height:16px; margin-top:6px; display:inline-block; }
 
@@ -757,11 +757,15 @@
       var mlogo = pic
         ? '<img src="'+DELIVERY.esc(pic)+'" alt="" class="x-iimg">'
         : '<i class="fa-solid fa-utensils" style="font-size:44px;color:#C9BFF5"></i>';
+      var hours=(m.open_time||m.close_time)
+        ? '<div class="x-meta"><i class="fa-regular fa-clock"></i> '+DELIVERY.esc((m.open_time||"").slice(0,5))+((m.open_time&&m.close_time)?" – ":"")+DELIVERY.esc((m.close_time||"").slice(0,5))+'</div>'
+        : '';
       return '<a class="x-mcard" href="/delivery/menu?merchant='+encodeURIComponent(m.name)+'">'+
         '<div class="x-mthumb" style="'+(pic?'background:#fff':'background:#F1ECFF')+'"><span class="x-mtag">'+DELIVERY.esc(svc)+'</span>'+mlogo+'</div>'+
         '<div class="x-mbody"><div class="x-mrow"><div class="nm">'+DELIVERY.esc(m.merchant_name)+'</div>'+
-        '<span class="x-open"><i class="fa-solid fa-circle" style="font-size:6px"></i> Open</span></div>'+
-        '<div class="x-meta"><i class="fa-solid fa-location-dot"></i> '+DELIVERY.esc(m.area||m.city||"Dar es Salaam")+' · <i class="fa-regular fa-clock"></i> ~'+Math.round(m.avg_prep_minutes||20)+' min</div></div></a>';
+        '<span class="x-view">View</span></div>'+
+        '<div class="x-meta"><i class="fa-solid fa-location-dot"></i> '+DELIVERY.esc(m.area||m.city||"Dar es Salaam")+' · <i class="fa-regular fa-clock"></i> ~'+Math.round(m.avg_prep_minutes||20)+' min</div>'+
+        hours+'</div></a>';
     }).join("");
   }
 

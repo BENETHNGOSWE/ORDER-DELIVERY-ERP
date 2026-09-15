@@ -93,7 +93,8 @@ def list_merchants(service_type=None, search=None, zone=None):
     rows = frappe.get_all("Merchant", filters=filters,
                           fields=["name", "merchant_id", "merchant_name", "service_type",
                                   "city", "area", "avg_prep_minutes", "logo",
-                                  "minimum_order_value", "latitude", "longitude"],
+                                  "minimum_order_value", "latitude", "longitude",
+                                  "open_time", "close_time"],
                           order_by="merchant_name asc", limit=100)
 
     # card image fallback: newest published item photo per merchant

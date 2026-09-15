@@ -5,8 +5,6 @@
 <style>
   :root{ --purple-light:#F1ECFF; --ink:#171717; --sec:#6B6B75; --line:#EAEAEF; }
   .c-wrap{ max-width:1100px; margin:0 auto; }
-  .c-back{ width:42px; height:42px; border:1.5px solid var(--line); background:#fff; border-radius:12px;
-    display:grid; place-items:center; color:var(--ink); font-size:16px; text-decoration:none; flex:none; }
   /* merchants grid (restaurant mode) - same card style as the homepage */
   .c-merchants{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px; }
   .c-mcard{ display:block; background:#fff; border:1px solid var(--line); border-radius:16px;
@@ -19,8 +17,8 @@
   .c-mbody{ padding:11px 12px 12px; }
   .c-mrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .c-mbody .nm{ font-weight:700; font-size:14px; line-height:20px; text-transform:uppercase; color:var(--ink); }
-  .c-open{ background:#E8F9EE; color:#16A34A; font-weight:700; font-size:11px; line-height:16px;
-    padding:3px 10px; border-radius:999px; flex:none; white-space:nowrap; }
+  .c-view{ background:#E8F9EE; color:#16A34A; font-weight:700; font-size:11px; line-height:16px;
+    padding:3px 10px; border-radius:999px; flex:none; white-space:nowrap; cursor:pointer; }
   .c-meta{ color:var(--sec); font-size:12.5px; line-height:18px; margin-top:3px; }
   /* items grid (same style as home) */
   .c-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; }
@@ -49,7 +47,6 @@
 
 <section class="pc-hero">
   <div class="pc-hero-l">
-    <a class="c-back" href="/delivery" title="Back to home"><i class="fa-solid fa-arrow-left"></i></a>
     <span class="hic" id="c-heroic"><i class="fa-solid fa-shapes"></i></span>
     <div>
       <h1 id="c-title">Category</h1>
@@ -129,13 +126,18 @@
     var inner = pic
       ? '<img src="' + esc(pic) + '" alt="">'
       : '<i class="fa-solid fa-utensils" style="font-size:40px;color:#C9BFF5"></i>';
+    var hours = (m.open_time || m.close_time)
+      ? '<div class="c-meta"><i class="fa-regular fa-clock"></i> ' + esc((m.open_time || "").slice(0, 5)) +
+        ((m.open_time && m.close_time) ? " – " : "") + esc((m.close_time || "").slice(0, 5)) + '</div>'
+      : "";
     return '<a class="c-mcard" href="/delivery/menu?merchant=' + encodeURIComponent(m.name) + '">' +
       '<div class="c-mthumb" style="' + (pic ? 'background:#fff' : 'background:#F1ECFF') + '">' +
         '<span class="c-mtag">' + esc(svc) + '</span>' + inner + '</div>' +
       '<div class="c-mbody"><div class="c-mrow"><div class="nm">' + esc(m.merchant_name) + '</div>' +
-        '<span class="c-open"><i class="fa-solid fa-circle" style="font-size:6px"></i> Open</span></div>' +
+        '<span class="c-view">View</span></div>' +
       '<div class="c-meta"><i class="fa-solid fa-location-dot"></i> ' + esc(m.area || m.city || "Dar es Salaam") +
-      ' · <i class="fa-regular fa-clock"></i> ~' + Math.round(m.avg_prep_minutes || 20) + ' min</div></div></a>';
+      ' · <i class="fa-regular fa-clock"></i> ~' + Math.round(m.avg_prep_minutes || 20) + ' min</div>' +
+      hours + '</div></a>';
   }
   function wireButtons(host) {
     host.querySelectorAll("button[data-item]").forEach(function (b) {
