@@ -750,11 +750,12 @@
     if(!MERCH.length){ host.innerHTML='<div class="x-empty">No merchants open right now.</div>'; return; }
     host.innerHTML=MERCH.map(function(m,i){
       var svc=(m.service_type||"").replace(" & ","/");
-      var mlogo = m.logo
-        ? '<img src="'+DELIVERY.esc(m.logo)+'" alt="" class="x-iimg">'
+      var pic = m.logo || m.thumb;
+      var mlogo = pic
+        ? '<img src="'+DELIVERY.esc(pic)+'" alt="" class="x-iimg">'
         : '<i class="fa-solid fa-store" style="font-size:44px;color:rgba(255,255,255,.92)"></i>';
       return '<a class="x-mcard" href="/delivery/menu?merchant='+encodeURIComponent(m.name)+'">'+
-        '<div class="x-mthumb" style="'+(m.logo?'background:#fff':('background:'+grad(i)))+'"><span class="x-mtag">'+DELIVERY.esc(svc)+'</span>'+mlogo+'</div>'+
+        '<div class="x-mthumb" style="'+(pic?'background:#fff':('background:'+grad(i)))+'"><span class="x-mtag">'+DELIVERY.esc(svc)+'</span>'+mlogo+'</div>'+
         '<div class="x-mbody"><div class="nm">'+DELIVERY.esc(m.merchant_name)+'</div>'+
         '<div class="x-meta"><i class="fa-solid fa-location-dot"></i> '+DELIVERY.esc(m.area||m.city||"Dar es Salaam")+' · <i class="fa-regular fa-clock"></i> ~'+Math.round(m.avg_prep_minutes||20)+' min</div>'+
         '<span class="x-mfree">Free delivery · min '+money(m.minimum_order_value||0)+'</span></div></a>';

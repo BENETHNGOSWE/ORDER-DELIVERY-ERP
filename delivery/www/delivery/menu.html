@@ -52,7 +52,7 @@
   function load(merchant) {
     if (!merchant) return;
     DELIVERY.call("delivery.api.customer.merchant_catalog",
-                  { merchant: merchant, search: document.getElementById("q").value })
+                  { merchant: merchant })
       .then(function (data) {
         var host = document.getElementById("items");
         document.getElementById("title").textContent = data.merchant;
