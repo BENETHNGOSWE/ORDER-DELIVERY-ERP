@@ -562,8 +562,11 @@
         <div class="ck-label">Delivery address / notes for the driver</div>
         <textarea class="ck-input" id="ck-addr" rows="2" placeholder="e.g. Slipway Villas, Block B, Apt 12 — or describe where to meet you"></textarea>
 
+        <div class="ck-label">Your name</div>
+        <input class="ck-input" id="ck-name" placeholder="e.g. Amina Juma">
+
         <div class="ck-label">Phone</div>
-        <input class="ck-input" id="ck-phone" placeholder="+255 …">
+        <input class="ck-input" id="ck-phone" placeholder="e.g. 0712 345 678 or +255 712 345 678">
 
         <div class="ck-label">Payment method</div>
         <select class="ck-input" id="ck-pay"></select>
@@ -1006,6 +1009,10 @@
     if(!DELIVERY.cart.length){ DELIVERY.toast("Cart is empty.","error"); return; }
     var search=document.getElementById("ck-search").value.trim();
     var addr=document.getElementById("ck-addr").value.trim() || search;
+    var cname=document.getElementById("ck-name").value.trim();
+    var cphone=document.getElementById("ck-phone").value.trim();
+    if(!cname){ DELIVERY.toast("Please enter your name.","error"); return; }
+    if(!cphone){ DELIVERY.toast("Please enter your phone number.","error"); return; }
     btn.disabled=true; btn.textContent="Placing order…";
     DELIVERY.call("delivery.api.customer.place_order",{
       merchant:DELIVERY.cartMerchant,
@@ -1015,7 +1022,8 @@
       delivery_zone:document.getElementById("ck-zone").value||null,
       delivery_distance_km:0,
       payment_method:document.getElementById("ck-pay").value||"Cash On Delivery",
-      phone:document.getElementById("ck-phone").value,
+      customer_name:cname,
+      phone:cphone,
       delivery_instructions:document.getElementById("ck-notes").value,
       delivery_latitude:destLat, delivery_longitude:destLng
     }).then(function(r){
