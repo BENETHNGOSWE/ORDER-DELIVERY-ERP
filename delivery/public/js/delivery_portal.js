@@ -94,10 +94,47 @@
       localStorage.setItem("dl_cart_merchant", this.cartMerchant || "");
       this.renderCartBadge();
     },
-    addToCart: function (merchant, item, name, rate, qty, svc) {
+    /* ask what to do when the cart belongs to another merchant.
+       onSwitch(true)  -> cart cleared, caller should add the new item
+       onSwitch(false) -> keep the old cart (caller does nothing) */
+    askMerchantSwitch: function (onSwitch) {
+      if (document.getElementById("dl-sw-overlay")) { onSwitch(false); return; }
+      var ov = document.createElement("div");
+      ov.id = "dl-sw-overlay";
+      ov.style.cssText = "position:fixed;inset:0;background:rgba(23,23,23,.5);z-index:9998;" +
+        "display:flex;align-items:center;justify-content:center;padding:20px";
+      ov.innerHTML =
+        '<div style="background:#fff;border-radius:16px;max-width:400px;width:100%;padding:22px;' +
+        'font-family:Inter,system-ui,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+        '<div style="width:46px;height:46px;border-radius:13px;background:#F1ECFF;color:#5B2BE0;' +
+        'display:grid;place-items:center;font-size:20px;margin-bottom:12px">' +
+        '<i class="fa-solid fa-cart-shopping"></i></div>' +
+        '<b style="font-size:16px;color:#171717">Your cart has items from another merchant.</b>' +
+        '<p style="font-size:13.5px;color:#6B6B75;line-height:1.5;margin:8px 0 18px">' +
+        "Submit that order first to proceed, or go back to your checkout.</p>" +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+        '<button id="dl-sw-submit" style="flex:1;min-width:150px;height:44px;border:0;border-radius:12px;' +
+        'background:#5B2BE0;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Submit order</button>' +
+        '<button id="dl-sw-cancel" style="flex:1;min-width:150px;height:44px;border:1.5px solid #EAEAEF;' +
+        'border-radius:12px;background:#fff;color:#171717;font-weight:700;font-size:14px;cursor:pointer">' +
+        'Back to checkout</button></div></div>';
+      document.body.appendChild(ov);
+      ov.querySelector("#dl-sw-submit").addEventListener("click", function () {
+        ov.remove(); onSwitch(true); location.href = "/delivery/cart";
+      });
+      ov.querySelector("#dl-sw-cancel").addEventListener("click", function () {
+        ov.remove(); onSwitch(false); location.href = "/delivery/cart";
+      });
+    },
+    addToCart: function (merchant, item, name, rate, qty, svc, opts) {
       if (this.cartMerchant && this.cartMerchant !== merchant) {
-        if (!confirm("Your cart has items from another merchant. Clear it and start a new order?")) return;
-        this.cart = [];
+        this.askMerchantSwitch(function (switched) {
+          if (switched) {
+            DELIVERY.cart = []; DELIVERY.cartMerchant = merchant;
+            DELIVERY.addToCart(merchant, item, name, rate, qty, svc);
+          }
+        });
+        return;
       }
       this.cartMerchant = merchant;
       svc = svc || {};
