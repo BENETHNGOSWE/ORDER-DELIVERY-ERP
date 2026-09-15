@@ -2,6 +2,24 @@
 <!doctype html><html lang="en"><head>
 {% include "delivery/templates/includes/delivery_head.html" %}
 {% include "delivery/templates/includes/delivery_shell_css.html" %}
+<style>
+  .dl-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; }
+  .mn-card{ background:#fff; border:1px solid #EAEAEF; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
+  .mn-thumb{ position:relative; height:110px; display:grid; place-items:center; overflow:hidden; }
+  .mn-thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .mn-body{ padding:12px 13px 13px; display:flex; flex-direction:column; flex:1; }
+  .mn-name{ font-weight:700; font-size:13.5px; line-height:1.3; }
+  .mn-desc{ font-size:11.5px; color:#6B6B75; margin:4px 0 0;
+    display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  .mn-pill{ display:inline-block; font-size:10px; font-weight:700; letter-spacing:.4px; color:#5B2BE0;
+    background:#F1ECFF; border-radius:6px; padding:2px 7px; margin-top:7px; text-transform:uppercase; align-self:flex-start; }
+  .mn-foot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:10px; }
+  .mn-price{ font-weight:800; font-size:14px; color:#3F1BA8; }
+  .mn-add{ background:#5B2BE0; color:#fff; border:0; border-radius:999px; padding:8px 14px;
+    font-weight:700; font-size:12.5px; cursor:pointer; }
+  .mn-add:disabled{ background:#C9C2F2; cursor:not-allowed; }
+  @media (max-width:480px){ .dl-grid{ grid-template-columns:1fr 1fr; } .mn-thumb{ height:96px; } }
+</style>
 </head><body>
 <div class="pc-app">
 {% include "delivery/templates/includes/delivery_side.html" %}
@@ -17,19 +35,6 @@
     </div>
   </div>
 </section>
-
-<div class="pc-card" style="margin-top:18px">
-  <div class="dl-row">
-    <div style="flex:1; min-width:220px">
-      <label class="dl-label" for="merchant">Merchant</label>
-      <select id="merchant" class="dl-select"></select>
-    </div>
-    <div style="flex:1; min-width:220px">
-      <label class="dl-label" for="q">Search</label>
-      <input id="q" class="dl-input" placeholder="Search items&hellip;">
-    </div>
-  </div>
-</div>
 
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-store"></i></span> <span id="title">Catalogue</span></h2>
 <div id="items" class="dl-grid"><div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-shop"></i>Choose a merchant.</div></div></div>
@@ -55,32 +60,33 @@
           host.innerHTML = '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-box-open"></i>Nothing published yet.</div></div>';
           return;
         }
-        host.innerHTML = data.items.map(function (i) {
+        var GRADS = ["linear-gradient(135deg,#f97316,#ef4444)","linear-gradient(135deg,#7c3aed,#a855f7)",
+                     "linear-gradient(135deg,#0ea5e9,#2563eb)","linear-gradient(135deg,#16a34a,#059669)",
+                     "linear-gradient(135deg,#db2777,#9333ea)","linear-gradient(135deg,#ca8a04,#d97706)"];
+        host.innerHTML = data.items.map(function (i, idx) {
           var base = (typeof i.base_rate === "number") ? i.base_rate
             : (i.discount_rate ? i.standard_rate * (1 - i.discount_rate / 100) : i.standard_rate);
           var svc = (typeof i.service_fee === "number") ? i.service_fee
             : (i.apply_service_charge ? base * (i.service_charge_pct || 0) / 100 : 0);
           var eff = (typeof i.effective_rate === "number") ? i.effective_rate : base + svc;
           var out = i.track_stock && i.available_stock <= 0;
-          return '<div class="dl-card">' +
-            '<span class="dl-thumb"><i class="fa-solid fa-utensils"></i></span>' +
-            "<h3>" + DELIVERY.esc(i.item_name) + "</h3>" +
-            (i.category ? '<div style="margin-bottom:6px"><span class="pill s-acc">' + DELIVERY.esc(i.category) + "</span></div>" : "") +
-            '<div class="dl-mut">' + DELIVERY.esc(i.description || "") + "</div>" +
-            '<div class="dl-between" style="margin-top:auto; padding-top:12px">' +
-              "<span>" +
-                '<span class="dl-price">' + DELIVERY.fmt(eff) + "</span>" +
-              "</span>" +
-              '<button class="dl-btn sm" data-item="' + DELIVERY.esc(i.name) +
-                '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + base + '"' +
-                ' data-svcpct="' + (i.apply_service_charge ? (i.service_charge_pct || 0) : 0) + '"' +
-                ' data-svcfee="' + svc + '" data-eff="' + eff + '"' +
-                ' data-flat="' + (i.service_fee_flat || 0) + '"' +
-                (out ? " disabled" : "") + "><i class=\"fa-solid fa-cart-plus\"></i> " +
-                (out ? "Sold out" : "Add") + "</button>" +
-            "</div>" +
-            (i.track_stock ? '<div class="dl-mut" style="margin-top:8px">' + i.available_stock + " in stock</div>" : "") +
-            "</div>";
+          var inner = i.item_image
+            ? '<img src="' + DELIVERY.esc(i.item_image) + '" alt="">'
+            : '<i class="fa-solid fa-utensils" style="font-size:38px;color:rgba(255,255,255,.95)"></i>';
+          return '<div class="mn-card">' +
+            '<div class="mn-thumb" style="' + (i.item_image ? 'background:#fff' : ('background:' + GRADS[idx % GRADS.length])) + '">' + inner + '</div>' +
+            '<div class="mn-body">' +
+              '<div class="mn-name">' + DELIVERY.esc(i.item_name) + '</div>' +
+              (i.description ? '<div class="mn-desc">' + DELIVERY.esc(i.description) + '</div>' : "") +
+              (i.category ? '<span class="mn-pill">' + DELIVERY.esc(i.category) + '</span>' : "") +
+              '<div class="mn-foot"><span class="mn-price">' + DELIVERY.fmt(eff) + '</span>' +
+                '<button class="mn-add" data-item="' + DELIVERY.esc(i.name) +
+                  '" data-name="' + DELIVERY.esc(i.item_name) + '" data-rate="' + base + '"' +
+                  ' data-svcpct="' + (i.apply_service_charge ? (i.service_charge_pct || 0) : 0) + '"' +
+                  ' data-svcfee="' + svc + '" data-eff="' + eff + '"' +
+                  ' data-flat="' + (i.service_fee_flat || 0) + '"' +
+                  (out ? " disabled" : "") + '>' + (out ? "Sold out" : "Add +") + '</button>' +
+              '</div></div></div>';
         }).join("");
         host.querySelectorAll("button[data-item]").forEach(function (b) {
           b.addEventListener("click", function () {
@@ -100,22 +106,8 @@
     DELIVERY.currency = c.currency;
   }).catch(function () {});
 
-  DELIVERY.call("delivery.api.customer.list_merchants").then(function (rows) {
-    var sel = document.getElementById("merchant");
-    sel.innerHTML = rows.map(function (m) {
-      return '<option value="' + m.name + '">' + DELIVERY.esc(m.merchant_name) + "</option>";
-    }).join("");
-    var pick = chosen && rows.some(function (m) { return m.name === chosen; })
-               ? chosen : (rows[0] && rows[0].name);
-    if (pick) { sel.value = pick; load(pick); }
-    sel.addEventListener("change", function () { load(sel.value); });
-  }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
-
-  var t;
-  document.getElementById("q").addEventListener("input", function () {
-    clearTimeout(t);
-    t = setTimeout(function () { load(document.getElementById("merchant").value); }, 350);
-  });
+  if (chosen) { load(chosen); }
+  else { location.replace("/delivery/category?key=restaurant"); }
 })();
 </script>
 </body></html>

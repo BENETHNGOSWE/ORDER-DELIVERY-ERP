@@ -14,17 +14,19 @@
   .c-sec{ display:flex; align-items:center; justify-content:space-between; margin:20px 0 12px; }
   .c-sec h2{ font-size:16px; font-weight:800; margin:0; }
   .c-sec a{ font-size:12.5px; font-weight:700; color:var(--purple); text-decoration:none; }
-  /* merchants grid (restaurant mode) */
-  .c-merchants{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
-  .c-mcard{ display:flex; align-items:center; gap:13px; background:#fff; border:1px solid var(--line);
-    border-radius:16px; padding:14px; text-decoration:none; color:inherit; transition:.15s; }
-  .c-mcard:hover{ border-color:var(--purple); box-shadow:0 4px 16px rgba(91,43,224,.10); }
-  .c-mlogo{ width:54px; height:54px; border-radius:14px; background:var(--purple-light); color:var(--purple);
-    display:grid; place-items:center; font-size:22px; flex:none; overflow:hidden; }
-  .c-mlogo img{ width:100%; height:100%; object-fit:cover; }
-  .c-mcard .nm{ font-weight:800; font-size:14.5px; }
-  .c-mcard .mt{ font-size:12px; color:var(--sec); margin-top:3px; }
-  .c-mcard .go{ margin-left:auto; color:var(--purple); font-size:14px; flex:none; }
+  /* merchants grid (restaurant mode) - same card style as the homepage */
+  .c-merchants{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px; }
+  .c-mcard{ display:block; background:#fff; border:1px solid var(--line); border-radius:16px;
+    overflow:hidden; text-decoration:none; color:inherit; transition:.15s; }
+  .c-mcard:hover{ transform:translateY(-3px); box-shadow:0 12px 26px rgba(0,0,0,.08); }
+  .c-mthumb{ height:110px; display:grid; place-items:center; font-size:44px; color:#fff; position:relative; overflow:hidden; }
+  .c-mthumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .c-mtag{ position:absolute; top:9px; left:9px; background:rgba(0,0,0,.55); color:#fff; font-size:11px;
+    font-weight:600; line-height:16px; padding:2px 9px; border-radius:8px; }
+  .c-mbody{ padding:11px 12px 12px; }
+  .c-mbody .nm{ font-weight:700; font-size:14px; line-height:20px; text-transform:uppercase; color:var(--ink); }
+  .c-meta{ color:var(--sec); font-size:12.5px; line-height:18px; margin-top:3px; }
+  .c-mfree{ color:#16A34A; font-weight:600; font-size:11px; line-height:16px; margin-top:6px; display:inline-block; }
   /* items grid (same style as home) */
   .c-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; }
   .c-item{ background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;
@@ -110,13 +112,21 @@
       ' data-flat="' + (it.service_fee_flat || 0) + '"' + (soldOut ? " disabled" : "") + '>' +
       (soldOut ? "Sold out" : "Add +") + '</button></div></div></div>';
   }
-  function merchantCard(m) {
-    var logo = m.logo ? '<img src="' + esc(m.logo) + '" alt="">' : '<i class="fa-solid fa-store"></i>';
+  var GRADS = ["linear-gradient(135deg,#f97316,#ef4444)","linear-gradient(135deg,#7c3aed,#a855f7)",
+               "linear-gradient(135deg,#0ea5e9,#2563eb)","linear-gradient(135deg,#16a34a,#059669)",
+               "linear-gradient(135deg,#db2777,#9333ea)","linear-gradient(135deg,#ca8a04,#d77606)"];
+  function merchantCard(m, i) {
+    var svc = (m.service_type || "").replace(" & ", "/");
+    var inner = m.logo
+      ? '<img src="' + esc(m.logo) + '" alt="">'
+      : '<i class="fa-solid fa-store" style="font-size:42px;color:rgba(255,255,255,.92)"></i>';
     return '<a class="c-mcard" href="/delivery/menu?merchant=' + encodeURIComponent(m.name) + '">' +
-      '<span class="c-mlogo">' + logo + '</span>' +
-      '<span><span class="nm">' + esc(m.merchant_name) + '</span>' +
-      '<span class="mt">' + esc(m.service_type || "") + (m.area ? " · " + esc(m.area) : (m.city ? " · " + esc(m.city) : "")) + '</span></span>' +
-      '<span class="go"><i class="fa-solid fa-chevron-right"></i></span></a>';
+      '<div class="c-mthumb" style="' + (m.logo ? 'background:#fff' : ('background:' + GRADS[i % GRADS.length])) + '">' +
+        '<span class="c-mtag">' + esc(svc) + '</span>' + inner + '</div>' +
+      '<div class="c-mbody"><div class="nm">' + esc(m.merchant_name) + '</div>' +
+      '<div class="c-meta"><i class="fa-solid fa-location-dot"></i> ' + esc(m.area || m.city || "Dar es Salaam") +
+      ' · <i class="fa-regular fa-clock"></i> ~' + Math.round(m.avg_prep_minutes || 20) + ' min</div>' +
+      '<span class="c-mfree">Free delivery · min ' + money(m.minimum_order_value || 0) + '</span></div></a>';
   }
   function wireButtons(host) {
     host.querySelectorAll("button[data-item]").forEach(function (b) {

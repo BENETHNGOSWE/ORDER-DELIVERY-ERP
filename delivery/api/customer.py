@@ -138,7 +138,8 @@ def merchant_catalog(merchant, item_type=None, category=None, search=None):
     for r in rows:
         grouped.setdefault(r.category or "Other", []).append(r)
 
-    return {"merchant": merchant, "items": rows, "grouped": grouped}
+    merchant_name = frappe.db.get_value("Merchant", merchant, "merchant_name") or merchant
+    return {"merchant": merchant_name, "items": rows, "grouped": grouped}
 
 
 @frappe.whitelist(allow_guest=True)
