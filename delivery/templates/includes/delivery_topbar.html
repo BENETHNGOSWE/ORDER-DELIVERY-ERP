@@ -3,6 +3,19 @@
 {% set full_name = frappe.db.get_value("User", u, "full_name") if is_logged_in else "" %}
 {% set initials = ((full_name or "U").split(" ")|map("first")|list|join(""))[:2]|upper %}
 <div class="pc-topbar">
+  <button id="pc-burger" class="pc-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+  <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> {{ platform_name or "Delivery" }}</a>
+  <div id="pc-backdrop" class="pc-backdrop"></div>
+  <script>
+  (function () {
+    var b = document.getElementById("pc-burger"), d = document.getElementById("pc-backdrop");
+    if (b) b.addEventListener("click", function () { document.body.classList.toggle("pc-side-open"); });
+    if (d) d.addEventListener("click", function () { document.body.classList.remove("pc-side-open"); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") document.body.classList.remove("pc-side-open");
+    });
+  })();
+  </script>
   {% if is_logged_in %}
     <a class="pc-user" href="/delivery/me" title="My orders">
       <span class="av">{{ initials }}</span>

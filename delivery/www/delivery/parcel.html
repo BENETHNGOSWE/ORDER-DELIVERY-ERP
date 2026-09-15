@@ -263,7 +263,7 @@
               <input id="km" class="pc-in" type="number" step="0.1" value="0"></div>
             <div class="pc-field"><label for="val">Declared value</label>
               <input id="val" class="pc-in" type="number" value="0" placeholder="TZS"></div>
-            <div class="pc-field"><label for="phone">Phone (optional)</label>
+            <div class="pc-field"><label for="phone">Phone <span style="color:var(--danger)">*</span></label>
               <div class="pc-phone">
                 <span class="pf"><i class="fa-solid fa-phone" style="font-size:13px;margin-right:6px"></i>+255</span>
                 <input id="phone" type="tel" placeholder="7XX XXX XXX">
@@ -282,14 +282,6 @@
             <button id="q" class="pc-btn ghost"><i class="fa-solid fa-calculator"></i> Get quote</button>
             <button id="go" class="pc-btn solid">Send parcel <i class="fa-solid fa-arrow-right"></i></button>
           </div>
-        </div>
-
-        <h2 class="pc-sec-title">Weight bands</h2>
-        <div class="pc-card pc-tablecard">
-          <table class="pc-table">
-            <thead><tr><th>Band</th><th>From</th><th>To</th><th>Base</th><th>Per extra kg</th></tr></thead>
-            <tbody id="bands"></tbody>
-          </table>
         </div>
 
         <div class="pc-safe">
@@ -329,26 +321,11 @@
     return { weight_kg: v("w"), length_cm: v("l"), width_cm: v("wd"),
              height_cm: v("h"), distance_km: v("km"), is_fragile: document.getElementById("fragile").checked ? 1 : 0 };
   }
-  function bandIcon(name){
-    name = (name || "").toLowerCase();
-    return (name.indexOf("document") >= 0 || name.indexOf("envelope") >= 0)
-      ? '<i class="fa-regular fa-file-lines"></i>'
-      : '<i class="fa-solid fa-box"></i>';
-  }
 
   DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
     DELIVERY.currency = c.currency;
     document.getElementById("pay").innerHTML =
       c.payment_methods.map(function (m) { return "<option>" + m + "</option>"; }).join("");
-  }).catch(function () {});
-
-  DELIVERY.call("delivery.api.customer.parcel_weight_categories").then(function (rows) {
-    document.getElementById("bands").innerHTML = rows.map(function (b) {
-      return '<tr><td><div class="pc-band"><span class="bic">' + bandIcon(b.category_name) + "</span>" +
-        DELIVERY.esc(b.category_name) + '</div></td><td>' + b.min_weight_kg +
-        " kg</td><td>" + (b.max_weight_kg || "&infin;") + " kg</td><td>" +
-        DELIVERY.fmt(b.base_charge) + "</td><td>" + DELIVERY.fmt(b.per_kg_charge) + "</td></tr>";
-    }).join("");
   }).catch(function () {});
 
   document.getElementById("q").addEventListener("click", function () {
@@ -366,7 +343,8 @@
     p.pickup_address = v("pickup"); p.dropoff_address = v("dropoff");
     p.parcel_description = v("desc"); p.declared_value = v("val");
     var phone = v("phone").replace(/\s+/g, "");
-    if (phone) { if (phone.indexOf("+") !== 0) { phone = "+255" + phone.replace(/^0+/, ""); } }
+    if (!phone) { DELIVERY.toast("Phone number is required", "error"); b.disabled = false; return; }
+    if (phone.indexOf("+") !== 0) { phone = "+255" + phone.replace(/^0+/, ""); }
     p.phone = phone; p.payment_method = v("pay");
     DELIVERY.call("delivery.api.customer.place_parcel_request", p).then(function (r) {
       DELIVERY.toast("Parcel " + r.parcel + " created", "success");
