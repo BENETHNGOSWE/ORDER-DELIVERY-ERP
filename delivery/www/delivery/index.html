@@ -463,12 +463,12 @@
       <div class="dh"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Delivery</div>
       <nav>
         <a id="xd-home"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
-        <a id="xd-cat-restaurant"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
-        <a id="xd-cat-groceries"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
-        <a id="xd-cat-drinks"><span class="ni"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
-        <a id="xd-cat-pharmacy"><span class="ni"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Pharmacy &amp; Cosmetics</a>
-        <a id="xd-cat-shopping"><span class="ni"><i class="fa-solid fa-bag-shopping"></i></span> Shopping</a>
-        <a id="xd-cat-others"><span class="ni"><i class="fa-solid fa-shapes"></i></span> Others</a>
+        <a href="/delivery/category?key=restaurant"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
+        <a href="/delivery/category?key=groceries"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
+        <a href="/delivery/category?key=drinks"><span class="ni"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
+        <a href="/delivery/category?key=pharmacy"><span class="ni"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Pharmacy &amp; Cosmetics</a>
+        <a href="/delivery/category?key=shopping"><span class="ni"><i class="fa-solid fa-bag-shopping"></i></span> Shopping</a>
+        <a href="/delivery/category?key=others"><span class="ni"><i class="fa-solid fa-shapes"></i></span> Others</a>
         <div class="grp">Services</div>
         <a href="/delivery/parcel"><span class="ni"><i class="fa-solid fa-box"></i></span> Send a Parcel</a>
         <a href="/delivery/transport"><span class="ni"><i class="fa-solid fa-truck"></i></span> Transport</a>
@@ -491,6 +491,7 @@
 
     <div class="x-sec-head" id="items">
       <h2 id="items-title">Available now</h2>
+      <a id="items-viewall" href="/delivery/category?key=all" style="font-size:12.5px; font-weight:700; color:var(--purple); text-decoration:none">View all</a>
       <div class="x-sort">Sort
         <select id="sort">
           <option value="featured">Featured</option>
@@ -640,13 +641,15 @@
     ["others","fa-shapes","Others"]
   ];
   document.getElementById("cats").innerHTML = TILES.map(function(t){
-    return '<div class="x-cat" data-cat="'+t[0]+'"><div class="ic">'+fa(t[1])+'</div><div class="lb">'+t[2]+'</div></div>';
+    return '<a class="x-cat" href="/delivery/category?key='+t[0]+'"><div class="ic">'+fa(t[1])+'</div><div class="lb">'+t[2]+'</div></a>';
   }).join("");
 
   function setCat(k){
     cat = k;
     document.querySelectorAll(".x-chip").forEach(function(x){ x.classList.toggle("active", x.dataset.cat===k); });
     document.querySelectorAll(".x-nav a").forEach(function(x){ x.classList.toggle("active", x.dataset.cat===k); });
+    var va=document.getElementById("items-viewall");
+    if(va) va.href="/delivery/category?key="+encodeURIComponent(k==="offers"?"others":k);
     renderItems();
     document.getElementById("items").scrollIntoView({behavior:"smooth", block:"start"});
   }
@@ -670,11 +673,6 @@
     });
     document.getElementById("x-backdrop").addEventListener("click", close);
     document.addEventListener("keydown", function(e){ if(e.key==="Escape") close(); });
-    drawer.querySelector("#xd-home").addEventListener("click", function(){ close(); setCat("all"); });
-    ["restaurant","groceries","drinks","pharmacy","shopping","others"].forEach(function(k){
-      var el=drawer.querySelector("#xd-cat-"+k);
-      if(el) el.addEventListener("click", function(){ close(); setCat(k); });
-    });
   })();
 
   function matchCat(it){
@@ -711,10 +709,11 @@
       return (b.featured?1:0)-(a.featured?1:0) || a.rate-b.rate;
     });
     var labelMap={all:"Available now",restaurant:"Restaurant",groceries:"Groceries",drinks:"Drinks",shopping:"Shopping",pharmacy:"Pharmacy & Cosmetics",others:"Others",offers:"Offers"};
+    var onHome = list.length > 6 ? list.slice(0,6) : list;
     document.getElementById("items-title").textContent=(labelMap[cat]||"Available now")+" ("+list.length+")";
     var host=document.getElementById("grid");
     if(!list.length){ host.innerHTML='<div class="x-empty">No items match. Try another search or category.</div>'; return; }
-    host.innerHTML=list.map(function(it,i){
+    host.innerHTML=onHome.map(function(it,i){
       itemById[it.name]=it;
       var old=it.discount_rate?'<span class="old">'+money(it.standard_rate)+'</span>':"";
       var off=it.discount_rate?'<span class="x-off">-'+Math.round(it.discount_rate)+'%</span>':"";

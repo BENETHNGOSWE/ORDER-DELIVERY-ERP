@@ -1,0 +1,162 @@
+{% set page_title = "Category" %}
+<!doctype html><html lang="en"><head>
+{% include "delivery/templates/includes/delivery_head.html" %}
+<style>
+  :root{ --purple:#5B2BE0; --purple-dark:#3F1BA8; --purple-light:#F1ECFF; --lime:#D9FF5A;
+    --ink:#171717; --sec:#6B6B75; --muted:#9999A3; --line:#EAEAEF; }
+  body{ font-family:Inter,system-ui,sans-serif; background:#F8F8FA; margin:0; color:var(--ink); }
+  .c-wrap{ max-width:1100px; margin:0 auto; padding:16px 16px 90px; }
+  .c-top{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .c-back{ width:42px; height:42px; border:1.5px solid var(--line); background:#fff; border-radius:12px;
+    display:grid; place-items:center; color:var(--ink); font-size:16px; text-decoration:none; flex:none; }
+  .c-title{ font-size:20px; font-weight:800; letter-spacing:-.02em; }
+  .c-sub{ font-size:12.5px; color:var(--sec); margin-top:2px; }
+  .c-sec{ display:flex; align-items:center; justify-content:space-between; margin:20px 0 12px; }
+  .c-sec h2{ font-size:16px; font-weight:800; margin:0; }
+  .c-sec a{ font-size:12.5px; font-weight:700; color:var(--purple); text-decoration:none; }
+  /* merchants grid (restaurant mode) */
+  .c-merchants{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+  .c-mcard{ display:flex; align-items:center; gap:13px; background:#fff; border:1px solid var(--line);
+    border-radius:16px; padding:14px; text-decoration:none; color:inherit; transition:.15s; }
+  .c-mcard:hover{ border-color:var(--purple); box-shadow:0 4px 16px rgba(91,43,224,.10); }
+  .c-mlogo{ width:54px; height:54px; border-radius:14px; background:var(--purple-light); color:var(--purple);
+    display:grid; place-items:center; font-size:22px; flex:none; overflow:hidden; }
+  .c-mlogo img{ width:100%; height:100%; object-fit:cover; }
+  .c-mcard .nm{ font-weight:800; font-size:14.5px; }
+  .c-mcard .mt{ font-size:12px; color:var(--sec); margin-top:3px; }
+  .c-mcard .go{ margin-left:auto; color:var(--purple); font-size:14px; flex:none; }
+  /* items grid (same style as home) */
+  .c-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; }
+  .c-item{ background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .c-ithumb{ position:relative; height:110px; display:grid; place-items:center; font-size:40px;
+    background:linear-gradient(135deg,#F1ECFF,#E4DBFF); color:var(--purple); }
+  .c-ithumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .c-ibody{ padding:12px 13px 13px; display:flex; flex-direction:column; flex:1; }
+  .c-iname{ font-weight:700; font-size:13.5px; line-height:1.3; }
+  .c-isub{ font-size:11.5px; color:var(--sec); margin:4px 0 10px; }
+  .c-ifoot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .c-price{ font-weight:800; font-size:14px; color:var(--purple-dark); }
+  .c-add{ background:var(--purple); color:#fff; border:0; border-radius:999px; padding:8px 14px;
+    font-weight:700; font-size:12.5px; cursor:pointer; }
+  .c-add:disabled{ background:#C9C2F2; cursor:not-allowed; }
+  .c-empty{ text-align:center; color:var(--sec); padding:44px 14px; font-size:14px; background:#fff;
+    border:1px solid var(--line); border-radius:16px; }
+  @media (max-width:480px){ .c-grid{ grid-template-columns:1fr 1fr; } .c-ithumb{ height:96px; } }
+</style>
+</head><body>
+<div class="c-wrap">
+  <div class="c-top">
+    <a class="c-back" href="/delivery"><i class="fa-solid fa-arrow-left"></i></a>
+    <div>
+      <div class="c-title" id="c-title">Category</div>
+      <div class="c-sub" id="c-sub">Loading…</div>
+    </div>
+  </div>
+
+  <div id="c-body"><div class="c-empty">Loading…</div></div>
+</div>
+
+<script src="/assets/delivery/js/delivery_portal.js"></script>
+<script>
+(function () {
+  DELIVERY.loadCart();
+  var params = new URLSearchParams(location.search);
+  var key = (params.get("key") || "").toLowerCase();
+  var CATS = {
+    restaurant:{ label:"Restaurant", icon:"fa-utensils" },
+    groceries:{ label:"Groceries", icon:"fa-cart-shopping" },
+    drinks:{ label:"Drinks", icon:"fa-glass-water" },
+    pharmacy:{ label:"Pharmacy & Cosmetics", icon:"fa-prescription-bottle-medical" },
+    shopping:{ label:"Shopping", icon:"fa-bag-shopping" },
+    others:{ label:"Others", icon:"fa-shapes" }
+  };
+  /* category -> the Item Type values it matches (legacy values included) */
+  var MATCH = {
+    restaurant:["Restaurant","Food"],
+    groceries:["Groceries","Retail","Grocery"],
+    drinks:["Drinks"],
+    pharmacy:["Pharmacy & Cosmetics"],
+    shopping:["Shopping"],
+    others:["Others"]
+  };
+  var cat = CATS[key];
+  var ICON = { "Restaurant":"fa-utensils","Food":"fa-utensils","Groceries":"fa-cart-shopping",
+    "Retail":"fa-cart-shopping","Grocery":"fa-cart-shopping","Drinks":"fa-glass-water",
+    "Pharmacy & Cosmetics":"fa-prescription-bottle-medical","Shopping":"fa-bag-shopping",
+    "Others":"fa-shapes" };
+
+  if (!cat) { location.href = "/delivery"; return; }
+  document.title = cat.label + " — Delivery";
+  document.getElementById("c-title").textContent = cat.label;
+  document.getElementById("c-sub").textContent = "On delivery now";
+
+  var money = function (n) { return DELIVERY.fmt(n); };
+  function esc(s) { return DELIVERY.esc(s); }
+  function thumb(it) {
+    return it.image ? '<img src="' + esc(it.image) + '" alt="">' : '<i class="fa-solid ' + (ICON[it.item_type] || "fa-utensils") + '"></i>';
+  }
+
+  function itemCard(it) {
+    var soldOut = it.track_stock && it.in_stock <= 0;
+    return '<div class="c-item"><div class="c-ithumb">' + thumb(it) + '</div>' +
+      '<div class="c-ibody"><div class="c-iname">' + esc(it.item_name) + '</div>' +
+      '<div class="c-isub">' + esc(it.merchant_name) + '</div>' +
+      '<div class="c-ifoot"><span class="c-price">' + money(it.effective_rate || it.rate) + '</span>' +
+      '<button class="c-add" data-item="' + esc(it.name) + '" data-name="' + esc(it.item_name) + '"' +
+      ' data-merchant="' + esc(it.merchant) + '" data-rate="' + (it.base_rate || 0) + '"' +
+      ' data-svcpct="' + (it.service_charge ? (it.service_charge && (it.effective_rate - it.base_rate) / (it.base_rate || 1) * 100).toFixed(1) : 0) + '"' +
+      ' data-svcfee="' + (it.service_charge || 0) + '" data-eff="' + (it.effective_rate || 0) + '"' +
+      ' data-flat="' + (it.service_fee_flat || 0) + '"' + (soldOut ? " disabled" : "") + '>' +
+      (soldOut ? "Sold out" : "Add +") + '</button></div></div></div>';
+  }
+  function merchantCard(m) {
+    var logo = m.logo ? '<img src="' + esc(m.logo) + '" alt="">' : '<i class="fa-solid fa-store"></i>';
+    return '<a class="c-mcard" href="/delivery/menu?merchant=' + encodeURIComponent(m.name) + '">' +
+      '<span class="c-mlogo">' + logo + '</span>' +
+      '<span><span class="nm">' + esc(m.merchant_name) + '</span>' +
+      '<span class="mt">' + esc(m.service_type || "") + (m.area ? " · " + esc(m.area) : (m.city ? " · " + esc(m.city) : "")) + '</span></span>' +
+      '<span class="go"><i class="fa-solid fa-chevron-right"></i></span></a>';
+  }
+  function wireButtons(host) {
+    host.querySelectorAll("button[data-item]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        DELIVERY.addToCart(b.dataset.merchant, b.dataset.item, b.dataset.name, b.dataset.rate, 1, {
+          pct: Number(b.dataset.svcpct || 0),
+          fee: Number(b.dataset.svcfee || 0),
+          eff: Number(b.dataset.eff || 0),
+          flat: Number(b.dataset.flat || 0)
+        });
+      });
+    });
+  }
+
+  function loadAll() {
+    var body = document.getElementById("c-body");
+    if (key === "restaurant") {
+      /* restaurants: list the merchants first */
+      DELIVERY.call("delivery.api.customer.list_merchants", { service_type: "Food" }).then(function (rows) {
+        document.getElementById("c-sub").textContent = rows.length + (rows.length === 1 ? " restaurant open" : " restaurants open");
+        body.innerHTML = rows.length
+          ? '<div class="c-merchants">' + rows.map(merchantCard).join("") + '</div>'
+          : '<div class="c-empty">No restaurants open right now.</div>';
+      }).catch(function () { body.innerHTML = '<div class="c-empty">Could not load restaurants.</div>'; });
+    } else {
+      /* other categories: all items of that type across open merchants */
+      var types = MATCH[key] || [];
+      DELIVERY.call("delivery.api.customer.browse_items", { limit: 300 }).then(function (all) {
+        var rows = all.filter(function (it) { return types.indexOf(it.item_type) >= 0; });
+        document.getElementById("c-sub").textContent = rows.length + " items";
+        body.innerHTML = rows.length
+          ? '<div class="c-grid">' + rows.map(itemCard).join("") + '</div>'
+          : '<div class="c-empty">Nothing in ' + esc(cat.label) + ' yet — check back soon.</div>';
+        wireButtons(body);
+      }).catch(function (e) {
+        body.innerHTML = '<div class="c-empty">Could not load items.<br><small>' + esc((e && e.message) || "") + '</small></div>';
+      });
+    }
+  }
+  loadAll();
+})();
+</script>
+</body></html>

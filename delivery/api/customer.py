@@ -142,6 +142,66 @@ def merchant_catalog(merchant, item_type=None, category=None, search=None):
 
 
 @frappe.whitelist(allow_guest=True)
+def category_items(item_type=None, search=None, sort="newest", limit=200):
+    """All items of one category (Item Type) across every open merchant -
+    backs the /delivery/category page."""
+    filters = {"published": 1}
+    if item_type:
+        filters["item_type"] = item_type
+    order_by = {
+        "newest": "modified desc",
+        "price_asc": "standard_rate asc",
+        "price_desc": "standard_rate desc",
+        "name": "item_name asc",
+    }.get(sort, "modified desc")
+
+    rows = frappe.get_all("DL Menu Item", filters=filters,
+        fields=["name", "item_name", "item_type", "category", "description",
+                "standard_rate", "discount_rate", "apply_service_charge",
+                "service_charge_pct", "service_fee", "prep_minutes",
+                "item_image", "available_stock", "track_stock", "merchant",
+                "modified"],
+        order_by=order_by, limit=int(limit))
+
+    merchants = {m.name: m for m in frappe.get_all(
+        "Merchant", filters={"status": "Open"},
+        fields=["name", "merchant_name", "service_type", "area", "city", "logo"])}
+
+    items = []
+    for r in rows:
+        m = merchants.get(r.merchant)
+        if not m:
+            continue
+        if search:
+            q = search.lower()
+            if q not in (r.item_name or "").lower() \
+               and q not in (r.category or "").lower() \
+               and q not in (m.merchant_name or "").lower():
+                continue
+        rate = flt(r.standard_rate)
+        disc = flt(r.discount_rate or 0)
+        price = rate - (rate * disc / 100.0) if disc else rate
+        svc = flt(price * flt(r.service_charge_pct or 0) / 100.0) \
+              if r.apply_service_charge else 0.0
+        items.append({
+            "name": r.name, "item_name": r.item_name,
+            "item_type": r.item_type, "category": r.category or "Other",
+            "description": r.description or "",
+            "rate": flt(price, 2), "base_rate": flt(price, 2),
+            "service_charge": flt(svc, 2),
+            "service_fee_flat": flt(r.service_fee or 0),
+            "effective_rate": flt(price + svc, 2),
+            "standard_rate": rate, "discount_rate": disc,
+            "prep_minutes": flt(r.prep_minutes or 20),
+            "image": r.item_image or "", "in_stock": flt(r.available_stock or 0),
+            "track_stock": bool(r.track_stock),
+            "merchant": r.merchant, "merchant_name": m.merchant_name,
+            "modified": str(r.modified),
+        })
+    return items
+
+
+@frappe.whitelist(allow_guest=True)
 def browse_items(search=None, category=None, item_type=None, sort="featured", limit=200):
     """
     Marketplace-wide catalogue for the home page: every published, in-stock
