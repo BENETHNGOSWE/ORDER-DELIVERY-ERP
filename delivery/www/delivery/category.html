@@ -112,17 +112,13 @@
       ' data-flat="' + (it.service_fee_flat || 0) + '"' + (soldOut ? " disabled" : "") + '>' +
       (soldOut ? "Sold out" : "Add +") + '</button></div></div></div>';
   }
-  var GRADS = ["linear-gradient(135deg,#f97316,#ef4444)","linear-gradient(135deg,#7c3aed,#a855f7)",
-               "linear-gradient(135deg,#0ea5e9,#2563eb)","linear-gradient(135deg,#16a34a,#059669)",
-               "linear-gradient(135deg,#db2777,#9333ea)","linear-gradient(135deg,#ca8a04,#d77606)"];
-  function merchantCard(m, i) {
+  function merchantCard(m) {
     var svc = (m.service_type || "").replace(" & ", "/");
-    var pic = m.logo || m.thumb;
-    var inner = pic
-      ? '<img src="' + esc(pic) + '" alt="">'
-      : '<i class="fa-solid fa-store" style="font-size:42px;color:rgba(255,255,255,.92)"></i>';
+    var inner = m.logo
+      ? '<img src="' + esc(m.logo) + '" alt="">'
+      : '<i class="fa-solid fa-utensils" style="font-size:40px;color:#C9BFF5"></i>';
     return '<a class="c-mcard" href="/delivery/menu?merchant=' + encodeURIComponent(m.name) + '">' +
-      '<div class="c-mthumb" style="' + (pic ? 'background:#fff' : ('background:' + GRADS[i % GRADS.length])) + '">' +
+      '<div class="c-mthumb" style="' + (m.logo ? 'background:#fff' : 'background:#F1ECFF') + '">' +
         '<span class="c-mtag">' + esc(svc) + '</span>' + inner + '</div>' +
       '<div class="c-mbody"><div class="nm">' + esc(m.merchant_name) + '</div>' +
       '<div class="c-meta"><i class="fa-solid fa-location-dot"></i> ' + esc(m.area || m.city || "Dar es Salaam") +

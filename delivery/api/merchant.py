@@ -84,15 +84,40 @@ def profile(merchant=None):
         "Merchant", name,
         ["name", "merchant_name", "service_type", "status", "phone", "email",
          "city", "area", "full_address", "avg_prep_minutes",
-         "minimum_order_value", "delivery_radius_km", "commission_rate"],
+         "minimum_order_value", "delivery_radius_km", "commission_rate", "logo"],
         as_dict=True)
     return {"merchant": m.name, "merchant_name": m.merchant_name,
             "service_type": m.service_type, "status": m.status,
             "phone": m.phone, "email": m.email, "city": m.city, "area": m.area,
+            "logo": m.logo or "",
             "full_address": m.full_address, "avg_prep_minutes": m.avg_prep_minutes,
             "minimum_order_value": flt(m.minimum_order_value, 2),
             "delivery_radius_km": flt(m.delivery_radius_km, 2),
             "commission_rate": flt(m.commission_rate, 2)}
+
+
+@frappe.whitelist()
+def set_logo(image_data=None, merchant=None):
+    """Save an uploaded image as the merchant logo (shown on the customer
+    restaurant list + homepage). Accepts a base64 data URL from the portal."""
+    import base64
+    name = _merchant_or_throw(merchant)
+    if not image_data or "," not in image_data:
+        frappe.throw(_("Please choose an image first."))
+    head, b64 = image_data.split(",", 1)
+    ext = "png" if "png" in head.lower() else "jpg"
+    doc = frappe.get_doc({
+        "doctype": "File",
+        "file_name": f"{name}-logo.{ext}",
+        "attached_to_doctype": "Merchant",
+        "attached_to_name": name,
+        "is_private": 0,
+        "content": base64.b64decode(b64),
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.set_value("Merchant", name, "logo", doc.file_url)
+    frappe.db.commit()
+    return {"logo": doc.file_url}
 
 
 @frappe.whitelist()

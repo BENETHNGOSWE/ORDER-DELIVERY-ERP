@@ -96,19 +96,6 @@ def list_merchants(service_type=None, search=None, zone=None):
                                   "minimum_order_value", "latitude", "longitude"],
                           order_by="merchant_name asc", limit=100)
 
-    # food-photo fallback for merchant cards: newest published item image
-    thumbs = {}
-    if rows:
-        imgs = frappe.get_all("DL Menu Item",
-            filters={"published": 1, "merchant": ["in", [r.name for r in rows]],
-                     "item_image": ["is", "set"]},
-            fields=["merchant", "item_image"],
-            order_by="is_featured desc, modified desc", limit=500)
-        for it in imgs:
-            thumbs.setdefault(it.merchant, it.item_image)
-    for r in rows:
-        r["thumb"] = thumbs.get(r.name, "")
-
     if search:
         s = f"%{search}%"
         rows = [r for r in rows if s.replace("%", "").lower()
