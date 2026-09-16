@@ -289,8 +289,7 @@
           <div id="quote" class="pc-quote"></div>
 
           <div class="pc-actions">
-            <button id="q" class="pc-btn ghost"><i class="fa-solid fa-calculator"></i> Get quote</button>
-            <button id="go" class="pc-btn solid">Send parcel <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="go" class="pc-btn solid" style="width:100%">Send parcel <i class="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
 
@@ -336,15 +335,6 @@
     document.getElementById("pay").innerHTML =
       c.payment_methods.map(function (m) { return "<option>" + m + "</option>"; }).join("");
   }).catch(function () {});
-
-  document.getElementById("q").addEventListener("click", function () {
-    DELIVERY.call("delivery.api.customer.quote_parcel", payload()).then(function (r) {
-      document.getElementById("quote").innerHTML = r.needs_review
-        ? '<i class="fa-solid fa-headset"></i> <b>Manual quote needed</b> &mdash; operations will price this parcel.'
-        : '<i class="fa-solid fa-tag"></i> Tariff <b>' + DELIVERY.fmt(r.tariff_amount) + "</b>" +
-          (r.weight_category ? " (" + DELIVERY.esc(r.weight_category) + ")" : "");
-    }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
-  });
 
   document.getElementById("go").addEventListener("click", function () {
     var b = this; b.disabled = true;
