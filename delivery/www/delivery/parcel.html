@@ -23,7 +23,9 @@
 
   .pc-logo{ display:flex; align-items:center; gap:11px; font-weight:800; font-size:21px;
     color:var(--ink); letter-spacing:-.02em; padding:2px 8px 20px; text-decoration:none; }
-  .pc-logo .lg{ width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
+  .pc-logo .lg{
+  .lg img{ width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
+ width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
     color:#fff; display:grid; place-items:center; font-size:19px; box-shadow:0 8px 18px rgba(91,43,224,.35); }
   .pc-nav{ display:flex; flex-direction:column; gap:3px; }
   .pc-nav a{ display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:12px;
@@ -187,7 +189,7 @@
 <div class="pc-app">
   <!-- LEFT SIDEBAR -->
   <aside class="pc-side">
-    <a class="pc-logo" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
+    <a class="pc-logo" href="/delivery"><span class="lg"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span> <span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
     <nav class="pc-nav">
       <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
       <a href="/delivery/menu"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>
@@ -216,7 +218,7 @@
   <main class="pc-main">
     <div class="pc-topbar">
       <button id="pc-burger" class="pc-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-      <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
+      <a class="pc-mbrand" href="/delivery"><span class="lg"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span> <span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
       <div id="pc-backdrop" class="pc-backdrop"></div>
       <span class="pc-top-spacer"></span>
     </div>
