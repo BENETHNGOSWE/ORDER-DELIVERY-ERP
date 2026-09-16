@@ -10,11 +10,11 @@
             z-index: 1; margin-top: 14px; }
   .dl-map-status { margin-top: 10px; font-weight: 600; color: var(--purple-dark); font-size: 13px; }
   .dl-pulse { width: 18px; height: 18px; background: var(--purple); border: 3px solid #fff;
-              border-radius: 50%; box-shadow: 0 0 0 0 rgba(91,43,224,.6);
+              border-radius: 50%; box-shadow: 0 0 0 0 rgba(198,5,12,.6);
               animation: dl-pulse 1.6s infinite; }
-  @keyframes dl-pulse { 0%{box-shadow:0 0 0 0 rgba(91,43,224,.55);}
-                        70%{box-shadow:0 0 0 16px rgba(91,43,224,0);}
-                        100%{box-shadow:0 0 0 0 rgba(91,43,224,0);} }
+  @keyframes dl-pulse { 0%{box-shadow:0 0 0 0 rgba(198,5,12,.55);}
+                        70%{box-shadow:0 0 0 16px rgba(198,5,12,0);}
+                        100%{box-shadow:0 0 0 0 rgba(198,5,12,0);} }
   .dl-driver-tag { display:inline-flex; align-items:center; gap:7px; padding:5px 12px;
                    border-radius:999px; background:var(--purple-light); color:var(--purple-dark);
                    font-size:12px; font-weight:700; }
@@ -184,9 +184,9 @@
 
         // driver's travelled breadcrumb trail
         if (pts.length > 1) {
-          routeLine = L.polyline(pts, { color: "#5B2BE0", weight: 4, opacity: 0.75 }).addTo(layer);
+          routeLine = L.polyline(pts, { color: "#C6050C", weight: 4, opacity: 0.75 }).addTo(layer);
           pts.forEach(function (ll) {
-            L.circleMarker(ll, { radius: 3, color: "#3F1BA8", fillColor: "#fff", fillOpacity: 1 }).addTo(layer);
+            L.circleMarker(ll, { radius: 3, color: "#8F0409", fillColor: "#fff", fillOpacity: 1 }).addTo(layer);
           });
         }
 
@@ -201,7 +201,7 @@
         }
 
         // pickup (merchant) and destination (drop-off) pins
-        var pickupLL = addPlace(r.pickup, "fa-store", "#5B2BE0", "Pickup");
+        var pickupLL = addPlace(r.pickup, "fa-store", "#C6050C", "Pickup");
         var dropLL = addPlace(r.dropoff, "fa-flag-checkered", "#171717", "Destination");
 
         // remaining route: driver -> destination (dashed)

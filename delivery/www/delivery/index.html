@@ -9,8 +9,8 @@
 <style>
   /* ============ Easu design tokens ============ */
   :root{
-    --purple:#5B2BE0; --purple-dark:#3F1BA8; --purple-light:#F1ECFF;
-    --lime:#D9FF5A; --ink:#171717; --sec:#6B6B75; --muted:#9999A3;
+    --purple:#C6050C; --purple-dark:#8F0409; --purple-light:#FDECEC;
+    --lime:#FDC702; --ink:#171717; --sec:#6B6B75; --muted:#9999A3;
     --bg:#F8F8FA; --card:#FFFFFF; --line:#EAEAEF;
     --success:#20B26B; --danger:#EF4444; --warning:#F59E0B;
     --price:#4F24D8; --ph:#85858F; --nav:#222222; --cat:#202020;
@@ -28,7 +28,7 @@
   .x-brand{ display:flex; align-items:center; gap:10px; padding:6px 8px; }
   .lg img{ width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
   .x-brand .logo{ width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,var(--purple),var(--purple-dark));
-                  display:grid; place-items:center; color:#fff; font-size:22px; box-shadow:0 8px 18px rgba(91,43,224,.30); }
+                  display:grid; place-items:center; color:#fff; font-size:22px; box-shadow:0 8px 18px rgba(198,5,12,.30); }
   .x-brand img{ display:block; width:100%; max-width:172px; height:auto; border-radius:12px; }
   .x-brand b{ font-size:21px; font-weight:800; line-height:1; display:block; letter-spacing:-.5px; }
   .x-brand small{ color:var(--sec); font-size:11px; font-weight:500; }
@@ -63,7 +63,7 @@
   .x-deliver small{ color:var(--sec); font-size:12px; line-height:16px; }
   .x-search{ flex:1; display:flex; align-items:center; gap:9px; background:#F2F2F5; border:1px solid transparent;
              border-radius:12px; height:48px; padding:0 16px; }
-  .x-search:focus-within{ background:#fff; border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+  .x-search:focus-within{ background:#fff; border-color:var(--purple); box-shadow:0 0 0 3px rgba(198,5,12,.12); }
   .x-search input{ flex:1; border:0; outline:0; background:transparent; font-family:inherit;
                    font-size:14px; font-weight:400; color:var(--ink); }
   .x-search input::placeholder{ color:var(--ph); }
@@ -76,7 +76,7 @@
   .x-mbrand .bt small{ font-size:12px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
 
   .x-hero{ border-radius:22px; overflow:hidden; position:relative; color:#fff; padding:40px 38px;
-           background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%);
+           background:radial-gradient(120% 140% at 80% 20%, #8F0409 0%, #14142b 62%);
            display:flex; align-items:center; gap:20px; }
   .x-hero h1{ font-size:40px; font-weight:700; line-height:48px; letter-spacing:-1px; margin:0 0 12px; color:#fff; }
   .x-hero h1 .y{ color:var(--lime); }
@@ -93,7 +93,7 @@
   .x-slide{ position:absolute; inset:0; opacity:0; transition:opacity .7s ease;
             pointer-events:none; }
   .x-slide.on{ opacity:1; pointer-events:auto; }
-  .x-slide.grad{ background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%); }
+  .x-slide.grad{ background:radial-gradient(120% 140% at 80% 20%, #8F0409 0%, #14142b 62%); }
   .x-slide.grad .slide-in{ position:absolute; inset:0; display:flex; align-items:center; gap:20px; padding:40px 38px; color:#fff; }
   .x-slide .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .x-slide .shade{ position:absolute; inset:0;
@@ -303,7 +303,7 @@
              font-family:inherit; font-size:14px; color:var(--ink); background:#fff; }
   textarea.ck-input{ height:auto; padding:11px 14px; resize:vertical; }
   select.ck-input{ background:#fff; }
-  .ck-input:focus{ outline:none; border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+  .ck-input:focus{ outline:none; border-color:var(--purple); box-shadow:0 0 0 3px rgba(198,5,12,.12); }
   .ck-geowrap{ position:relative; }
   .ck-geo-res{ position:absolute; left:0; right:0; top:48px; z-index:6; background:#fff; border:1px solid var(--line);
                border-top:none; border-radius:0 0 12px 12px; max-height:200px; overflow:auto; box-shadow:0 10px 26px rgba(0,0,0,.12); }
@@ -506,7 +506,7 @@
     <div class="x-grid" id="grid"><div class="x-empty">Loading items…</div></div>
 
     <div class="x-banners" style="margin-top:22px">
-      <div class="x-banner" style="background:linear-gradient(135deg,#6d28d9,#4c1d95)"><h4>Transport</h4><p>Point-to-point trips with live GPS tracking.</p><a class="b" href="/delivery/transport">Request Now</a><span class="em"><img src="/assets/delivery/img/banner-transport.jpg" alt="Transport"></span></div>
+      <div class="x-banner" style="background:linear-gradient(135deg,#DC0A12,#8F0409)"><h4>Transport</h4><p>Point-to-point trips with live GPS tracking.</p><a class="b" href="/delivery/transport">Request Now</a><span class="em"><img src="/assets/delivery/img/banner-transport.jpg" alt="Transport"></span></div>
       <div class="x-banner" style="background:linear-gradient(135deg,#0ea5e9,#15803d)"><h4>Send a Parcel</h4><p>Door-to-door parcels, instant quote, delivered fast.</p><a class="b" href="/delivery/parcel">Send Now</a><span class="em"><img src="/assets/delivery/img/banner-parcel.jpg" alt="Delivery parcel"></span></div>
       <div class="x-banner" style="background:linear-gradient(135deg,#fb923c,#ea580c)"><h4>Support</h4><p>We're here for you &mdash; call <b>+255 620 484 383</b></p><a class="b" href="tel:+255620484383">Call Now</a><span class="em"><img src="/assets/delivery/img/banner-support.jpg" alt="Support"></span></div>
     </div>
@@ -750,12 +750,12 @@
       var pic = m.logo || m.thumb;
       var mlogo = pic
         ? '<img src="'+DELIVERY.esc(pic)+'" alt="" class="x-iimg">'
-        : '<i class="fa-solid fa-utensils" style="font-size:44px;color:#C9BFF5"></i>';
+        : '<i class="fa-solid fa-utensils" style="font-size:44px;color:#F0A9AB"></i>';
       var hours=(m.open_time||m.close_time)
         ? '<div class="x-meta"><i class="fa-regular fa-clock"></i> '+DELIVERY.esc((m.open_time||"").slice(0,5))+((m.open_time&&m.close_time)?" – ":"")+DELIVERY.esc((m.close_time||"").slice(0,5))+'</div>'
         : '';
       return '<a class="x-mcard" href="/delivery/menu?merchant='+encodeURIComponent(m.name)+'">'+
-        '<div class="x-mthumb" style="'+(pic?'background:#fff':'background:#F1ECFF')+'"><span class="x-mtag">'+DELIVERY.esc(svc)+'</span>'+mlogo+'</div>'+
+        '<div class="x-mthumb" style="'+(pic?'background:#fff':'background:#FDECEC')+'"><span class="x-mtag">'+DELIVERY.esc(svc)+'</span>'+mlogo+'</div>'+
         '<div class="x-mbody"><div class="x-mrow"><div class="nm">'+DELIVERY.esc(m.merchant_name)+'</div>'+
         '<span class="x-view">View</span></div>'+
         '<div class="x-meta"><i class="fa-solid fa-location-dot"></i> '+DELIVERY.esc(m.area||m.city||"Dar es Salaam")+' · <i class="fa-regular fa-clock"></i> ~'+Math.round(m.avg_prep_minutes||20)+' min</div>'+

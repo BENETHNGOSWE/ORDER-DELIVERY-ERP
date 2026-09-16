@@ -106,7 +106,7 @@
       ov.innerHTML =
         '<div style="background:#fff;border-radius:16px;max-width:400px;width:100%;padding:22px;' +
         'font-family:Inter,system-ui,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
-        '<div style="width:46px;height:46px;border-radius:13px;background:#F1ECFF;color:#5B2BE0;' +
+        '<div style="width:46px;height:46px;border-radius:13px;background:#FDECEC;color:#C6050C;' +
         'display:grid;place-items:center;font-size:20px;margin-bottom:12px">' +
         '<i class="fa-solid fa-cart-shopping"></i></div>' +
         '<b style="font-size:16px;color:#171717">Your cart has items from another merchant.</b>' +
@@ -114,7 +114,7 @@
         "Submit that order first to proceed, or go back to your checkout.</p>" +
         '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
         '<button id="dl-sw-submit" style="flex:1;min-width:150px;height:44px;border:0;border-radius:12px;' +
-        'background:#5B2BE0;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Submit order</button>' +
+        'background:#C6050C;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Submit order</button>' +
         '<button id="dl-sw-cancel" style="flex:1;min-width:150px;height:44px;border:1.5px solid #EAEAEF;' +
         'border-radius:12px;background:#fff;color:#171717;font-weight:700;font-size:14px;cursor:pointer">' +
         'Back to checkout</button></div></div>';

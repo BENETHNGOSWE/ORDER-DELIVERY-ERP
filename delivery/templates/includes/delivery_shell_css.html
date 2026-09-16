@@ -9,7 +9,7 @@
      ============================================================ -->
 <style>
   :root{
-    --purple:#5B2BE0; --purple-dark:#3F1BA8; --purple-light:#F1ECFF; --lime:#D9FF5A;
+    --purple:#C6050C; --purple-dark:#8F0409; --purple-light:#FDECEC; --lime:#FDC702;
     --ink:#171717; --sec:#6B6B75; --muted:#9999A3; --bg:#F8F8FA; --card:#FFFFFF; --line:#EAEAEF;
     --success:#20B26B; --danger:#EF4444; --warning:#F59E0B; --price:#4F24D8; --ph:#85858F;
   }
@@ -73,12 +73,12 @@
   .pc-user .ch{ display:block; color:var(--muted); font-size:12px; }
   .pc-iconbtn{ width:40px; height:40px; border-radius:12px; background:#fff; border:1px solid var(--line);
     display:grid; place-items:center; color:var(--sec); font-size:15px; transition:all .15s; }
-  .pc-iconbtn:hover{ background:var(--purple-light); color:var(--purple-dark); border-color:#E4DBFF; }
+  .pc-iconbtn:hover{ background:var(--purple-light); color:var(--purple-dark); border-color:#F8DCDC; }
   .pc-top-note{ display:flex; align-items:center; gap:8px; color:var(--sec); font-size:13px; font-weight:500; }
   .pc-top-note i{ color:var(--muted); }
   .pc-login{ background:var(--purple); color:#fff; padding:11px 20px; border-radius:12px;
     font-weight:700; font-size:14px; display:inline-flex; align-items:center; gap:9px;
-    box-shadow:0 8px 18px rgba(91,43,224,.25); }
+    box-shadow:0 8px 18px rgba(198,5,12,.25); }
 
   /* ---------------- hero banner ---------------- */
   .pc-hero{ background:linear-gradient(135deg,var(--purple),var(--purple-dark)); border-radius:22px;
@@ -138,7 +138,7 @@
     border-radius:12px; font-size:14px; cursor:pointer; font-weight:700; font-family:inherit;
     display:inline-flex; align-items:center; justify-content:center; gap:9px; white-space:nowrap;
     transition:background .15s ease, box-shadow .15s ease, transform .08s ease; }
-  .dl-btn:hover{ background:var(--purple-dark); box-shadow:0 8px 18px rgba(91,43,224,.28); }
+  .dl-btn:hover{ background:var(--purple-dark); box-shadow:0 8px 18px rgba(198,5,12,.28); }
   .dl-btn:active{ transform:translateY(1px); }
   .dl-btn.sec{ background:#fff; color:var(--purple-dark); border:1.5px solid var(--purple); }
   .dl-btn.sec:hover{ background:var(--purple-light); box-shadow:none; }
@@ -154,7 +154,7 @@
   .dl-textarea{ height:auto; min-height:64px; padding:12px 14px; resize:vertical; }
   .dl-input::placeholder, .dl-textarea::placeholder{ color:var(--ph); }
   .dl-input:focus, .dl-select:focus, .dl-textarea:focus{ outline:none; border-color:var(--purple);
-    box-shadow:0 0 0 3px rgba(91,43,224,.12); }
+    box-shadow:0 0 0 3px rgba(198,5,12,.12); }
   .dl-label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin:16px 0 8px; }
   .dl-label:first-child{ margin-top:0; }
   .dl-check{ display:flex; align-items:center; gap:9px; margin-top:14px; font-size:14px;
@@ -196,7 +196,7 @@
 
   /* empty / loading states */
   .dl-empty{ text-align:center; padding:38px 14px; color:var(--muted); font-size:14px; font-weight:500; }
-  .dl-empty i{ display:block; margin:0 auto 10px; font-size:26px; color:#C9C2F2; }
+  .dl-empty i{ display:block; margin:0 auto 10px; font-size:26px; color:#F3B9BB; }
 
   /* progress steps (track page) */
   .dl-steps{ display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 10px; }
