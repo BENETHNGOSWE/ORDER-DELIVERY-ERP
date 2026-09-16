@@ -272,12 +272,12 @@
     var cphone = document.getElementById("phone").value.trim();
     if (!cname) { DELIVERY.toast("Please enter your name.", "error"); return; }
     if (!cphone) { DELIVERY.toast("Please enter your phone number.", "error"); return; }
-    if (!addrText) { DELIVERY.toast("Please choose a delivery location or type the address.", "error"); return; }
+    if (!addrText && destLat === null) { DELIVERY.toast("Please choose a delivery location or type the address.", "error"); return; }
     btn.disabled = true;
     DELIVERY.call("delivery.api.customer.place_order", {
       merchant: DELIVERY.cartMerchant,
       items: DELIVERY.cart.map(function (l) { return { item: l.item, qty: l.qty }; }),
-      delivery_address: addrText,
+      delivery_address: addrText || ("Pinned location (" + destLat.toFixed(5) + ", " + destLng.toFixed(5) + ")"),
       order_type: orderType,
       delivery_zone: document.getElementById("zone").value || null,
       delivery_distance_km: document.getElementById("km").value,

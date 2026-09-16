@@ -1006,12 +1006,12 @@
     var cphone=document.getElementById("ck-phone").value.trim();
     if(!cname){ DELIVERY.toast("Please enter your name.","error"); return; }
     if(!cphone){ DELIVERY.toast("Please enter your phone number.","error"); return; }
-    if(!addr){ DELIVERY.toast("Please choose a delivery location or type the address.","error"); return; }
+    if(!addr && destLat===null){ DELIVERY.toast("Please choose a delivery location or type the address.","error"); return; }
     btn.disabled=true; btn.textContent="Placing order…";
     DELIVERY.call("delivery.api.customer.place_order",{
       merchant:DELIVERY.cartMerchant,
       items:DELIVERY.cart.map(function(l){ return {item:l.item, qty:l.qty}; }),
-      delivery_address:addr,
+      delivery_address:addr || ("Pinned location ("+destLat.toFixed(5)+", "+destLng.toFixed(5)+")"),
       order_type:"Food",
       delivery_zone:document.getElementById("ck-zone").value||null,
       delivery_distance_km:0,
