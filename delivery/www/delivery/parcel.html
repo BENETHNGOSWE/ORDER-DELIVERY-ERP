@@ -46,7 +46,8 @@
     text-decoration:none; padding:3px 0; font-weight:500; }
   /* ---------- main ---------- */
   .pc-main{ padding:22px 30px 70px; min-width:0; }
-  .pc-topbar{ display:flex; justify-content:flex-end; align-items:center; gap:18px; margin-bottom:18px; }
+  .pc-topbar{ display:flex; justify-content:flex-start; align-items:center; gap:14px; margin-bottom:18px; }
+  .pc-top-spacer{ flex:1; }
   .pc-bell{ position:relative; background:none; border:0; font-size:20px; cursor:pointer; line-height:1; }
   .pc-bell .bdg{ position:absolute; top:-6px; right:-7px; background:#EF4444; color:#fff; font-size:10px;
     font-weight:700; min-width:16px; height:16px; border-radius:999px; display:grid; place-items:center; padding:0 3px; }
@@ -217,15 +218,7 @@
       <button id="pc-burger" class="pc-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
       <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
       <div id="pc-backdrop" class="pc-backdrop"></div>
-      {% if is_logged_in %}
-      <a class="pc-user" href="/delivery/me">
-        <span class="av">{{ initials }}</span>
-        <span class="nm">{{ full_name }}</span>
-        <span class="ch">▾</span>
-      </a>
-      {% else %}
-      <a class="pc-login" href="/login?redirect-to=/delivery/parcel">Log in</a>
-      {% endif %}
+      <span class="pc-top-spacer"></span>
     </div>
 
     <section class="pc-hero">

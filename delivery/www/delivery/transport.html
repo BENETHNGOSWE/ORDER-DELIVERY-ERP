@@ -214,15 +214,7 @@
       <button id="pc-burger" class="pc-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
       <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
       <div id="pc-backdrop" class="pc-backdrop"></div>
-      {% if is_logged_in %}
-      <a class="pc-user" href="/delivery/me">
-        <span class="av">{{ initials }}</span>
-        <span class="nm">{{ full_name }}</span>
-        <span class="ch"><i class="fa-solid fa-chevron-down"></i></span>
-      </a>
-      {% else %}
-      <a class="pc-login" href="/login?redirect-to=/delivery/transport">Log in</a>
-      {% endif %}
+      <span class="pc-top-spacer"></span>
     </div>
 
     <section class="pc-hero">
