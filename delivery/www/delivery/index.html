@@ -135,6 +135,10 @@
   .x-drawer{ position:fixed; left:0; top:0; bottom:0; width:280px; max-width:85vw; background:#fff; z-index:9998;
     transform:translateX(-105%); transition:transform .25s ease; overflow-y:auto; padding:18px 14px;
     box-shadow:0 10px 40px rgba(0,0,0,.25); }
+
+  .x-drawer .dh .bt{ display:flex; flex-direction:column; line-height:1.05; }
+  .x-drawer .dh .bt b{ font-size:16px; font-weight:800; white-space:nowrap; }
+  .x-drawer .dh .bt small{ font-size:10.5px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
   .x-drawer .dh{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; color:var(--ink);
     padding:2px 8px 16px; }
   .x-drawer .dh .lg{ width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
@@ -461,7 +465,7 @@
 
     <div id="x-backdrop" class="x-backdrop"></div>
     <aside id="x-drawer" class="x-drawer">
-      <div class="dh"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Zanzi Express</div>
+      <div class="dh"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></div>
       <nav>
         <a id="xd-home"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
         <a href="/delivery/category?key=restaurant"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>

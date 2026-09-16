@@ -14,6 +14,13 @@
   /* ---------- left sidebar ---------- */
   .pc-side{ background:#fff; border-right:1px solid var(--line); padding:24px 16px;
     position:sticky; top:0; height:100vh; overflow:auto; display:flex; flex-direction:column; gap:4px; }
+
+  /* two-line brand lockup: name + tagline (uniform on every page) */
+  .pc-logo .bt, .pc-mbrand .bt{ display:flex; flex-direction:column; line-height:1.05; min-width:0; }
+  .pc-logo .bt b, .pc-mbrand .bt b{ font-size:16px; font-weight:800; white-space:nowrap; }
+  .pc-logo .bt small, .pc-mbrand .bt small{ font-size:10.5px; font-weight:500; color:#8A8A93;
+    margin-top:2px; white-space:nowrap; }
+
   .pc-logo{ display:flex; align-items:center; gap:11px; font-weight:800; font-size:21px;
     color:var(--ink); letter-spacing:-.02em; padding:2px 8px 20px; text-decoration:none; }
   .pc-logo .lg{ width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
@@ -179,7 +186,7 @@
 <div class="pc-app">
   <!-- LEFT SIDEBAR -->
   <aside class="pc-side">
-    <a class="pc-logo" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Zanzi Express</a>
+    <a class="pc-logo" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
     <nav class="pc-nav">
       <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
       <a href="/delivery/menu"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>
@@ -208,7 +215,7 @@
   <main class="pc-main">
     <div class="pc-topbar">
       <button id="pc-burger" class="pc-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-      <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> Zanzi Express</a>
+      <a class="pc-mbrand" href="/delivery"><span class="lg"><i class="fa-solid fa-bolt"></i></span> <span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
       <div id="pc-backdrop" class="pc-backdrop"></div>
       {% if is_logged_in %}
       <a class="pc-user" href="/delivery/me">
