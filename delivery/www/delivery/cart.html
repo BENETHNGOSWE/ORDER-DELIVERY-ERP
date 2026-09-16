@@ -19,6 +19,20 @@
   .dl-geo-bar button { flex: 0 0 auto; }
   #geo-hint { font-size:12.5px; color:var(--success); margin-top:6px; font-weight:600; }
   #geo-hint i { margin-right:4px; }
+  .ck2-grid { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:16px; align-items:start; }
+  .ck2-sum { position:sticky; top:16px; }
+  .ck2-line { display:flex; justify-content:space-between; padding:7px 0; font-size:14px; color:var(--sec); }
+  .ck2-line b { color:var(--ink); }
+  .ck2-total { display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line);
+               margin-top:8px; padding-top:12px; font-weight:700; font-size:15px; }
+  .ck2-total b { color:#5B2BE0; font-size:22px; }
+  .ck2-place { width:100%; margin-top:14px; background:#5B2BE0; color:#fff; border:0; border-radius:12px;
+               height:48px; font-weight:700; font-size:15px; cursor:pointer; }
+  .ck2-place:disabled { background:#C9C2F2; cursor:not-allowed; }
+  .ck2-note { font-size:12px; color:var(--success); font-weight:600; min-height:14px; }
+  .ck2-row { display:flex; gap:12px; }
+  .ck2-row > div:first-child { flex:1; }
+  @media(max-width:960px){ .ck2-grid { grid-template-columns:1fr; } .ck2-sum { position:static; } }
 </style>
 </head><body>
 <div class="pc-app">
@@ -43,40 +57,53 @@
   <div id="empty" class="dl-empty"><i class="fa-solid fa-cart-shopping"></i>Your cart is empty.</div>
 </div>
 
-<div class="pc-card" style="margin-top:16px">
-  <h3><i class="fa-solid fa-truck-fast"></i> Delivery details</h3>
-  <label class="dl-label">Delivery zone</label>
-  <select id="zone" class="dl-select"></select>
-  <label class="dl-label">Distance (km)</label>
-  <input id="km" class="dl-input" type="number" step="0.1" value="0">
-  <label class="dl-label">Delivery location</label>
-  <div class="dl-geo-wrap">
-    <input id="geo-search" class="dl-input" type="text" autocomplete="off"
-           placeholder="Search your hotel, apartment, street or area&hellip;">
-    <div id="geo-results" style="display:none"></div>
+<div class="ck2-grid" style="margin-top:16px">
+  <div class="pc-card">
+    <h3><i class="fa-solid fa-truck-fast"></i> Delivery details</h3>
+    <label class="dl-label">Delivery location</label>
+    <div class="dl-geo-wrap">
+      <input id="geo-search" class="dl-input" type="text" autocomplete="off"
+             placeholder="Search your hotel, apartment, street or area&hellip;">
+      <div id="geo-results" style="display:none"></div>
+    </div>
+    <div class="dl-geo-bar">
+      <button type="button" id="geo-myloc" class="dl-btn sec">
+        <i class="fa-solid fa-location-crosshairs"></i> Use my location</button>
+      <button type="button" id="geo-clear" class="dl-btn danger"><i class="fa-solid fa-xmark"></i> Clear</button>
+    </div>
+    <div id="addr-map"></div>
+    <div id="geo-hint"></div>
+    <label class="dl-label">Delivery address / notes for the driver</label>
+    <textarea id="addr" class="dl-textarea" rows="2"
+              placeholder="e.g. Slipway Villas, Block B, Apt 12 &mdash; or describe where to meet you"></textarea>
+    <label class="dl-label">Your name</label>
+    <input id="cname" class="dl-input" placeholder="e.g. Amina Juma">
+    <label class="dl-label">Phone</label>
+    <input id="phone" class="dl-input" placeholder="e.g. 0712 345 678 or +255 712 345 678">
+    <label class="dl-label">Payment method</label>
+    <select id="pay" class="dl-select"></select>
+    <div class="ck2-row">
+      <div>
+        <label class="dl-label">Delivery zone (optional)</label>
+        <select id="zone" class="dl-select"></select>
+      </div>
+      <div style="width:140px">
+        <label class="dl-label">Distance (km)</label>
+        <input id="km" class="dl-input" type="number" step="0.1" value="0">
+      </div>
+    </div>
+    <label class="dl-label">Instructions (optional)</label>
+    <input id="notes" class="dl-input" placeholder="e.g. leave at reception">
   </div>
-  <div class="dl-geo-bar">
-    <button type="button" id="geo-myloc" class="dl-btn sec">
-      <i class="fa-solid fa-location-crosshairs"></i> Use my location</button>
-    <button type="button" id="geo-clear" class="dl-btn danger"><i class="fa-solid fa-xmark"></i> Clear</button>
-  </div>
-  <div id="addr-map"></div>
-  <div id="geo-hint"></div>
-  <label class="dl-label">Delivery address / notes for the driver</label>
-  <textarea id="addr" class="dl-textarea" rows="2"
-            placeholder="e.g. Slipway Villas, Block B, Apt 12 &mdash; or describe where to meet you"></textarea>
-  <label class="dl-label">Your name</label>
-  <input id="cname" class="dl-input" placeholder="e.g. Amina Juma">
-  <label class="dl-label">Phone</label>
-  <input id="phone" class="dl-input" placeholder="e.g. 0712 345 678 or +255 712 345 678">
-  <label class="dl-label">Payment method</label>
-  <select id="pay" class="dl-select"></select>
-  <label class="dl-label">Instructions</label>
-  <input id="notes" class="dl-input">
 
-  <div class="dl-between" style="margin-top:16px">
-    <div id="summary" class="dl-mut"></div>
-    <button id="place" class="dl-btn" disabled><i class="fa-solid fa-paper-plane"></i> Place order</button>
+  <div class="pc-card ck2-sum">
+    <h3><i class="fa-solid fa-receipt"></i> Order summary</h3>
+    <div class="ck2-line"><span>Subtotal</span><b id="s-sub">&mdash;</b></div>
+    <div class="ck2-line" id="s-svc-row" style="display:none"><span>Service fee</span><b id="s-svc">&mdash;</b></div>
+    <div class="ck2-line"><span>Delivery fee</span><b id="s-dlv">&mdash;</b></div>
+    <div class="ck2-note" id="s-note"></div>
+    <div class="ck2-total"><span>Total</span><b id="s-tot">&mdash;</b></div>
+    <button id="place" class="ck2-place" disabled><i class="fa-solid fa-paper-plane"></i> Place order</button>
   </div>
 </div>
 
@@ -200,23 +227,22 @@
   function quote() {
     var totals = DELIVERY.cartTotals();
     document.getElementById("place").disabled = !DELIVERY.cart.length;
+    document.getElementById("s-sub").textContent = money(totals.base + totals.service);
+    document.getElementById("s-svc-row").style.display = totals.flat > 0 ? "flex" : "none";
+    document.getElementById("s-svc").textContent = money(totals.flat);
     DELIVERY.call("delivery.api.customer.quote_delivery_fee", {
       zone: document.getElementById("zone").value,
       distance_km: document.getElementById("km").value,
       items_total: totals.base
     }).then(function (f) {
-      var sub = totals.base + totals.service;
-      var parts = "Subtotal <b>" + money(sub) + "</b>";
-      if (totals.flat > 0) parts += " &middot; Service fee <b>" + money(totals.flat) + "</b>";
-      parts += " &middot; Delivery <b>" + money(f.delivery_fee) + "</b>" +
-        (f.free_delivery ? " (free over " + money(f.free_delivery_over) + ")" : "") +
-        " &middot; <span class='dl-price' style='font-size:16px'>Total " +
-        money(totals.grand + f.delivery_fee) + "</span>";
-      document.getElementById("summary").innerHTML = parts;
+      document.getElementById("s-dlv").textContent = money(f.delivery_fee);
+      document.getElementById("s-note").textContent =
+        f.free_delivery ? "Free delivery over " + money(f.free_delivery_over) + " applied" : "";
+      document.getElementById("s-tot").textContent = money(totals.grand + f.delivery_fee);
     }).catch(function () {
-      document.getElementById("summary").innerHTML =
-        "Subtotal <b>" + money(totals.base + totals.service) + "</b>" +
-        (totals.flat > 0 ? " &middot; Service fee <b>" + money(totals.flat) + "</b>" : "");
+      document.getElementById("s-dlv").textContent = "\u2014";
+      document.getElementById("s-note").textContent = "";
+      document.getElementById("s-tot").textContent = money(totals.grand);
     });
   }
 
