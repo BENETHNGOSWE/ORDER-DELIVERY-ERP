@@ -66,11 +66,10 @@
                    font-size:14px; font-weight:400; color:var(--ink); }
   .x-search input::placeholder{ color:var(--ph); }
   .x-search .flt{ color:var(--muted); font-size:18px; cursor:pointer; }
-  .x-mbrand{ display:none; align-items:center; gap:10px; text-decoration:none; color:var(--ink); }
-  .x-mbrand .logo{ width:38px; height:38px; border-radius:11px; }
+  .x-mbrand{ display:none; flex:1; min-width:0; text-decoration:none; color:var(--ink); }
   .x-mbrand .bt{ display:flex; flex-direction:column; line-height:1.05; min-width:0; }
-  .x-mbrand .bt b{ font-size:15.5px; font-weight:800; white-space:nowrap; }
-  .x-mbrand .bt small{ font-size:10.5px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
+  .x-mbrand .bt b{ font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; }
+  .x-mbrand .bt small{ font-size:12px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
 
   .x-hero{ border-radius:22px; overflow:hidden; position:relative; color:#fff; padding:40px 38px;
            background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%);
@@ -454,7 +453,7 @@
   <div class="x-col">
     <header class="x-top">
       <button id="x-burger" class="x-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-      <a class="x-mbrand" href="/delivery"><span class="logo"><i class="fa-solid fa-bolt"></i></span><span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
+      <a class="x-mbrand" href="/delivery"><span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
       <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
       <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
     </header>
