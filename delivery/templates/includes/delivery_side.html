@@ -7,7 +7,7 @@
 {% set is_driver = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Driver'}) %}
 {% set here = frappe.request.path if frappe.request else '' %}
 <aside class="pc-side">
-  <a class="pc-logo" href="/delivery"><span class="lg"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span> <span class="bt"><b>{{ platform_name or "Zanzi Express" }}</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
+  <a class="pc-logo" href="/delivery"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
   <nav class="pc-nav">
     <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
     <a href="/delivery/menu"{% if here == '/delivery/menu' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>

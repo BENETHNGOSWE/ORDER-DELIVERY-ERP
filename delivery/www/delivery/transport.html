@@ -22,10 +22,8 @@
 
   .pc-logo{ display:flex; align-items:center; gap:11px; font-weight:800; font-size:21px;
     color:var(--ink); letter-spacing:-.02em; padding:2px 8px 20px; text-decoration:none; }
-  .pc-logo .lg{
   .lg img{ width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
- width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
-    color:#fff; display:grid; place-items:center; font-size:19px; box-shadow:0 8px 18px rgba(91,43,224,.35); }
+  .pc-logo .lg{ width:40px; height:40px; border-radius:12px; flex:none; overflow:hidden; }
   .pc-burger, .pc-mbrand, .pc-backdrop{ display:none; }
   .pc-nav{ display:flex; flex-direction:column; gap:3px; }
   .pc-nav a{ display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:12px;
@@ -186,7 +184,7 @@
 </head><body>
 <div class="pc-app">
   <aside class="pc-side">
-    <a class="pc-logo" href="/delivery"><span class="lg"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span> <span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
+    <a class="pc-logo" href="/delivery"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
     <nav class="pc-nav">
       <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
       <a href="/delivery/menu"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>
