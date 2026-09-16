@@ -84,7 +84,7 @@
     <select id="pay" class="dl-select"></select>
     <div class="ck2-row">
       <div>
-        <label class="dl-label">Delivery zone (optional)</label>
+        <label class="dl-label">Delivery zone</label>
         <select id="zone" class="dl-select"></select>
       </div>
       <div style="width:140px">
@@ -213,7 +213,7 @@
         "<td>" + l.qty + "</td><td>" + money(unit) + "</td>" +
         "<td>" + money(unit * l.qty) + "</td>" +
         '<td><button class="dl-btn sm danger" data-i="' + i +
-          '"><i class="fa-solid fa-trash-can"></i> Remove</button></td></tr>';
+          '"><i class="fa-solid fa-trash-can"></i><span class="rm-t"> Remove</span></button></td></tr>';
     }).join("");
     tb.querySelectorAll("button[data-i]").forEach(function (b) {
       b.addEventListener("click", function () {

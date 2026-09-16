@@ -69,10 +69,6 @@
   .x-bell{ position:relative; font-size:20px; cursor:pointer; }
   .x-bell .n{ position:absolute; top:-7px; right:-9px; background:var(--danger); color:#fff; font-size:10px;
               font-weight:700; line-height:16px; border-radius:99px; padding:0 6px; min-width:16px; text-align:center; }
-  .x-acct{ display:flex; align-items:center; gap:8px; white-space:nowrap; font-weight:600; font-size:14px;
-           line-height:20px; color:var(--ink); cursor:pointer; }
-  .x-acct .av{ width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--warning),var(--danger));
-               color:#fff; display:grid; place-items:center; font-size:18px; }
 
   .x-hero{ border-radius:22px; overflow:hidden; position:relative; color:#fff; padding:40px 38px;
            background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%);
@@ -405,7 +401,6 @@
   .x-search > span:first-child i{ color:var(--purple); }
   .x-deliver .pin i{ color:var(--purple); }
   .x-bell i{ font-size:18px; color:var(--ink); }
-  .x-acct .av i{ font-size:17px; color:#fff; }
   .logo i{ font-size:20px; }
 
   /* promo / hero big art stays white-on-purple */
@@ -460,7 +455,6 @@
       <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
       <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
       <div class="x-bell"><i class="fa-regular fa-bell"></i><span class="n" data-cart-count>0</span></div>
-      <a class="x-acct" href="/delivery/me"><span class="av"><i class="fa-regular fa-user"></i></span><span id="acct-name">Hi, Guest</span> <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></a>
     </header>
 
     <div id="x-backdrop" class="x-backdrop"></div>
@@ -896,13 +890,6 @@
   DELIVERY.call("delivery.api.customer.browse_items",{sort:"featured",limit:300}).then(function(rows){
     ALL=rows||[]; renderItems(); renderOffers(); renderCart();
   }).catch(function(e){ document.getElementById("grid").innerHTML='<div class="x-empty">Could not load items.<br><small>'+DELIVERY.esc((e&&e.message)||"")+'</small></div>'; });
-
-  // account name
-  fetch("/api/method/frappe.auth.get_logged_user",{credentials:"same-origin"})
-    .then(function(r){return r.json();}).then(function(d){
-      var u=(d&&d.message)||"Guest";
-      document.getElementById("acct-name").textContent = u==="Guest" ? "Sign in" : ("Hi, "+String(u).split("@")[0]);
-    }).catch(function(){});
 
   var t;
   document.getElementById("q").addEventListener("input", function(){ clearTimeout(t); t=setTimeout(renderItems,220); });
