@@ -26,10 +26,10 @@
   /* ---------- left sidebar ---------- */
   .x-side{ flex:0 0 232px; width:232px; position:sticky; top:16px; display:flex; flex-direction:column; gap:14px; }
   .x-brand{ display:flex; align-items:center; gap:10px; padding:6px 8px; }
-  .x-brand .logo{
   .lg img{ width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
- width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,var(--purple),var(--purple-dark));
+  .x-brand .logo{ width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,var(--purple),var(--purple-dark));
                   display:grid; place-items:center; color:#fff; font-size:22px; box-shadow:0 8px 18px rgba(91,43,224,.30); }
+  .x-brand img{ display:block; width:100%; max-width:172px; height:auto; border-radius:12px; }
   .x-brand b{ font-size:21px; font-weight:800; line-height:1; display:block; letter-spacing:-.5px; }
   .x-brand small{ color:var(--sec); font-size:11px; font-weight:500; }
   .x-nav{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:10px; }
@@ -69,7 +69,8 @@
   .x-search input::placeholder{ color:var(--ph); }
   .x-search .flt{ color:var(--muted); font-size:18px; cursor:pointer; }
   .x-mbrand{ display:none; flex:1; min-width:0; text-decoration:none; color:var(--ink); }
-  .x-mbrand .logo{ width:40px; height:40px; border-radius:11px; flex:none; }
+  .x-mbrand .logo{ width:40px; height:40px; border-radius:11px; flex:none; overflow:hidden; }
+  .x-mbrand .logo img{ width:100%; height:100%; object-fit:cover; display:block; }
   .x-mbrand .bt{ display:flex; flex-direction:column; line-height:1.05; min-width:0; }
   .x-mbrand .bt b{ font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; }
   .x-mbrand .bt small{ font-size:12px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
@@ -141,8 +142,8 @@
   .x-drawer .dh .bt small{ font-size:10.5px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
   .x-drawer .dh{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; color:var(--ink);
     padding:2px 8px 16px; }
-  .x-drawer .dh .lg{ width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,#6D28D9,#4C1D95);
-    color:#fff; display:grid; place-items:center; font-size:17px; box-shadow:0 8px 18px rgba(91,43,224,.35); }
+  .x-drawer .dh .lg{ width:38px; height:38px; border-radius:11px; overflow:hidden; flex:none; }
+  .x-drawer .dh .lg img{ width:100%; height:100%; object-fit:cover; display:block; }
   .x-drawer nav{ display:flex; flex-direction:column; gap:3px; }
   .x-drawer nav .grp{ font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
     color:var(--muted,#9999A3); padding:12px 13px 4px; }
