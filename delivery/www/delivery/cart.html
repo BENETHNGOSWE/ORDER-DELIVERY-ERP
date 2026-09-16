@@ -65,8 +65,10 @@
   <label class="dl-label">Delivery address / notes for the driver</label>
   <textarea id="addr" class="dl-textarea" rows="2"
             placeholder="e.g. Slipway Villas, Block B, Apt 12 &mdash; or describe where to meet you"></textarea>
+  <label class="dl-label">Your name</label>
+  <input id="cname" class="dl-input" placeholder="e.g. Amina Juma">
   <label class="dl-label">Phone</label>
-  <input id="phone" class="dl-input">
+  <input id="phone" class="dl-input" placeholder="e.g. 0712 345 678 or +255 712 345 678">
   <label class="dl-label">Payment method</label>
   <select id="pay" class="dl-select"></select>
   <label class="dl-label">Instructions</label>
@@ -237,9 +239,15 @@
   });
 
   document.getElementById("place").addEventListener("click", function () {
-    var btn = this; btn.disabled = true;
+    var btn = this;
     var searchText = document.getElementById("geo-search").value.trim();
     var addrText = document.getElementById("addr").value.trim() || searchText;
+    var cname = document.getElementById("cname").value.trim();
+    var cphone = document.getElementById("phone").value.trim();
+    if (!cname) { DELIVERY.toast("Please enter your name.", "error"); return; }
+    if (!cphone) { DELIVERY.toast("Please enter your phone number.", "error"); return; }
+    if (!addrText) { DELIVERY.toast("Please choose a delivery location or type the address.", "error"); return; }
+    btn.disabled = true;
     DELIVERY.call("delivery.api.customer.place_order", {
       merchant: DELIVERY.cartMerchant,
       items: DELIVERY.cart.map(function (l) { return { item: l.item, qty: l.qty }; }),
@@ -248,7 +256,8 @@
       delivery_zone: document.getElementById("zone").value || null,
       delivery_distance_km: document.getElementById("km").value,
       payment_method: document.getElementById("pay").value,
-      phone: document.getElementById("phone").value,
+      customer_name: cname,
+      phone: cphone,
       delivery_instructions: document.getElementById("notes").value,
       delivery_latitude: destLat,
       delivery_longitude: destLng

@@ -422,13 +422,11 @@
     </a>
     <nav class="x-nav">
       <a class="active" data-cat="all"><span class="e"><i class="fa-solid fa-house"></i></span> Home</a>
-      <a data-cat="food"><span class="e"><i class="fa-solid fa-burger"></i></span> Food</a>
-      <a data-cat="retail"><span class="e"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
-      <a data-cat="drinks"><span class="e"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
-      <a data-cat="snacks"><span class="e"><i class="fa-solid fa-cookie"></i></span> Snacks</a>
-      <a data-cat="bakery"><span class="e"><i class="fa-solid fa-bread-slice"></i></span> Bakery</a>
-      <a data-cat="offers"><span class="e"><i class="fa-solid fa-tag"></i></span> Offers</a>
-      <a id="nav-shops"><span class="e"><i class="fa-solid fa-store"></i></span> Shops</a>
+      <a href="/delivery/category?key=restaurant"><span class="e"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
+      <a href="/delivery/category?key=groceries"><span class="e"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
+      <a href="/delivery/category?key=drinks"><span class="e"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
+      <a href="/delivery/category?key=pharmacy"><span class="e"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Cosmetics</a>
+      <a href="/delivery/category?key=shopping"><span class="e"><i class="fa-solid fa-bag-shopping"></i></span> Shopping</a>
       <div class="grp">Services</div>
       <a href="/delivery/parcel"><span class="e"><i class="fa-solid fa-box"></i></span> Send Parcel</a>
       <a href="/delivery/transport"><span class="e"><i class="fa-solid fa-truck"></i></span> Transport</a>
@@ -469,7 +467,7 @@
         <a href="/delivery/category?key=restaurant"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
         <a href="/delivery/category?key=groceries"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Groceries</a>
         <a href="/delivery/category?key=drinks"><span class="ni"><i class="fa-solid fa-glass-water"></i></span> Drinks</a>
-        <a href="/delivery/category?key=pharmacy"><span class="ni"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Pharmacy &amp; Cosmetics</a>
+        <a href="/delivery/category?key=pharmacy"><span class="ni"><i class="fa-solid fa-prescription-bottle-medical"></i></span> Cosmetics</a>
         <a href="/delivery/category?key=shopping"><span class="ni"><i class="fa-solid fa-bag-shopping"></i></span> Shopping</a>
         <a href="/delivery/category?key=others"><span class="ni"><i class="fa-solid fa-shapes"></i></span> Others</a>
         <div class="grp">Services</div>
@@ -662,10 +660,6 @@
   document.querySelectorAll(".x-nav a[data-cat], a[data-cat]").forEach(function(a){
     a.addEventListener("click", function(e){ if(a.dataset.cat){ e.preventDefault(); setCat(a.dataset.cat); } });
   });
-  document.getElementById("nav-shops").addEventListener("click", function(){
-    document.getElementById("shops").scrollIntoView({behavior:"smooth"});
-  });
-
   // ---------- mobile drawer ----------
   (function(){
     var drawer=document.getElementById("x-drawer");
@@ -1020,6 +1014,7 @@
     var cphone=document.getElementById("ck-phone").value.trim();
     if(!cname){ DELIVERY.toast("Please enter your name.","error"); return; }
     if(!cphone){ DELIVERY.toast("Please enter your phone number.","error"); return; }
+    if(!addr){ DELIVERY.toast("Please choose a delivery location or type the address.","error"); return; }
     btn.disabled=true; btn.textContent="Placing order…";
     DELIVERY.call("delivery.api.customer.place_order",{
       merchant:DELIVERY.cartMerchant,
