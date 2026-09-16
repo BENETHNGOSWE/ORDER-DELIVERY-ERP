@@ -66,9 +66,11 @@
                    font-size:14px; font-weight:400; color:var(--ink); }
   .x-search input::placeholder{ color:var(--ph); }
   .x-search .flt{ color:var(--muted); font-size:18px; cursor:pointer; }
-  .x-bell{ position:relative; font-size:20px; cursor:pointer; }
-  .x-bell .n{ position:absolute; top:-7px; right:-9px; background:var(--danger); color:#fff; font-size:10px;
-              font-weight:700; line-height:16px; border-radius:99px; padding:0 6px; min-width:16px; text-align:center; }
+  .x-mbrand{ display:none; align-items:center; gap:10px; text-decoration:none; color:var(--ink); }
+  .x-mbrand .logo{ width:38px; height:38px; border-radius:11px; }
+  .x-mbrand .bt{ display:flex; flex-direction:column; line-height:1.05; min-width:0; }
+  .x-mbrand .bt b{ font-size:15.5px; font-weight:800; white-space:nowrap; }
+  .x-mbrand .bt small{ font-size:10.5px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
 
   .x-hero{ border-radius:22px; overflow:hidden; position:relative; color:#fff; padding:40px 38px;
            background:radial-gradient(120% 140% at 80% 20%, #3F1BA8 0%, #14142b 62%);
@@ -259,6 +261,7 @@
   @media (max-width:880px){
     .x-side{ display:none; }
     .x-top{ flex-wrap:wrap; } .x-search{ order:5; flex-basis:100%; }
+    .x-mbrand{ display:flex; }
     .x-deliver{ display:none; }
     .x-hero{ padding:28px 22px; } .x-hero .art{ display:none; }
     .x-hero h1{ font-size:28px; line-height:34px; }
@@ -362,7 +365,7 @@
   /* generic alignment */
   .x-nav .e i, .x-cat .ic i, .x-ithumb i.fa-solid, .x-mthumb i.fa-solid,
   .x-offer .oe i, .x-banner .em i, .x-promo .art i, .x-hero .art i,
-  .x-fast .z i, .x-search i, .x-deliver .pin i, .x-bell i,
+  .x-fast .z i, .x-search i, .x-deliver .pin i,
   .logo i, .x-chip i { line-height:1; }
 
   /* category tiles: purple glyph in a soft purple container */
@@ -400,7 +403,6 @@
   /* header icons */
   .x-search > span:first-child i{ color:var(--purple); }
   .x-deliver .pin i{ color:var(--purple); }
-  .x-bell i{ font-size:18px; color:var(--ink); }
   .logo i{ font-size:20px; }
 
   /* promo / hero big art stays white-on-purple */
@@ -452,9 +454,9 @@
   <div class="x-col">
     <header class="x-top">
       <button id="x-burger" class="x-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+      <a class="x-mbrand" href="/delivery"><span class="logo"><i class="fa-solid fa-bolt"></i></span><span class="bt"><b>Zanzi Express</b><small>Everything, delivered</small></span></a>
       <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
       <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
-      <div class="x-bell"><i class="fa-regular fa-bell"></i><span class="n" data-cart-count>0</span></div>
     </header>
 
     <div id="x-backdrop" class="x-backdrop"></div>
