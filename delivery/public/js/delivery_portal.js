@@ -90,6 +90,7 @@
       return this.cart;
     },
     saveCart: function () {
+      if (!this.cart.length) this.cartMerchant = null;
       localStorage.setItem("dl_cart", JSON.stringify(this.cart));
       localStorage.setItem("dl_cart_merchant", this.cartMerchant || "");
       this.renderCartBadge();
@@ -127,7 +128,7 @@
       });
     },
     addToCart: function (merchant, item, name, rate, qty, svc, opts) {
-      if (this.cartMerchant && this.cartMerchant !== merchant) {
+      if (this.cart.length && this.cartMerchant && this.cartMerchant !== merchant) {
         this.askMerchantSwitch(function (switched) {
           if (switched) {
             DELIVERY.cart = []; DELIVERY.cartMerchant = merchant;

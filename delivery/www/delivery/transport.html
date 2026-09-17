@@ -267,8 +267,7 @@
           <div id="est" class="pc-quote"></div>
 
           <div class="pc-actions">
-            <button id="est-btn" class="pc-btn ghost"><i class="fa-solid fa-calculator"></i> Estimate</button>
-            <button id="go" class="pc-btn solid">Submit request <i class="fa-solid fa-arrow-right"></i></button>
+            <button id="go" class="pc-btn solid" style="width:100%">Submit request <i class="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
 
@@ -284,7 +283,7 @@
         <div class="pc-card">
           <h3>How it works</h3>
           <div class="pc-step"><div class="sic"><i class="fa-solid fa-route"></i></div><div><b>1. Build your trip</b><span>Add stops, vehicle &amp; time</span></div></div>
-          <div class="pc-step"><div class="sic"><i class="fa-solid fa-calculator"></i></div><div><b>2. Get an estimate</b><span>We calculate a reference fare</span></div></div>
+          <div class="pc-step"><div class="sic"><i class="fa-solid fa-paper-plane"></i></div><div><b>2. Submit your request</b><span>We receive it instantly</span></div></div>
           <div class="pc-step"><div class="sic"><i class="fa-solid fa-phone"></i></div><div><b>3. We call you</b><span>Operations agrees the fare with you</span></div></div>
           <div class="pc-step"><div class="sic"><i class="fa-solid fa-truck-fast"></i></div><div><b>4. You ride / we move</b><span>Pay only once you approve</span></div></div>
         </div>
@@ -335,19 +334,6 @@
                distance_from_prev_km: Number(d.querySelector(".km").value || 0) };
     });
   }
-
-  document.getElementById("est-btn").addEventListener("click", function () {
-    DELIVERY.call("delivery.api.customer.quote_transport", {
-      stops: JSON.stringify(collect()),
-      vehicle_type: document.getElementById("veh").value,
-      passengers: document.getElementById("pax").value
-    }).then(function (r) {
-      DELIVERY.currency = r.currency;
-      document.getElementById("est").innerHTML =
-        '<i class="fa-solid fa-tag"></i> Reference fare <b>' + DELIVERY.fmt(r.suggested_fare) + "</b> over " +
-        r.total_distance_km + " km &mdash; " + DELIVERY.esc(r.note);
-    }).catch(function (e) { DELIVERY.toast(e.message, "error"); });
-  });
 
   document.getElementById("go").addEventListener("click", function () {
     var b = this; b.disabled = true;
