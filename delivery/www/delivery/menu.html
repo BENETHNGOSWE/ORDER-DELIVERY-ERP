@@ -20,6 +20,17 @@
   .mn-add:disabled{ background:#F3B9BB; cursor:not-allowed; }
   @media (min-width:1100px){ .dl-grid{ grid-template-columns:repeat(5,1fr); } }
   @media (max-width:480px){ .dl-grid{ grid-template-columns:1fr 1fr; } .mn-thumb{ height:96px; } }
+  /* mobile quick-cart bar (same as the homepage bar) */
+  #c-cartbar{ position:fixed; left:14px; right:14px; bottom:14px; z-index:9990; display:none;
+    align-items:center; justify-content:space-between; gap:10px; background:#171717; color:#fff;
+    border-radius:999px; padding:12px 18px; text-decoration:none; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  #c-cartbar .cb-l{ font-size:13.5px; font-weight:600; }
+  #c-cartbar .cb-l b{ color:#FDC702; }
+  #c-cartbar .cb-r{ font-weight:700; font-size:14px; }
+  @media(max-width:768px){
+    #c-cartbar.show{ display:flex; }
+    body{ padding-bottom:78px; }
+  }
 </style>
 </head><body>
 <div class="pc-app">
@@ -40,6 +51,10 @@
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-store"></i></span> <span id="title">Catalogue</span></h2>
 <div id="items" class="dl-grid"><div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-shop"></i>Choose a merchant.</div></div></div>
 
+<a id="c-cartbar" href="/delivery/cart">
+  <span class="cb-l"><i class="fa-solid fa-cart-shopping"></i> <b id="c-cart-n">0</b> items &middot; <b id="c-cart-t"></b></span>
+  <span class="cb-r">Checkout <i class="fa-solid fa-arrow-right"></i></span>
+</a>
 </main>
 </div>
 
@@ -49,6 +64,17 @@
   var params = new URLSearchParams(location.search);
   var chosen = params.get("merchant");
   DELIVERY.loadCart();
+  function cartBar() {
+    var n = 0; (DELIVERY.cart || []).forEach(function (l) { n += Number(l.qty || 0); });
+    var bar = document.getElementById("c-cartbar");
+    if (!bar) return;
+    if (!n) { bar.classList.remove("show"); return; }
+    var t = DELIVERY.cartTotals();
+    document.getElementById("c-cart-n").textContent = n;
+    document.getElementById("c-cart-t").textContent = DELIVERY.fmt(t.grand || 0);
+    bar.classList.add("show");
+  }
+
 
   function load(merchant) {
     if (!merchant) return;
@@ -97,6 +123,7 @@
               eff: Number(b.dataset.eff || 0),
               flat: Number(b.dataset.flat || 0),
             });
+            cartBar();
           });
         });
       })
@@ -107,6 +134,7 @@
     DELIVERY.currency = c.currency;
   }).catch(function () {});
 
+  cartBar();
   if (chosen) { load(chosen); }
   else { location.replace("/delivery/category?key=restaurant"); }
 })();
