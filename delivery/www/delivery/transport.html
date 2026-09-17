@@ -24,6 +24,11 @@
     color:var(--ink); letter-spacing:-.02em; padding:2px 8px 20px; text-decoration:none; }
   .lg img{ width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
   .pc-logo .lg{ width:40px; height:40px; border-radius:12px; flex:none; overflow:hidden; }
+  .pc-side{ position:relative; }
+  .pc-side-x{ display:none; position:absolute; top:12px; right:12px; width:38px; height:38px;
+    border:1.5px solid var(--line); background:#fff; border-radius:11px; color:var(--ink);
+    font-size:15px; cursor:pointer; z-index:2; }
+  @media (max-width:960px){ .pc-side-x{ display:grid; place-items:center; } }
   .pc-burger, .pc-mbrand, .pc-backdrop{ display:none; }
   .pc-nav{ display:flex; flex-direction:column; gap:3px; }
   .pc-nav a{ display:flex; align-items:center; gap:13px; padding:11px 13px; border-radius:12px;
@@ -184,6 +189,7 @@
 </head><body>
 <div class="pc-app">
   <aside class="pc-side">
+  <button id="pc-side-x" class="pc-side-x" type="button" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
     <a class="pc-logo" href="/delivery"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
     <nav class="pc-nav">
       <a href="/delivery"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
@@ -354,6 +360,8 @@
   });
   var b = document.getElementById("pc-burger"), d = document.getElementById("pc-backdrop");
   if (b) b.addEventListener("click", function () { document.body.classList.toggle("pc-side-open"); });
+  var x = document.getElementById("pc-side-x");
+  if (x) x.addEventListener("click", function () { document.body.classList.remove("pc-side-open"); });
   if (d) d.addEventListener("click", function () { document.body.classList.remove("pc-side-open"); });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") document.body.classList.remove("pc-side-open");

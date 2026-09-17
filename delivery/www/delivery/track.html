@@ -18,6 +18,9 @@
   .dl-driver-tag { display:inline-flex; align-items:center; gap:7px; padding:5px 12px;
                    border-radius:999px; background:var(--purple-light); color:var(--purple-dark);
                    font-size:12px; font-weight:700; }
+  .dl-twrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .dl-twrap .dl-table{ min-width:520px; }
+  @media (max-width:560px){ .dl-twrap .dl-table th, .dl-twrap .dl-table td{ padding:8px 9px; font-size:12.5px; } }
 </style>
 </head><body>
 <div class="pc-app">
@@ -111,9 +114,9 @@
           (t.otp_code ? " &middot; handoff code <b>" + DELIVERY.esc(t.otp_code) + "</b>" : "") +
         "</div></div>" +
       '<div class="pc-card" style="margin-top:16px"><h3><i class="fa-solid fa-clock-rotate-left"></i> History</h3>' +
-        '<table class="dl-table"><thead><tr><th>When</th><th>State</th><th>By</th><th>Note</th>' +
+        '<div class="dl-twrap"><table class="dl-table"><thead><tr><th>When</th><th>State</th><th>By</th><th>Note</th>' +
         "</tr></thead><tbody>" + (hist || '<tr><td colspan="4">No history yet.</td></tr>') +
-        "</tbody></table></div>";
+        "</tbody></table></div></div>";
 
     // --- map: only meaningful once a driver is attached to the order ---
     var driverAssigned = ["DRIVER_ASSIGNED", "PICKED_UP", "COMPLETED"].indexOf(t.state) >= 0

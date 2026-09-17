@@ -303,8 +303,10 @@ def stats(merchant=None):
         "SELECT workflow_state, COUNT(*) FROM `tabDelivery Order` "
         "WHERE merchant=%s GROUP BY workflow_state", name)
 
+    # merchant revenue = item amounts ONLY (service charges, delivery fees
+    # and other platform charges belong to the platform, not the merchant)
     revenue = frappe.db.sql(
-        "SELECT COALESCE(SUM(grand_total),0) FROM `tabDelivery Order` "
+        "SELECT COALESCE(SUM(items_total),0) FROM `tabDelivery Order` "
         "WHERE merchant=%s AND workflow_state='COMPLETED'", name)[0][0]
 
     items = frappe.db.count("DL Menu Item", {"merchant": name})

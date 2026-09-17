@@ -306,11 +306,16 @@ def update_settings(**changes):
 # reports (admin dashboard box 9)
 # ---------------------------------------------------------------------------
 @frappe.whitelist()
-def reports():
-    """End-of-day style report:
-    - order counts + totals for today / last 7 days / last 30 days
-    - amount payable to each merchant (item amounts only, service fee excluded)
-    - platform revenue: office share of delivery fees + all service charges
+def reports(from_date=None, to_date=None):
+    """Time-based financial reporting.
+
+    With from_date/to_date (YYYY-MM-DD) every section - KPI totals, merchant
+    payables, platform revenue - is computed ONLY from orders created inside
+    that period. Without dates it defaults to today, so the dashboard always
+    answers 'what happened in the selected period'.
+
+    Also returns the fixed overview windows (today / last 7 days / month /
+    all time) for the period table, and the recent orders behind the numbers.
     """
     from delivery.delivery_logistics import billing
     from frappe.utils import nowdate
@@ -327,6 +332,23 @@ def reports():
             d = d - timedelta(days=days)
         return d.strftime("%Y-%m-%d")
 
+    # ---- resolve the selected reporting period (default: today) ----
+    def _clean(x):
+        x = (x or "").strip()
+        if not x:
+            return None
+        try:
+            return datetime.strptime(x[:10], "%Y-%m-%d").date().strftime("%Y-%m-%d")
+        except Exception:
+            return None
+    fd, td = _clean(from_date), _clean(to_date)
+    if fd and not td:
+        td = fd
+    if td and not fd:
+        fd = td
+    if not fd:
+        fd = td = nowdate()[:10]
+
     def stats(since=None):
         f = {"workflow_state": "COMPLETED"}
         if since:
@@ -341,9 +363,11 @@ def reports():
                 "delivery_fees": round(sum(flt(r.delivery_fee) for r in rows), 2)}
 
     completed_all = frappe.get_all("Delivery Order",
-                                   filters={"workflow_state": "COMPLETED"},
-                                   fields=["merchant", "items_total",
-                                           "service_fee_total", "delivery_fee"])
+                                   filters={"workflow_state": "COMPLETED",
+                                            "creation": ["between", [fd + " 00:00:00", td + " 23:59:59"]]},
+                                   fields=["name", "creation", "merchant", "items_total",
+                                           "service_fee_total", "delivery_fee", "grand_total",
+                                           "payment_status"])
     payables = {}
     for r in completed_all:
         m = r.merchant or "Unknown"
@@ -361,8 +385,25 @@ def reports():
     share = billing.driver_fee_share_pct()
     all_fees = sum(flt(r.delivery_fee) for r in completed_all)
 
+    sel_orders = len(completed_all)
+    sel_items = round(sum(flt(r.items_total) for r in completed_all), 2)
+    sel_service = round(sum(flt(r.service_fee_total) for r in completed_all), 2)
+    sel_fees = round(sum(flt(r.delivery_fee) for r in completed_all), 2)
+    sel_grand = round(sum(flt(r.grand_total) for r in completed_all), 2)
+    recent = [{"name": r.name,
+               "date": str(r.creation)[:16] if r.creation else "",
+               "merchant": mnames.get(r.merchant, r.merchant or "-"),
+               "items_total": flt(r.items_total), "service_fee_total": flt(r.service_fee_total),
+               "delivery_fee": flt(r.delivery_fee), "grand_total": flt(r.grand_total),
+               "payment_status": r.payment_status or "Pending"}
+              for r in sorted(completed_all, key=lambda x: str(x.creation), reverse=True)[:50]]
+
     return {
         "currency": billing.settings().currency,
+        "period": {"from": fd, "to": td},
+        "selected": {"orders": sel_orders, "items_total": sel_items,
+                     "service_fee_total": sel_service, "delivery_fees": sel_fees,
+                     "grand_total": sel_grand},
         "today": stats(window()),
         "week": stats(window(days=7)),
         "month": stats(window(month_start=True)),
@@ -376,23 +417,40 @@ def reports():
             for m, v in sorted(payables.items(),
                                key=lambda kv: -kv[1]["items_total"])],
         "platform_revenue": {
-            "delivery_office_share": round(all_fees * (100 - share) / 100.0, 2),
-            "service_fees": round(sum(flt(r.service_fee_total) for r in completed_all), 2),
-            "total": round(all_fees * (100 - share) / 100.0
-                           + sum(flt(r.service_fee_total) for r in completed_all), 2),
+            "delivery_office_share": round(sel_fees * (100 - share) / 100.0, 2),
+            "service_fees": sel_service,
+            "total": round(sel_fees * (100 - share) / 100.0 + sel_service, 2),
         },
         "driver_share_pct": share,
+        "recent_orders": recent,
     }
 
 
 @frappe.whitelist()
-def driver_payouts():
-    """Per-driver payout: 70% of delivery fees on completed deliveries."""
+def driver_payouts(from_date=None, to_date=None):
+    """Per-driver payout for the SELECTED period: driver's share (e.g. 70%)
+    of delivery fees on completed deliveries. Defaults to today."""
     from delivery.delivery_logistics import billing
+    from frappe.utils import nowdate
+    from datetime import datetime
+    def _clean(x):
+        x = (x or "").strip()
+        if not x:
+            return None
+        try:
+            return datetime.strptime(x[:10], "%Y-%m-%d").date().strftime("%Y-%m-%d")
+        except Exception:
+            return None
+    fd, td = _clean(from_date), _clean(to_date)
+    if fd and not td:
+        td = fd
+    if not fd:
+        fd = td = nowdate()[:10]
     share = billing.driver_fee_share_pct()
     rows = frappe.get_all("Delivery Order",
                           filters={"workflow_state": "COMPLETED",
-                                   "assigned_driver": ["is", "set"]},
+                                   "assigned_driver": ["is", "set"],
+                                   "creation": ["between", [fd + " 00:00:00", td + " 23:59:59"]]},
                           fields=["assigned_driver", "delivery_fee"])
     agg = {}
     for r in rows:
@@ -411,4 +469,7 @@ def driver_payouts():
                     "fees_total": round(v["fees"], 2),
                     "share_pct": share,
                     "payable": round(v["fees"] * share / 100.0, 2)})
-    return sorted(out, key=lambda x: -x["payable"])
+    out = sorted(out, key=lambda x: -x["payable"])
+    return {"from": fd, "to": td, "share_pct": share,
+            "total_payable": round(sum(o["payable"] for o in out), 2),
+            "drivers": out}

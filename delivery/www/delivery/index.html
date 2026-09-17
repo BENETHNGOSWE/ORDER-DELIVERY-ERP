@@ -663,6 +663,8 @@
   // ---------- mobile drawer ----------
   (function(){
     var drawer=document.getElementById("x-drawer");
+    var dx=document.getElementById("x-drawer-x");
+    if(dx) dx.addEventListener("click",function(){ document.body.classList.remove("x-side-open"); });
     if(!drawer) return;
     function close(){ document.body.classList.remove("x-side-open"); }
     document.getElementById("x-burger").addEventListener("click", function(){

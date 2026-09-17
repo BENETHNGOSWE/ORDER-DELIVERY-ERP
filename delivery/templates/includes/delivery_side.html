@@ -7,6 +7,7 @@
 {% set is_driver = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Driver'}) %}
 {% set here = frappe.request.path if frappe.request else '' %}
 <aside class="pc-side">
+  <button id="pc-side-x" class="pc-side-x" type="button" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
   <a class="pc-logo" href="/delivery"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
   <nav class="pc-nav">
     <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
@@ -26,6 +27,12 @@
       <a href="/login?redirect-to=/delivery"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
     {% endif %}
   </nav>
+  <script>
+  (function () {
+    var x = document.getElementById("pc-side-x");
+    if (x) x.addEventListener("click", function () { document.body.classList.remove("pc-side-open"); });
+  })();
+  </script>
   <div class="pc-promo">
     <h4>Send a parcel today</h4>
     <p>Door-to-door parcels and transport with live GPS tracking on the map.</p>

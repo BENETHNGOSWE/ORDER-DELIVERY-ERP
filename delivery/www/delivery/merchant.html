@@ -63,9 +63,11 @@
   </div>
 </div>
 <div class="pc-card">
+  <div class="dl-twrap">
   <table class="dl-table">
     <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Live</th><th></th></tr></thead>
     <tbody id="cat"></tbody></table>
+  </div>
 </div>
 
 </main>
@@ -99,7 +101,7 @@
       document.getElementById("kpi").innerHTML =
         stat("fa-shopping-bag", s.orders || 0, "Orders") +
         stat("fa-circle-check", b.COMPLETED || 0, "Completed") +
-        stat("fa-money-bill-wave", DELIVERY.fmt(s.completed_revenue), "Revenue") +
+        stat("fa-money-bill-wave", DELIVERY.fmt(s.completed_revenue), "Revenue (items only)") +
         stat("fa-utensils", s.catalog_items || 0, "Items");
       document.getElementById("pay-amount").textContent = DELIVERY.fmt(s.payable_to_merchant || 0);
       document.getElementById("pay-orders").textContent =
@@ -119,7 +121,7 @@
         host.innerHTML = '<div class="dl-empty"><i class="fa-regular fa-circle-check"></i>No orders waiting.</div>';
         return;
       }
-      host.innerHTML = '<table class="dl-table"><thead><tr><th>Order</th><th>Customer</th>' +
+      host.innerHTML = '<div class="dl-twrap"><table class="dl-table"><thead><tr><th>Order</th><th>Customer</th>' +
         '<th>Total</th><th>Address</th><th></th></tr></thead><tbody>' +
         rows.map(function (o) {
           return "<tr><td>" + o.name + "</td><td>" + DELIVERY.esc(o.customer_name || "") +
@@ -130,7 +132,7 @@
               '"><i class="fa-solid fa-check"></i> Accept</button> ' +
             '<button class="dl-btn sm danger" data-rej="' + o.name +
               '"><i class="fa-solid fa-xmark"></i> Reject</button></td></tr>';
-        }).join("") + "</tbody></table>";
+        }).join("") + "</tbody></table></div>";
 
       host.querySelectorAll("[data-acc]").forEach(function (b) {
         b.addEventListener("click", function () {
@@ -164,7 +166,7 @@
         return;
       }
       var methods = ["Cash On Delivery", "M-Pesa", "Tigo Pesa", "Card"];
-      host.innerHTML = '<table class="dl-table"><thead><tr><th>Order</th><th>Total</th><th>State</th>' +
+      host.innerHTML = '<div class="dl-twrap"><table class="dl-table"><thead><tr><th>Order</th><th>Total</th><th>State</th>' +
         '<th>Payment</th><th></th></tr></thead><tbody>' +
         rows.map(function (o) {
           var acts = "";
@@ -194,7 +196,7 @@
             "<td>" + DELIVERY.statePill(o.workflow_state) + "</td>" +
             "<td>" + pay + "</td>" +
             "<td>" + acts + "</td></tr>";
-        }).join("") + "</tbody></table>";
+        }).join("") + "</tbody></table></div>";
 
       host.querySelectorAll("[data-prep]").forEach(function (b) {
         b.addEventListener("click", function () {
