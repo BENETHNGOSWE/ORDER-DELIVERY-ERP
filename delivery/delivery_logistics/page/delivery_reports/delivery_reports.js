@@ -30,7 +30,9 @@ frappe.pages['delivery-reports'].on_page_load = function (wrapper) {
 		.dlrep-custom { display: none; gap: 8px; align-items: center; }
 		.dlrep-custom.show { display: flex; flex-wrap: wrap; }
 		.dlrep-custom input { border: 1.5px solid #E5E0F0; border-radius: 10px; padding: 7px 10px; font-size: 12.5px; }
-		.dlrep-kpi { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin: 4px 0 18px; }
+		.dlrep-kpi { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); margin: 4px 0 18px; }
+		@media (max-width: 900px) { .dlrep-kpi { grid-template-columns: repeat(2, 1fr); } }
+		@media (max-width: 560px) { .dlrep-kpi { grid-template-columns: 1fr; } }
 		.dlrep-stat { display: flex; align-items: center; gap: 13px; background: #fff; border: 1px solid #F0DCDC;
 			border-radius: 16px; padding: 16px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
 		.dlrep-ic { width: 44px; height: 44px; border-radius: 13px; background: #FDECEC; color: #C6050C;

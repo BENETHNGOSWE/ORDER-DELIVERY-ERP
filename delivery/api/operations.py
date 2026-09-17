@@ -417,6 +417,7 @@ def reports(from_date=None, to_date=None):
             for m, v in sorted(payables.items(),
                                key=lambda kv: -kv[1]["items_total"])],
         "platform_revenue": {
+            "merchant_items": sel_items,
             "delivery_office_share": round(sel_fees * (100 - share) / 100.0, 2),
             "service_fees": sel_service,
             "total": round(sel_fees * (100 - share) / 100.0 + sel_service, 2),
