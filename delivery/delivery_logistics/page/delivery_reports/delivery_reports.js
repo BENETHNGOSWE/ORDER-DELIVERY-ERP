@@ -70,7 +70,7 @@ frappe.pages['delivery-reports'].on_page_load = function (wrapper) {
 					<button class="dlrep-chip active" id="dlrep-apply">Apply</button>
 				</span>
 			</div>
-			<div id="dlrep-kpi"><div class="dlrep-card">Loading reports&hellip;</div></div>
+			<div id="dlrep-kpi" class="dlrep-kpi"><div class="dlrep-card">Loading reports&hellip;</div></div>
 
 			<div class="dlrep-card">
 				<h3>Payable to merchants</h3>
@@ -243,5 +243,7 @@ frappe.pages['delivery-reports'].on_page_load = function (wrapper) {
 	});
 
 	page.set_primary_action(__('Refresh'), load, 'fa fa-refresh');
+	var init = resolve('today');
+	PERIOD = { key: 'today', from: init[0], to: init[1] };
 	load();
 };
