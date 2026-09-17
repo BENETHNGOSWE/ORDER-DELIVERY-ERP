@@ -137,6 +137,8 @@
     transform:translateX(-105%); transition:transform .25s ease; overflow-y:auto; padding:18px 14px;
     box-shadow:0 10px 40px rgba(0,0,0,.25); }
 
+  .x-drawer-x{ margin-left:auto; width:36px; height:36px; border:1.5px solid var(--line); background:#fff;
+    border-radius:10px; color:var(--ink); font-size:14px; cursor:pointer; display:grid; place-items:center; }
   .x-drawer .dh .bt{ display:flex; flex-direction:column; line-height:1.05; }
   .x-drawer .dh .bt b{ font-size:16px; font-weight:800; white-space:nowrap; }
   .x-drawer .dh .bt small{ font-size:10.5px; font-weight:500; color:#8A8A93; margin-top:2px; white-space:nowrap; }
@@ -461,7 +463,7 @@
 
     <div id="x-backdrop" class="x-backdrop"></div>
     <aside id="x-drawer" class="x-drawer">
-      <div class="dh"><span class="lg"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span> <span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></div>
+      <div class="dh"><span class="lg"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span> <span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span><button id="x-drawer-x" class="x-drawer-x" type="button" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button></div>
       <nav>
         <a id="xd-home"><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
         <a href="/delivery/category?key=restaurant"><span class="ni"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
