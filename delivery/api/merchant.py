@@ -322,11 +322,27 @@ def stats(merchant=None):
         "SELECT COALESCE(SUM(service_fee_total),0) FROM `tabDelivery Order` "
         "WHERE merchant=%s AND workflow_state='COMPLETED'", name)
 
+    # period payables so the merchant knows the end-of-day payout
+    today = frappe.utils.nowdate()
+    week_start = frappe.utils.add_days(today, -6)
+
+    def period_payable(since):
+        r = frappe.db.sql(
+            "SELECT COALESCE(SUM(items_total),0), COUNT(*) FROM `tabDelivery Order` "
+            "WHERE merchant=%s AND workflow_state='COMPLETED' AND creation >= %s",
+            (name, since + " 00:00:00"))
+        return {"payable": flt(r[0][0], 2), "orders": int(r[0][1] or 0)}
+
+    t = period_payable(today)
+    w = period_payable(week_start)
+
     return {"orders": total, "by_state": {r[0]: r[1] for r in by_state_rows},
             "completed_revenue": flt(revenue, 2), "catalog_items": items,
             "payable_to_merchant": payable,
             "payable_orders": payable_orders,
-            "service_fees_collected": flt(service_rows[0][0], 2)}
+            "service_fees_collected": flt(service_rows[0][0], 2),
+            "payable_today": t["payable"], "payable_today_orders": t["orders"],
+            "payable_week": w["payable"], "payable_week_orders": w["orders"]}
 
 
 # ---------------------------------------------------------------------------

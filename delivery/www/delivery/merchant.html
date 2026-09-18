@@ -23,6 +23,26 @@
 
 <div id="kpi" class="dl-kpi dl-kpi-4" style="margin-top:18px"></div>
 
+<h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-hand-holding-dollar"></i></span> Payments</h2>
+<div class="pc-card" style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px">
+  <div style="flex:1;min-width:210px">
+    <div class="dl-mut" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Payable today</div>
+    <div id="pay-today" style="font-size:26px;font-weight:800;color:#8F0409;margin-top:4px">&mdash;</div>
+    <div class="dl-mut" id="pay-today-orders" style="margin-top:2px"></div>
+  </div>
+  <div style="flex:1;min-width:210px">
+    <div class="dl-mut" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Payable this week</div>
+    <div id="pay-week" style="font-size:26px;font-weight:800;margin-top:4px">&mdash;</div>
+    <div class="dl-mut" id="pay-week-orders" style="margin-top:2px"></div>
+  </div>
+  <div style="flex:1;min-width:210px">
+    <div class="dl-mut" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Total payable (all time)</div>
+    <div id="pay-amount" style="font-size:26px;font-weight:800;margin-top:4px">&mdash;</div>
+    <div class="dl-mut" id="pay-orders" style="margin-top:2px"></div>
+    <div class="dl-mut" id="pay-note" style="margin-top:2px"></div>
+  </div>
+</div>
+
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-image"></i></span> Shop logo</h2>
 <div class="pc-card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
   <span id="logo-prev" style="width:64px;height:64px;border-radius:14px;background:#FDECEC;display:grid;place-items:center;overflow:hidden;color:#C6050C;font-size:26px;flex:none"><i class="fa-solid fa-utensils"></i></span>
@@ -103,6 +123,12 @@
         stat("fa-circle-check", b.COMPLETED || 0, "Completed") +
         stat("fa-money-bill-wave", DELIVERY.fmt(s.completed_revenue), "Revenue (items only)") +
         stat("fa-utensils", s.catalog_items || 0, "Items");
+      document.getElementById("pay-today").textContent = DELIVERY.fmt(s.payable_today || 0);
+      document.getElementById("pay-today-orders").textContent =
+        (s.payable_today_orders || 0) + " completed order" + ((s.payable_today_orders || 0) === 1 ? "" : "s") + " today";
+      document.getElementById("pay-week").textContent = DELIVERY.fmt(s.payable_week || 0);
+      document.getElementById("pay-week-orders").textContent =
+        (s.payable_week_orders || 0) + " completed order" + ((s.payable_week_orders || 0) === 1 ? "" : "s") + " this week";
       document.getElementById("pay-amount").textContent = DELIVERY.fmt(s.payable_to_merchant || 0);
       document.getElementById("pay-orders").textContent =
         (s.payable_orders || 0) + " completed orders";
