@@ -22,7 +22,8 @@ frappe.pages['delivery-reports'].on_page_load = function (wrapper) {
 	}
 
 	frappe.dom.set_style(`
-		.dlrep-wrap { max-width: 1080px; }
+		.dlrep-wrap { max-width: 1080px; padding: 0 0 0 26px; }
+		@media (max-width: 768px) { .dlrep-wrap { padding-left: 0; } }
 		.dlrep-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 2px 0 16px; }
 		.dlrep-chip { border: 1.5px solid #E5E0F0; background: #fff; color: #33323A; border-radius: 999px;
 			padding: 8px 16px; font-size: 12.5px; font-weight: 700; cursor: pointer; }

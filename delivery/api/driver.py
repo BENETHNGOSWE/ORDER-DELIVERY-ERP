@@ -379,9 +379,18 @@ def earnings():
     items_collected = sum(flt(r.items_total) + flt(r.service_fee_total)
                           for r in rows)
     share = billing.driver_fee_share_pct()
-    from frappe.utils import nowdate
-    today = sum(flt(r.delivery_fee) for r in rows
-                if str(r.creation)[:10] == str(nowdate()))
+    from frappe.utils import nowdate, add_days
+    today = nowdate()
+    week_start = add_days(today, -6)
+
+    def period(since):
+        fees = sum(flt(r.delivery_fee) for r in rows
+                   if str(r.creation)[:10] >= since)
+        return {"fees": round(fees, 2),
+                "payable": round(fees * share / 100.0, 2),
+                "jobs": sum(1 for r in rows if str(r.creation)[:10] >= since)}
+
+    t, w = period(today), period(week_start)
     return {
         "completed": len(rows),
         "delivery_fees_total": round(fees_total, 2),
@@ -389,7 +398,7 @@ def earnings():
         "driver_share_pct": share,
         "payable_total": round(fees_total * share / 100.0, 2),
         "office_total": round(fees_total * (100 - share) / 100.0, 2),
-        "delivery_fees_today": round(today, 2),
-        "payable_today": round(today * share / 100.0, 2),
+        "payable_today": t["payable"], "fees_today": t["fees"], "jobs_today": t["jobs"],
+        "payable_week": w["payable"], "fees_week": w["fees"], "jobs_week": w["jobs"],
         "currency": billing._cfg("currency") or "TZS",
     }

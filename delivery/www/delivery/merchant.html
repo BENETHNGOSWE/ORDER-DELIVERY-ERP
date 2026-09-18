@@ -38,8 +38,6 @@
   <div style="flex:1;min-width:210px">
     <div class="dl-mut" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Total payable (all time)</div>
     <div id="pay-amount" style="font-size:26px;font-weight:800;margin-top:4px">&mdash;</div>
-    <div class="dl-mut" id="pay-orders" style="margin-top:2px"></div>
-    <div class="dl-mut" id="pay-note" style="margin-top:2px"></div>
   </div>
 </div>
 
@@ -130,13 +128,6 @@
       document.getElementById("pay-week-orders").textContent =
         (s.payable_week_orders || 0) + " completed order" + ((s.payable_week_orders || 0) === 1 ? "" : "s") + " this week";
       document.getElementById("pay-amount").textContent = DELIVERY.fmt(s.payable_to_merchant || 0);
-      document.getElementById("pay-orders").textContent =
-        (s.payable_orders || 0) + " completed orders";
-      if (s.service_fees_collected) {
-        document.getElementById("pay-note").innerHTML =
-          "Item amounts on your completed orders. Service charges collected on your items: <b>" +
-          DELIVERY.fmt(s.service_fees_collected) + "</b> (platform share).";
-      }
     }).catch(function () {});
   }
 
