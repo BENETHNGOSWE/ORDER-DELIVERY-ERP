@@ -82,25 +82,31 @@
         return '<div class="dl-stat"><span class="dl-stat-ic"><i class="fa-solid ' + icon +
           '"></i></span><div><b>' + val + "</b><span>" + label + "</span></div></div>";
       };
+      var dpl = function (n) { return n + " completed deliver" + (n === 1 ? "y" : "ies"); };
       var payCard = function (label, val, sub, hot) {
-        return '<div class="pc-card" style="flex:1; min-width:210px">' +
+        return '<div class="pc-card" style="display:flex; flex-direction:column">' +
           '<div class="dl-mut" style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.4px">' + label + '</div>' +
-          '<div style="font-size:26px; font-weight:800; margin-top:4px;' + (hot ? ' color:#8F0409' : '') + '">' + DELIVERY.fmt(val) + '</div>' +
+          '<div style="font-size:25px; font-weight:800; margin-top:4px;' + (hot ? ' color:#8F0409' : '') + '">' + DELIVERY.fmt(val) + '</div>' +
           '<div class="dl-mut" style="margin-top:2px">' + sub + '</div></div>';
       };
+      document.getElementById("pay").style.display = "grid";
+      document.getElementById("pay").style.gridTemplateColumns = "repeat(auto-fit, minmax(215px, 1fr))";
+      document.getElementById("pay").style.gap = "14px";
       document.getElementById("pay").innerHTML =
-        '<div style="display:flex; gap:18px; flex-wrap:wrap; width:100%">' +
+        payCard("Total amount order", e.remit_today || 0,
+          "Collected " + DELIVERY.fmt(e.collected_today || 0) + " + office " +
+          (100 - e.driver_share_pct) + "% (" + DELIVERY.fmt(e.office_share_today || 0) +
+          ") - remit today", true) +
         payCard("Payable today", e.payable_today || 0,
-          (e.jobs_today || 0) + " completed delivery" + ((e.jobs_today || 0) === 1 ? "" : "s") + " today", true) +
+          dpl(e.jobs_today || 0) + " today") +
         payCard("Payable this week", e.payable_week || 0,
-          (e.jobs_week || 0) + " completed delivery" + ((e.jobs_week || 0) === 1 ? "" : "s") + " this week") +
-        payCard("Total payable (all time)", e.payable_total || 0,
-          e.driver_share_pct + "% of " + DELIVERY.fmt(e.delivery_fees_total || 0) + " delivery fees") +
-        '</div>' +
+          dpl(e.jobs_week || 0) + " this week") +
+        payCard("Payable this month", e.payable_month || 0,
+          dpl(e.jobs_month || 0) + " this month") +
         '<div class="pc-card dl-mut" style="grid-column:1/-1; padding:12px 16px">' +
           "<i class=\"fa-solid fa-circle-info\" style=\"color:var(--purple)\"></i> " +
-          "Completed jobs: " + (e.completed || 0) + " &middot; You collect items + service on behalf of the office; " +
-          "your pay is " + e.driver_share_pct + "% of the delivery fee, payable end of day." +
+          "You collect order amounts + 100% of delivery fees; your pay is " + e.driver_share_pct +
+          "% of each delivery fee. Remit the rest (Total amount order) at end of day." +
         "</div>";
     }).catch(function () {});
   }
