@@ -169,6 +169,14 @@
       "options": "currency"
     },
     {
+      "default": "130",
+      "description": "Straight-line distance from the merchant to the drop-off pin is multiplied by this to approximate real roads (130 = x1.3).",
+      "fieldname": "road_distance_factor_pct",
+      "fieldtype": "Percent",
+      "label": "Road Distance Factor (%)",
+      "non_negative": 1
+    },
+    {
       "fieldname": "column_break_3",
       "fieldtype": "Column Break",
       "idx": 17

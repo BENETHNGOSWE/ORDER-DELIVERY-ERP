@@ -117,6 +117,70 @@ def estimate_delivery_fee(zone=None, distance_km=0, items_total=0):
     }
 
 
+# ---------------------------------------------------------------------------
+# distance resolution (SRS 3.1) - the server never trusts a client km
+# ---------------------------------------------------------------------------
+def haversine_km(lat1, lng1, lat2, lng2):
+    """Great-circle distance between two coordinate pairs, in km."""
+    import math
+    lat1, lng1, lat2, lng2 = (math.radians(flt(a))
+                              for a in (lat1, lng1, lat2, lng2))
+    a = (math.sin((lat2 - lat1) / 2) ** 2
+         + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2)
+    return 2 * 6371.0088 * math.asin(min(1.0, math.sqrt(a)))
+
+
+def road_km(merchant=None, dest_lat=0, dest_lng=0):
+    """
+    Merchant pin -> drop-off pin distance.
+
+    Straight-line (haversine) inflated by the configured road factor
+    (Logistics Settings ``road_distance_factor_pct``, default 130%) to
+    approximate real roads. 0.0 when either end has no coordinates.
+    """
+    if not (merchant and flt(dest_lat) and flt(dest_lng)):
+        return 0.0
+    m = frappe.db.get_value("Merchant", merchant,
+                            ["latitude", "longitude"], as_dict=True)
+    if not m or not flt(m.latitude) or not flt(m.longitude):
+        return 0.0
+    straight = haversine_km(m.latitude, m.longitude, dest_lat, dest_lng)
+    factor = _cfg("road_distance_factor_pct", 130) / 100.0
+    return r2(straight * factor)
+
+
+def resolve_distance_km(merchant=None, dest_lat=0, dest_lng=0,
+                        zone=None, address=None):
+    """
+    Server-side km for food/retail pricing, in order of truth:
+
+    1. merchant pin -> drop-off pin (map pin / GPS from checkout),
+    2. geocode the typed address, then the same pin math,
+    3. the zone's default ``distance_km``.
+
+    Returns ``{"km", "source", "lat", "lng"}`` - lat/lng are the drop-off
+    coordinates the km came from (pin first, geocoded second) so checkout can
+    store them for tracking. A client-supplied distance is never used.
+    """
+    km = road_km(merchant, dest_lat, dest_lng)
+    if km:
+        return {"km": km, "source": "pin",
+                "lat": flt(dest_lat, 6), "lng": flt(dest_lng, 6)}
+    if address and (not flt(dest_lat) or not flt(dest_lng)):
+        try:
+            from delivery.delivery_logistics import geocode
+            lat, lng = geocode.geocode(address)
+        except Exception:
+            lat, lng = None, None
+        km = road_km(merchant, lat, lng)
+        if km:
+            return {"km": km, "source": "address", "lat": lat, "lng": lng}
+    _base, _per_km, zone_km = zone_fees(zone)
+    if flt(zone_km):
+        return {"km": flt(zone_km), "source": "zone", "lat": 0, "lng": 0}
+    return {"km": 0.0, "source": "standard", "lat": 0, "lng": 0}
+
+
 def _item_rate(item):
     """Menu item rate after any discount."""
     rate = flt(item.standard_rate)

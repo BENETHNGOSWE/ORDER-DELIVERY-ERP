@@ -87,9 +87,9 @@
         <label class="dl-label">Delivery zone</label>
         <select id="zone" class="dl-select"></select>
       </div>
-      <div style="width:140px">
-        <label class="dl-label">Distance (km)</label>
-        <input id="km" class="dl-input" type="number" step="0.1" value="0">
+      <div style="flex:1">
+        <label class="dl-label">Distance</label>
+        <div id="kmchip" class="dl-mut" style="font-size:13px; padding-top:8px">Auto &mdash; restaurant &rarr; your pin</div>
       </div>
     </div>
     <label class="dl-label">Instructions (optional)</label>
@@ -147,12 +147,14 @@
       '<i class="fa-solid fa-circle-check"></i> Exact delivery point set (' +
       Math.abs(destLat).toFixed(5) + ", " + Math.abs(destLng).toFixed(5) + ")" +
       (label ? " &mdash; " + DELIVERY.esc(label) : "") + ". Drag the pin to fine-tune.";
+    quote();
   }
   function clearDestination() {
     destLat = destLng = null;
     if (geoMarker) { geoMarker.remove(); geoMarker = null; }
     document.getElementById("geo-hint").textContent = "";
     geoMap.setView(DAR, 13);
+    quote();
   }
   function renderResults(list) {
     var box = document.getElementById("geo-results");
@@ -231,10 +233,17 @@
     document.getElementById("s-svc-row").style.display = totals.flat > 0 ? "flex" : "none";
     document.getElementById("s-svc").textContent = money(totals.flat);
     DELIVERY.call("delivery.api.customer.quote_delivery_fee", {
-      zone: document.getElementById("zone").value,
-      distance_km: document.getElementById("km").value,
+      merchant: DELIVERY.cartMerchant || null,
+      zone: document.getElementById("zone").value || null,
+      dest_lat: destLat, dest_lng: destLng,
+      address: document.getElementById("addr").value || document.getElementById("geo-search").value,
       items_total: totals.base
     }).then(function (f) {
+      var src = { pin: "from your pin", address: "from the address",
+                  zone: "zone average", standard: "standard" }[f.distance_source] || "";
+      document.getElementById("kmchip").textContent = f.distance_km
+        ? "~" + f.distance_km + " km " + src
+        : "set a pin or address for an exact fee";
       document.getElementById("s-dlv").textContent = money(f.delivery_fee);
       document.getElementById("s-note").textContent =
         f.free_delivery ? "Free delivery over " + money(f.free_delivery_over) + " applied" : "";
@@ -260,7 +269,7 @@
       }).join("");
   }).catch(function () {});
 
-  ["zone", "km"].forEach(function (id) {
+  ["zone", "addr"].forEach(function (id) {
     document.getElementById(id).addEventListener("change", quote);
   });
 
@@ -280,7 +289,6 @@
       delivery_address: addrText || ("Pinned location (" + destLat.toFixed(5) + ", " + destLng.toFixed(5) + ")"),
       order_type: orderType,
       delivery_zone: document.getElementById("zone").value || null,
-      delivery_distance_km: document.getElementById("km").value,
       payment_method: document.getElementById("pay").value,
       customer_name: cname,
       phone: cphone,

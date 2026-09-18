@@ -306,9 +306,21 @@ def zones():
 
 
 @frappe.whitelist(allow_guest=True)
-def quote_delivery_fee(zone=None, distance_km=0, items_total=0):
-    """Live fee preview for the cart (SRS 3.1 step 2)."""
-    return billing.estimate_delivery_fee(zone, flt(distance_km), flt(items_total))
+def quote_delivery_fee(merchant=None, zone=None, dest_lat=None, dest_lng=None,
+                       address=None, items_total=0, distance_km=None):
+    """
+    Live fee preview for the cart (SRS 3.1 step 2).
+
+    Distance is resolved on the SERVER: merchant pin -> drop-off pin (map
+    pin / GPS), then the typed address, then the zone default. The legacy
+    client ``distance_km`` argument is accepted for compatibility but
+    IGNORED - a customer can no longer shrink the fee by typing less.
+    """
+    d = billing.resolve_distance_km(merchant, flt(dest_lat), flt(dest_lng),
+                                    zone, address)
+    out = billing.estimate_delivery_fee(zone, d["km"], flt(items_total))
+    out["distance_source"] = d["source"]
+    return out
 
 
 @frappe.whitelist(allow_guest=True)
@@ -406,7 +418,7 @@ def search_places(query, lat=None, lng=None, limit=8):
 
 @frappe.whitelist(allow_guest=True)
 def place_order(merchant, items, delivery_address, order_type="Food",
-                delivery_zone=None, delivery_distance_km=0,
+                delivery_zone=None,
                 payment_method="Cash On Delivery", phone=None,
                 delivery_instructions=None, customer_name=None,
                 delivery_latitude=None, delivery_longitude=None):
@@ -427,6 +439,13 @@ def place_order(merchant, items, delivery_address, order_type="Food",
         frappe.throw(_("{0} is not available. Choose from: {1}.")
                      .format(payment_method, ", ".join(methods)))
 
+    # distance is the server's business: merchant pin -> drop-off pin (map
+    # pin / GPS), falling back to geocoding the typed address, then the zone
+    # default. Never a client-supplied number.
+    dist = billing.resolve_distance_km(merchant, flt(delivery_latitude),
+                                       flt(delivery_longitude),
+                                       delivery_zone, delivery_address)
+
     order = frappe.get_doc({
         "doctype": "Delivery Order",
         "order_type": order_type,
@@ -436,16 +455,17 @@ def place_order(merchant, items, delivery_address, order_type="Food",
         "merchant": merchant,
         "delivery_address": delivery_address,
         "delivery_zone": delivery_zone,
-        "delivery_distance_km": flt(delivery_distance_km),
+        "delivery_distance_km": dist["km"],
         "delivery_instructions": delivery_instructions,
         "payment_method": payment_method,
         "order_items": [{"item": i["item"], "qty": flt(i.get("qty", 1))} for i in items],
     })
-    # exact destination coordinates captured at checkout (map pin / place search)
-    if delivery_latitude is not None and delivery_longitude is not None \
-            and flt(delivery_latitude) and flt(delivery_longitude):
-        order.delivery_latitude = flt(delivery_latitude, 6)
-        order.delivery_longitude = flt(delivery_longitude, 6)
+    # drop-off coordinates the fee was computed from (customer pin, or
+    # geocoded from the typed address) - stored so tracking and driver
+    # navigation reuse them without a second geocode
+    if dist["lat"] and dist["lng"]:
+        order.delivery_latitude = flt(dist["lat"], 6)
+        order.delivery_longitude = flt(dist["lng"], 6)
     order.insert(ignore_permissions=True)
 
     # SRS 3.1 step 2 -> order lands in the Merchant portal as PENDING

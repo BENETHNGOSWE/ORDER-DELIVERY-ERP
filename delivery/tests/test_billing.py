@@ -33,6 +33,18 @@ class TestCurrency(FrappeTestCase):
 
 
 class TestDeliveryFee(FrappeTestCase):
+    def test_haversine_same_point_is_zero(self):
+        self.assertAlmostEqual(
+            billing.haversine_km(-6.79, 39.21, -6.79, 39.21), 0.0, places=6)
+
+    def test_haversine_one_degree_latitude_is_about_111_km(self):
+        self.assertAlmostEqual(
+            billing.haversine_km(0.0, 0.0, 1.0, 0.0), 111.2, delta=0.5)
+
+    def test_haversine_is_symmetric(self):
+        self.assertAlmostEqual(
+            billing.haversine_km(-6.7, 39.2, -6.9, 39.4),
+            billing.haversine_km(-6.9, 39.4, -6.7, 39.2), places=6)
     def test_fee_is_base_plus_distance(self):
         s = _settings()
         r = billing.estimate_delivery_fee(zone=None, distance_km=5, items_total=0)

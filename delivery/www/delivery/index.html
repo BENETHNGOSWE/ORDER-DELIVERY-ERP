@@ -951,7 +951,14 @@
     document.getElementById("ck-svc").textContent=money(t.flat);
     document.getElementById("ck-svc-row").style.display=t.flat>0?"flex":"none";
     document.getElementById("ck-fee").textContent="…";
-    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{zone:document.getElementById("ck-zone").value, distance_km:0, items_total:t.base})
+    ckQuote();
+  }
+  function ckQuote(){
+    var t=DELIVERY.cartTotals();
+    DELIVERY.call("delivery.api.customer.quote_delivery_fee",{merchant:DELIVERY.cartMerchant||null,
+      zone:document.getElementById("ck-zone").value||null, dest_lat:destLat, dest_lng:destLng,
+      address:document.getElementById("ck-addr").value||document.getElementById("ck-search").value,
+      items_total:t.base})
       .then(function(f){ var fee=f.delivery_fee||0;
         document.getElementById("ck-fee").textContent=fee?money(fee):"FREE";
         document.getElementById("ck-total").textContent=money(t.grand+fee);
@@ -972,8 +979,9 @@
     ckMarker.off("dragend"); ckMarker.on("dragend",function(ev){ var p=ev.target.getLatLng(); ckSetDest(p.lat,p.lng); });
     ckMap.setView(ll,Math.max(ckMap.getZoom(),15));
     document.getElementById("ck-hint").innerHTML='<i class="fa-solid fa-location-dot" style="color:var(--purple)"></i> Delivery point set'+(label?" — "+label:"")+". Drag the pin to fine-tune.";
+    ckQuote();
   }
-  function ckClearDest(){ destLat=destLng=null; if(ckMarker){ckMarker.remove();ckMarker=null;} document.getElementById("ck-hint").textContent=""; ckMap.setView([-6.7924,39.2083],12); }
+  function ckClearDest(){ destLat=destLng=null; if(ckMarker){ckMarker.remove();ckMarker=null;} document.getElementById("ck-hint").textContent=""; ckMap.setView([-6.7924,39.2083],12); ckQuote(); }
 
   document.getElementById("ck-search").addEventListener("input",function(){
     var q=this.value.trim(); clearTimeout(ckTimer); var box=document.getElementById("ck-geo-res");
@@ -998,6 +1006,7 @@
       {enableHighAccuracy:true,timeout:12000});
   });
   document.getElementById("ck-clear").addEventListener("click",function(){ document.getElementById("ck-search").value=""; ckClearDest(); });
+  document.getElementById("ck-zone").addEventListener("change",ckQuote);
   document.getElementById("ck-close").addEventListener("click",closeCheckout);
   overlay.addEventListener("click",function(e){ if(e.target===overlay) closeCheckout(); });
   document.addEventListener("keydown",function(e){ if(e.key==="Escape" && overlay.classList.contains("show")) closeCheckout(); });
@@ -1019,7 +1028,6 @@
       delivery_address:addr || ("Pinned location ("+destLat.toFixed(5)+", "+destLng.toFixed(5)+")"),
       order_type:"Food",
       delivery_zone:document.getElementById("ck-zone").value||null,
-      delivery_distance_km:0,
       payment_method:document.getElementById("ck-pay").value||"Cash On Delivery",
       customer_name:cname,
       phone:cphone,
