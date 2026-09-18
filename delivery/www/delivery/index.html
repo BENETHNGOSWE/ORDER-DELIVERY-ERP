@@ -343,6 +343,8 @@
              font-family:inherit; font-weight:700; font-size:15px; cursor:pointer; }
   .ck-place:disabled{ opacity:.5; cursor:not-allowed; }
   @media (max-width:760px){
+    /* phones: no "Available now" grid - services & banners below surface instead */
+    #items, #grid { display:none !important; }
     .ck-body{ grid-template-columns:1fr; }
     .ck-col.left{ border-right:none; border-bottom:1px solid var(--line); max-height:none; order:2; }
     .ck-col.right{ max-height:none; order:1; }
@@ -710,7 +712,7 @@
       return (b.featured?1:0)-(a.featured?1:0) || a.rate-b.rate;
     });
     var labelMap={all:"Available now",restaurant:"Restaurant",groceries:"Groceries",drinks:"Drinks",shopping:"Shopping",pharmacy:"Pharmacy & Cosmetics",others:"Others",offers:"Offers"};
-    var onHome = list.length > 6 ? list.slice(0,6) : list;
+    var onHome = list.length > 8 ? list.slice(0,8) : list;
     document.getElementById("items-title").textContent=(labelMap[cat]||"Available now")+" ("+list.length+")";
     var host=document.getElementById("grid");
     if(!list.length){ host.innerHTML='<div class="x-empty">No items match. Try another search or category.</div>'; return; }
