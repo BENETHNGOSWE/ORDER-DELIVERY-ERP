@@ -41,6 +41,39 @@
   </div>
 </div>
 
+<!-- handoff modal: OTP + COD cash (replaces browser prompts) -->
+<div id="hand-modal" style="display:none; position:fixed; inset:0; z-index:9990;
+     background:rgba(23,23,23,.55); align-items:center; justify-content:center; padding:16px">
+  <div class="pc-card" style="max-width:430px; width:100%; padding:26px 24px">
+    <div style="width:54px; height:54px; border-radius:16px; background:var(--purple-light);
+                display:grid; place-items:center; margin:0 auto 14px">
+      <i class="fa-solid fa-clipboard-check" style="font-size:22px; color:var(--purple)"></i>
+    </div>
+    <h3 style="text-align:center; margin:0 0 4px">Complete handoff</h3>
+    <div class="dl-mut" id="hand-sub" style="text-align:center; margin-bottom:16px"></div>
+    <label class="dl-label">Customer&rsquo;s 4-digit handoff code</label>
+    <input id="hand-otp" class="dl-input" inputmode="numeric" maxlength="4"
+           placeholder="e.g. 4821" style="text-align:center; font-size:20px; letter-spacing:8px">
+    <div id="hand-cash-wrap" style="margin-top:14px">
+      <label class="dl-label">Cash collected &mdash; must equal the order total <b id="hand-amt-lab"></b></label>
+      <input id="hand-cash" class="dl-input" inputmode="numeric"
+             style="text-align:center; font-size:20px; font-weight:800">
+      <div class="dl-mut" style="font-size:12px; margin-top:6px">
+        <i class="fa-solid fa-circle-info"></i> Enter the exact amount &mdash; less or more will be rejected.
+      </div>
+    </div>
+    <div id="hand-err" style="display:none; margin-top:14px; background:var(--purple-light);
+         border:1.5px solid var(--purple); color:var(--purple-dark); border-radius:12px;
+         padding:10px 13px; font-size:13.5px; font-weight:600; line-height:1.45">
+      <i class="fa-solid fa-triangle-exclamation"></i> <span id="hand-err-txt"></span>
+    </div>
+    <div class="dl-between" style="margin-top:18px">
+      <button class="dl-btn sec" id="hand-cancel" style="flex:1; margin-right:8px">Cancel</button>
+      <button class="dl-btn" id="hand-confirm" style="flex:1.4"><i class="fa-solid fa-check"></i> Confirm delivery</button>
+    </div>
+  </div>
+</div>
+
 <div class="pc-card" style="margin-top:16px">
   <div class="dl-between">
     <div style="display:flex; align-items:center; gap:14px; min-width:0">
@@ -274,23 +307,7 @@
         });
       });
       host.querySelectorAll("[data-done]").forEach(function (b) {
-        b.addEventListener("click", function () {
-          var otp = prompt("Customer's 4-digit handoff code");
-          if (otp === null) return;
-          var amt = Number(b.dataset.amt || 0);
-          var cash = 0;
-          if (b.dataset.paid !== "1") {
-            // cash on delivery: the entered amount must equal the order total
-            cash = prompt("Cash collected from the customer - must equal the order total ("
-                          + DELIVERY.fmt(amt) + ")", amt ? String(Math.round(amt)) : "0");
-            if (cash === null) return;
-            cash = Number(cash || 0);
-          }
-          DELIVERY.call("delivery.api.driver.complete_handoff",
-                        { reference: b.dataset.done, otp: otp, collected_amount: cash })
-            .then(function (r) { DELIVERY.toast(r.reference + " delivered", "success"); jobs(); earnings(); })
-            .catch(function (e) { DELIVERY.toast(e.message, "error"); });
-        });
+        b.addEventListener("click", function () { handOpen(b); });
       });
     }).catch(function (e) {
       document.getElementById("jobs").innerHTML =
@@ -298,6 +315,69 @@
         DELIVERY.esc(e.message) + "</div></div>";
     });
   }
+
+  // ----- handoff modal wiring -----
+  var HAND = null;
+  var handModal = document.getElementById("hand-modal");
+  function handErr(msg, badCash, badOtp) {
+    document.getElementById("hand-err-txt").innerHTML = msg;
+    document.getElementById("hand-err").style.display = "block";
+    document.getElementById("hand-cash").style.borderColor = badCash ? "var(--purple)" : "";
+    document.getElementById("hand-otp").style.borderColor = badOtp ? "var(--purple)" : "";
+  }
+  function handOpen(b) {
+    HAND = { ref: b.dataset.done, amt: Number(b.dataset.amt || 0), paid: b.dataset.paid === "1" };
+    document.getElementById("hand-err").style.display = "none";
+    document.getElementById("hand-otp").style.borderColor = "";
+    document.getElementById("hand-cash").style.borderColor = "";
+    document.getElementById("hand-otp").value = "";
+    document.getElementById("hand-sub").textContent = "Order " + HAND.ref;
+    var cw = document.getElementById("hand-cash-wrap");
+    if (HAND.paid) { cw.style.display = "none"; }
+    else {
+      cw.style.display = "block";
+      document.getElementById("hand-amt-lab").textContent = "(" + DELIVERY.fmt(HAND.amt) + ")";
+      document.getElementById("hand-cash").value = HAND.amt ? String(Math.round(HAND.amt)) : "";
+    }
+    handModal.style.display = "flex";
+    setTimeout(function () { document.getElementById("hand-otp").focus(); }, 60);
+  }
+  document.getElementById("hand-cancel").addEventListener("click", function () {
+    handModal.style.display = "none";
+  });
+  ["hand-otp", "hand-cash"].forEach(function (id) {
+    document.getElementById(id).addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("hand-confirm").click(); }
+    });
+  });
+  document.getElementById("hand-confirm").addEventListener("click", function () {
+    if (!HAND) return;
+    var btn = this;
+    var otp = document.getElementById("hand-otp").value.trim();
+    var cash = 0;
+    if (!/^\d{4}$/.test(otp)) { handErr("Enter the customer&rsquo;s 4-digit handoff code.", false, true); return; }
+    if (!HAND.paid) {
+      cash = Number(document.getElementById("hand-cash").value || 0);
+      if (!cash) { handErr("Enter the cash amount you collected.", true, false); return; }
+    }
+    btn.disabled = true;
+    DELIVERY.call("delivery.api.driver.complete_handoff",
+                  { reference: HAND.ref, otp: otp, collected_amount: cash })
+      .then(function (r) {
+        handModal.style.display = "none";
+        DELIVERY.toast(r.reference + " delivered", "success");
+        jobs(); earnings();
+      })
+      .catch(function (e) {
+        var msg = (e && e.message) || "Something went wrong. Try again.";
+        var m = String(msg).match(/must equal the amount due \(([^)]+)\)/);
+        if (m) msg = "<b>Wrong amount.</b> You must collect exactly " + m[1] +
+                     " &mdash; the order total. Less or more is not allowed.";
+        else if (/handoff code|otp/i.test(String(msg))) msg = "<b>Wrong code.</b> Ask the customer for their 4-digit handoff code.";
+        handErr(msg, /amount/i.test(String(msg)), /code\.|otp/i.test(String(msg)));
+      })
+      .then(function () { btn.disabled = false; });
+  });
 
   document.getElementById("avail").addEventListener("change", function () {
     DELIVERY.call("delivery.api.driver.set_availability", { status: this.value })
