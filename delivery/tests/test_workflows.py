@@ -100,9 +100,16 @@ class TestWorkflows(FrappeTestCase):
 
         done = driver_api.complete_handoff(ref, otp=otp, collected_amount=due)
         self.assertEqual(done["state"], "COMPLETED")
-        # Cash On Delivery settles at the handoff
+        # Cash On Delivery settles at the handoff - order AND transaction
         self.assertEqual(frappe.db.get_value("Delivery Order", ref,
                                              "payment_status"), "Paid")
+        txn_name = frappe.db.get_value("Delivery Order", ref,
+                                       "payment_transaction")
+        self.assertTrue(txn_name, "COD handoff must create/settle a transaction")
+        self.assertEqual(frappe.db.get_value("Payment Transaction", txn_name,
+                                             "payment_status"), "Paid")
+        self.assertEqual(flt(frappe.db.get_value(
+            "Payment Transaction", txn_name, "collected_amount")), due)
 
     def test_wrong_otp_is_rejected(self):
         result, _ = self._place_food()

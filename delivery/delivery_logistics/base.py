@@ -159,7 +159,13 @@ class ServiceDocument(Document):
             txn = (frappe.get_doc("Payment Transaction", self.payment_transaction)
                    if self.get("payment_transaction")
                    else payments.current_txn(self.doctype, self.name))
-            if txn and txn.payment_status != "Paid":
+            if txn is None:
+                # checkout skips the payment leg for COD, so the remittance
+                # record is opened here - the driver always settles against it
+                txn = payments.open_cod(self.doctype, self.name,
+                                        flt(self.get(self.AMOUNT_FIELD)),
+                                        self.get("currency"))
+            if txn.payment_status != "Paid":
                 collected = flt(collected_amount)
                 if collected <= 0:
                     frappe.throw(
