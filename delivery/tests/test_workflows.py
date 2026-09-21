@@ -89,7 +89,16 @@ class TestWorkflows(FrappeTestCase):
         self.assertEqual(frappe.db.get_value("Delivery Order", ref,
                                              "workflow_state"), "PICKED_UP")
 
-        done = driver_api.complete_handoff(ref, otp=otp, collected_amount=50000)
+        # COD settles only at the exact order total - less or more is rejected
+        due = flt(frappe.db.get_value("Delivery Order", ref, "grand_total"))
+        with self.assertRaises(frappe.ValidationError):
+            driver_api.complete_handoff(ref, otp=otp,
+                                        collected_amount=due - 5000)
+        with self.assertRaises(frappe.ValidationError):
+            driver_api.complete_handoff(ref, otp=otp,
+                                        collected_amount=due + 5000)
+
+        done = driver_api.complete_handoff(ref, otp=otp, collected_amount=due)
         self.assertEqual(done["state"], "COMPLETED")
         # Cash On Delivery settles at the handoff
         self.assertEqual(frappe.db.get_value("Delivery Order", ref,

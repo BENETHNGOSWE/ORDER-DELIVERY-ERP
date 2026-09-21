@@ -160,8 +160,12 @@ class ServiceDocument(Document):
                    if self.get("payment_transaction")
                    else payments.current_txn(self.doctype, self.name))
             if txn and txn.payment_status != "Paid":
-                payments.settle_cod(txn, flt(collected_amount)
-                                    or flt(self.get(self.AMOUNT_FIELD)))
+                collected = flt(collected_amount)
+                if collected <= 0:
+                    frappe.throw(
+                        _("Enter the exact amount collected from the customer."),
+                        title=_("Amount Required"))
+                payments.settle_cod(txn, collected)
                 self.payment_transaction = txn.name
                 self.payment_status = "Paid"
 

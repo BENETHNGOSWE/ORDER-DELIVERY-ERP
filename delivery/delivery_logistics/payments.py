@@ -21,7 +21,7 @@ from datetime import datetime
 
 import frappe
 from frappe import _
-from frappe.utils import flt, now_datetime
+from frappe.utils import flt, fmt_money, now_datetime
 
 COD = "Cash On Delivery"
 MPESA = "M-Pesa"
@@ -186,6 +186,15 @@ def settle_cod(txn, collected_amount):
     if collected <= 0:
         frappe.throw(_("Enter the amount actually collected."),
                      title=_("Invalid Amount"))
+
+    # the handoff is a cash verification, not a free-form note: the driver
+    # must collect exactly what the order says (SRS 3.1 step 5)
+    if round(collected, 2) != round(due, 2):
+        frappe.throw(
+            _("Collected amount must equal the amount due ({0}). "
+              "Enter the exact cash collected from the customer.").format(
+                fmt_money(due, currency=txn.get("currency"))),
+            title=_("Amount Mismatch"))
 
     txn.collected_amount = collected
     txn.change_due = max(0.0, round(collected - due, 2))

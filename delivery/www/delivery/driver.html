@@ -221,6 +221,7 @@
             ? '<button class="dl-btn" data-stop="' + j.reference +
               '"><i class="fa-solid fa-location-arrow"></i> Next stop</button>'
             : viewBtn + ' <button class="dl-btn" data-done="' + j.reference +
+              '" data-amt="' + (j.amount || 0) +
               '"><i class="fa-solid fa-clipboard-check"></i> Complete handoff</button>';
         }
         return '<div class="pc-card" style="margin-bottom:14px"><div class="dl-between">' +
@@ -274,7 +275,9 @@
         b.addEventListener("click", function () {
           var otp = prompt("Customer's 4-digit handoff code");
           if (otp === null) return;
-          var cash = prompt("Cash collected (0 if already paid)", "0");
+          var amt = Number(b.dataset.amt || 0);
+          var cash = prompt("Cash collected from the customer - must equal the order total ("
+                            + DELIVERY.fmt(amt) + ")", amt ? String(Math.round(amt)) : "0");
           DELIVERY.call("delivery.api.driver.complete_handoff",
                         { reference: b.dataset.done, otp: otp, collected_amount: Number(cash || 0) })
             .then(function (r) { DELIVERY.toast(r.reference + " delivered", "success"); jobs(); earnings(); })
