@@ -417,9 +417,7 @@
     if (!cash) { handErr("Enter the cash amount you collected after delivery.", true, false); return; }
     // client-side exactness: the driver must type the order total, to the shilling
     if (Math.abs(cash - Number(HAND.amt || 0)) > 0.009) {
-      handErr("<b>Amount you entered is wrong.</b> The order total is <b>" + DELIVERY.fmt(HAND.amt) +
-              "</b>. Collect exactly " + DELIVERY.fmt(HAND.amt) +
-              " from the customer and enter it here.", true, false);
+      handErr("<b>Amount you entered is wrong.</b> Enter the collected amount only.", true, false);
       return;
     }
     btn.disabled = true;
@@ -431,8 +429,7 @@
         var raw = String((e && e.message) || "");
         var m = raw.match(/must equal the amount due \(([^)]+)\)/);
         var msg = m
-          ? "<b>Amount you entered is wrong.</b> The order total is <b>" + m[1] +
-            "</b>. Collect exactly " + m[1] + " from the customer and enter it here."
+          ? "<b>Amount you entered is wrong.</b> Enter the collected amount only."
           : (raw ? "<b>Could not complete the handoff.</b> " + raw : "<b>Could not complete the handoff.</b> Check the amount and code, then try again.");
         handErr(msg, true, false);
       })
