@@ -76,7 +76,7 @@
       <i class="fa-solid fa-triangle-exclamation"></i> <span id="hand-err-txt"></span>
     </div>
 
-    <div class="dl-between" style="margin-top:18px">
+    <div class="dl-between" id="hand-step1-btns" style="margin-top:18px">
       <button class="dl-btn sec" id="hand-cancel" style="flex:1; margin-right:8px">Cancel</button>
       <button class="dl-btn" id="hand-verify" style="flex:1.4"><i class="fa-solid fa-unlock-keyhole"></i> Verify code</button>
     </div>
@@ -345,6 +345,7 @@
   }
   function handShow(step) {
     document.getElementById("hand-step1").style.display = step === 1 ? "block" : "none";
+    document.getElementById("hand-step1-btns").style.display = step === 1 ? "flex" : "none";
     document.getElementById("hand-step2").style.display = step === 2 ? "block" : "none";
     document.getElementById("hand-step2-btns").style.display = step === 2 ? "flex" : "none";
   }
@@ -414,16 +415,25 @@
     var btn = this;
     var cash = Number(document.getElementById("hand-cash").value || 0);
     if (!cash) { handErr("Enter the cash amount you collected after delivery.", true, false); return; }
+    // client-side exactness: the driver must type the order total, to the shilling
+    if (Math.abs(cash - Number(HAND.amt || 0)) > 0.009) {
+      handErr("<b>Amount you entered is wrong.</b> The order total is <b>" + DELIVERY.fmt(HAND.amt) +
+              "</b>. Collect exactly " + DELIVERY.fmt(HAND.amt) +
+              " from the customer and enter it here.", true, false);
+      return;
+    }
     btn.disabled = true;
     DELIVERY.call("delivery.api.driver.complete_handoff",
                   { reference: HAND.ref, otp: document.getElementById("hand-otp").value.trim(),
                     collected_amount: cash })
       .then(handFinish)
       .catch(function (e) {
-        var msg = (e && e.message) || "Something went wrong. Try again.";
-        var m = String(msg).match(/must equal the amount due \(([^)]+)\)/);
-        if (m) msg = "<b>Wrong amount.</b> The cash you entered is not the order total. Collect exactly " +
-                     m[1] + " from the customer and enter it here.";
+        var raw = String((e && e.message) || "");
+        var m = raw.match(/must equal the amount due \(([^)]+)\)/);
+        var msg = m
+          ? "<b>Amount you entered is wrong.</b> The order total is <b>" + m[1] +
+            "</b>. Collect exactly " + m[1] + " from the customer and enter it here."
+          : (raw ? "<b>Could not complete the handoff.</b> " + raw : "<b>Could not complete the handoff.</b> Check the amount and code, then try again.");
         handErr(msg, true, false);
       })
       .then(function () { btn.disabled = false; });
