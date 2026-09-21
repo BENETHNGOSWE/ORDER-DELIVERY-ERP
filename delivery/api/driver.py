@@ -203,6 +203,22 @@ def confirm_pickup(reference):
 
 
 @frappe.whitelist()
+def verify_otp(reference, otp=None):
+    """
+    Step 1 of the handoff dialog: check the customer's 4-digit code WITHOUT
+    completing anything, so the driver is asked for cash only after the code
+    is proven right. complete_handoff re-validates - this cannot bypass it.
+    """
+    dt, doc = _job(reference)
+    expected = doc.get("otp_code")
+    if expected and str(otp or "").strip() != str(expected):
+        frappe.throw(
+            _("Incorrect handoff code. Ask the customer for the 4-digit code."),
+            title=_("OTP Mismatch"))
+    return {"reference": reference, "verified": True}
+
+
+@frappe.whitelist()
 def complete_handoff(reference, otp=None, collected_amount=0):
     """
     Proof of delivery (SRS 3.1 step 5).
