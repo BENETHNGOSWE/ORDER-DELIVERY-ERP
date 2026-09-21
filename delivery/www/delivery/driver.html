@@ -221,8 +221,10 @@
             ? '<button class="dl-btn" data-stop="' + j.reference +
               '"><i class="fa-solid fa-location-arrow"></i> Next stop</button>'
             : viewBtn + ' <button class="dl-btn" data-done="' + j.reference +
-              '" data-amt="' + (j.amount || 0) +
-              '"><i class="fa-solid fa-clipboard-check"></i> Complete handoff</button>';
+              '" data-amt="' + (j.amount || 0) + '" data-paid="' +
+              (j.payment_status === "Paid" ? 1 : 0) +
+              '"><i class="fa-solid fa-clipboard-check"></i> Complete handoff' +
+              (j.payment_status === "Paid" ? " (paid online)" : "") + '</button>';
         }
         return '<div class="pc-card" style="margin-bottom:14px"><div class="dl-between">' +
           '<div style="display:flex; align-items:center; gap:13px; min-width:0">' +
@@ -276,10 +278,16 @@
           var otp = prompt("Customer's 4-digit handoff code");
           if (otp === null) return;
           var amt = Number(b.dataset.amt || 0);
-          var cash = prompt("Cash collected from the customer - must equal the order total ("
-                            + DELIVERY.fmt(amt) + ")", amt ? String(Math.round(amt)) : "0");
+          var cash = 0;
+          if (b.dataset.paid !== "1") {
+            // cash on delivery: the entered amount must equal the order total
+            cash = prompt("Cash collected from the customer - must equal the order total ("
+                          + DELIVERY.fmt(amt) + ")", amt ? String(Math.round(amt)) : "0");
+            if (cash === null) return;
+            cash = Number(cash || 0);
+          }
           DELIVERY.call("delivery.api.driver.complete_handoff",
-                        { reference: b.dataset.done, otp: otp, collected_amount: Number(cash || 0) })
+                        { reference: b.dataset.done, otp: otp, collected_amount: cash })
             .then(function (r) { DELIVERY.toast(r.reference + " delivered", "success"); jobs(); earnings(); })
             .catch(function (e) { DELIVERY.toast(e.message, "error"); });
         });
