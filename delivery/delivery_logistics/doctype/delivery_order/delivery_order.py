@@ -12,8 +12,11 @@ class DeliveryOrder(ServiceDocument):
 
     #: the moves a merchant may make on workflow_state from Desk:
     #: the normal kitchen walk Pending -> Accepted -> Preparing -> Ready
+    #: (PENDING -> PREPARING is the portal's Accept button, which accepts
+    #: AND starts the prep in one click)
     MERCHANT_STATE_MOVES = (
         ("PENDING", "ACCEPTED"),
+        ("PENDING", "PREPARING"),
         ("ACCEPTED", "PREPARING"),
         ("ACCEPTED", "READY_FOR_DELIVERY"),
         ("PREPARING", "READY_FOR_DELIVERY"),
@@ -41,9 +44,14 @@ class DeliveryOrder(ServiceDocument):
                            "Pending &rarr; Accepted &rarr; Preparing &rarr; "
                            "Ready for Delivery (from {0}).").format(old),
                          frappe.PermissionError)
-        # route through the state machine so the audit trail is written
+        # route through the state machine so the audit trail is written.
+        # PENDING -> PREPARING (the portal Accept button) walks through
+        # ACCEPTED first so every audit entry follows a legal transition.
         target = self.workflow_state
         self.workflow_state = old
+        if (old, target) == ("PENDING", "PREPARING"):
+            state_machine.set_state(self, "ACCEPTED",
+                                    note=_("Merchant accepted"))
         state_machine.set_state(self, target,
                                 note=_("Merchant updated the status (Desk)"))
         if target in ("ACCEPTED", "PREPARING") and not self.get("ready_at"):
