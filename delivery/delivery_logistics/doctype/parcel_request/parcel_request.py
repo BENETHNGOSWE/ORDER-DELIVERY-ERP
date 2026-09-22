@@ -11,11 +11,24 @@ class ParcelRequest(ServiceDocument):
     SERVICE = "Parcel"
     AMOUNT_FIELD = "tariff_amount"
 
+    def billable_amount(self):
+        """The parcel's price: the Operations-agreed amount when set,
+        otherwise the system-suggested tariff."""
+        return flt(self.get("agreed_amount")) or flt(self.get("tariff_amount"))
+
     def validate(self):
         billing.apply_currency(self)
 
         needs_review, totals = billing.parcel_billing(self)
         self._needs_review = needs_review
+
+        # Operations typed the agreed figure straight on the Desk form:
+        # a parcel still in manual review is now priced.
+        if flt(self.get("agreed_amount")) and self.get("workflow_state") == "UNDER_REVIEW":
+            state_machine.set_state(
+                self, "PRICE_AGREED",
+                note=_("Agreed amount set from Desk ({0})").format(
+                    flt(self.agreed_amount)))
 
         if not self.get("payment_status"):
             self.payment_status = "Pending"

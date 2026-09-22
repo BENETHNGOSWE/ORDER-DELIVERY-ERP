@@ -237,7 +237,9 @@ def dashboard():
         "orders": {"total": sum(orders.values()), "by_state": orders,
                    "revenue": revenue("Delivery Order", "grand_total")},
         "parcels": {"total": sum(parcels.values()), "by_state": parcels,
-                    "revenue": revenue("Parcel Request", "tariff_amount")},
+                    "revenue": flt(frappe.db.sql(
+                        "SELECT COALESCE(SUM(COALESCE(agreed_amount, tariff_amount)),0) "
+                        "FROM `tabParcel Request` WHERE workflow_state='COMPLETED'")[0][0], 2)},
         "transport": {"total": sum(transport.values()), "by_state": transport,
                       "revenue": revenue("Transport Request", "agreed_price")},
         "awaiting_review": frappe.db.count("Parcel Request",

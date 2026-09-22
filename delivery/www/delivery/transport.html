@@ -355,7 +355,7 @@
       special_requirements: document.getElementById("req").value
     }).then(function (r) {
       DELIVERY.toast(r.message, "success");
-      setTimeout(function () { location.href = "/delivery/track?ref=" + r.request; }, 1400);
+      setTimeout(function () { location.href = "/delivery"; }, 1400);
     }).catch(function (e) { DELIVERY.toast(e.message, "error"); b.disabled = false; });
   });
   var b = document.getElementById("pc-burger"), d = document.getElementById("pc-backdrop");

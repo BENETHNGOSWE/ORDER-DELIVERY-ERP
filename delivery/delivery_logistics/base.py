@@ -56,7 +56,7 @@ class ServiceDocument(Document):
             "label": self.state_label(),
             "timeline": state_machine.timeline(self),
             "currency": self.get("currency") or billing._currency(),
-            "amount": flt(self.get(self.AMOUNT_FIELD), 2),
+            "amount": flt(self.amount_due(), 2),
             "payment_status": self.get("payment_status"),
             "payment_method": self.get("payment_method"),
             "driver": self.get("assigned_driver"),
@@ -70,6 +70,11 @@ class ServiceDocument(Document):
             data["otp_code"] = self.get("otp_code")
         return data
 
+    def amount_due(self):
+        """The document's billable amount. Override where a service has a
+        negotiated figure that outranks the standard field (parcels)."""
+        return flt(self.get(self.AMOUNT_FIELD))
+
     # -- payment ----------------------------------------------------------
     def make_payment(self, method=None, phone=None):
         method = method or self.get("payment_method") or payments.COD
@@ -78,7 +83,7 @@ class ServiceDocument(Document):
             frappe.throw(_("{0} is not an available payment method.").format(method),
                          title=_("Payment Method Unavailable"))
 
-        amount = flt(self.get(self.AMOUNT_FIELD))
+        amount = self.amount_due()
         if amount <= 0:
             frappe.throw(_("There is nothing to pay on {0}.").format(self.name),
                          title=_("Nothing To Pay"))
@@ -163,7 +168,7 @@ class ServiceDocument(Document):
                 # checkout skips the payment leg for COD, so the remittance
                 # record is opened here - the driver always settles against it
                 txn = payments.open_cod(self.doctype, self.name,
-                                        flt(self.get(self.AMOUNT_FIELD)),
+                                        self.amount_due(),
                                         self.get("currency"))
             if txn.payment_status != "Paid":
                 collected = flt(collected_amount)

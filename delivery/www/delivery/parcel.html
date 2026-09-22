@@ -353,7 +353,7 @@
     p.phone = phone; p.payment_method = v("pay");
     DELIVERY.call("delivery.api.customer.place_parcel_request", p).then(function (r) {
       DELIVERY.toast("Parcel " + r.parcel + " created", "success");
-      setTimeout(function () { location.href = "/delivery/track?ref=" + r.parcel; }, 900);
+      setTimeout(function () { location.href = "/delivery"; }, 900);
     }).catch(function (e) { DELIVERY.toast(e.message, "error"); b.disabled = false; });
   });
   var b = document.getElementById("pc-burger"), d = document.getElementById("pc-backdrop");

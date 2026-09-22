@@ -22,6 +22,16 @@ class TestCurrency(FrappeTestCase):
     def test_platform_currency_is_honoured(self):
         self.assertEqual(billing._currency(), _settings().currency)
 
+    def test_parcel_agreed_amount_outranks_the_tariff(self):
+        doc = _Fake(doctype="Parcel Request", agreed_amount=6000,
+                    tariff_amount=7400)
+        self.assertEqual(doc.billable_amount(), 6000)
+
+    def test_parcel_without_agreed_amount_bills_the_tariff(self):
+        doc = _Fake(doctype="Parcel Request", agreed_amount=0,
+                    tariff_amount=7400)
+        self.assertEqual(doc.billable_amount(), 7400)
+
     def test_apply_currency_overrides_the_frappe_default(self):
         """
         A Currency *link* field takes its default from the global default

@@ -115,6 +115,8 @@ def my_jobs(state=None, limit=30):
         if dt == "Delivery Order":
             fields += ["customer_name", "customer_phone", "delivery_latitude",
                        "delivery_longitude", "delivery_instructions", "merchant_name_f"]
+        if dt == "Parcel Request":
+            fields += ["agreed_amount"]
 
         rows = frappe.get_all(dt, filters=filters, fields=fields,
                               order_by="creation asc", limit=int(limit))
@@ -153,7 +155,8 @@ def my_jobs(state=None, limit=30):
                 "doctype": dt,
                 "service": service,
                 "state": r.workflow_state,
-                "amount": flt(r.get(amount_field), 2),
+                "amount": (flt(r.get("agreed_amount")) or flt(r.get(amount_field)))
+                          if dt == "Parcel Request" else flt(r.get(amount_field), 2),
                 "currency": r.currency,
                 "payment_status": r.payment_status,
                 "address": address,
