@@ -48,6 +48,13 @@
   </div>
 </section>
 
+<div id="m-search-wrap" style="display:none; margin:0 0 6px">
+  <div style="position:relative">
+    <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9a9aa5"></i>
+    <input id="m-search" class="dl-input" placeholder="Search in this shop&hellip;" autocomplete="off"
+           style="height:46px; padding-left:40px; border-radius:14px">
+  </div>
+</div>
 <h2 class="pc-sec-title"><span class="tic"><i class="fa-solid fa-store"></i></span> <span id="title">Catalogue</span></h2>
 <div id="items" class="dl-grid"><div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-shop"></i>Choose a merchant.</div></div></div>
 
@@ -76,21 +83,20 @@
   }
 
 
-  function load(merchant) {
-    if (!merchant) return;
-    DELIVERY.call("delivery.api.customer.merchant_catalog",
-                  { merchant: merchant })
-      .then(function (data) {
-        var host = document.getElementById("items");
-        document.getElementById("title").textContent = data.merchant;
-        if (!data.items.length) {
-          host.innerHTML = '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-box-open"></i>Nothing published yet.</div></div>';
-          return;
-        }
-        var GRADS = ["linear-gradient(135deg,#f97316,#ef4444)","linear-gradient(135deg,#7c3aed,#a855f7)",
-                     "linear-gradient(135deg,#0ea5e9,#2563eb)","linear-gradient(135deg,#16a34a,#059669)",
-                     "linear-gradient(135deg,#db2777,#9333ea)","linear-gradient(135deg,#ca8a04,#d97706)"];
-        host.innerHTML = data.items.map(function (i, idx) {
+  var ITEMS = [];
+  function paint(list, merchant, q) {
+    var host = document.getElementById("items");
+    if (!list.length) {
+      host.innerHTML = '<div class="pc-card"><div class="dl-empty"><i class="fa-solid fa-' +
+        (q ? "magnifying-glass" : "box-open") + '"></i>' +
+        (q ? 'No item matches &ldquo;' + DELIVERY.esc(q) + '&rdquo; in this shop.'
+           : "Nothing published yet.") + '</div></div>';
+      return;
+    }
+    var GRADS = ["linear-gradient(135deg,#f97316,#ef4444)","linear-gradient(135deg,#7c3aed,#a855f7)",
+                 "linear-gradient(135deg,#0ea5e9,#2563eb)","linear-gradient(135deg,#16a34a,#059669)",
+                 "linear-gradient(135deg,#db2777,#9333ea)","linear-gradient(135deg,#ca8a04,#d97706)"];
+    host.innerHTML = list.map(function (i, idx) {
           var base = (typeof i.base_rate === "number") ? i.base_rate
             : (i.discount_rate ? i.standard_rate * (1 - i.discount_rate / 100) : i.standard_rate);
           var svc = (typeof i.service_fee === "number") ? i.service_fee
@@ -115,20 +121,48 @@
                   (out ? " disabled" : "") + '>' + (out ? "Sold out" : "Add +") + '</button>' +
               '</div></div></div>';
         }).join("");
-        host.querySelectorAll("button[data-item]").forEach(function (b) {
-          b.addEventListener("click", function () {
-            DELIVERY.addToCart(merchant, b.dataset.item, b.dataset.name, b.dataset.rate, 1, {
-              pct: Number(b.dataset.svcpct || 0),
-              fee: Number(b.dataset.svcfee || 0),
-              eff: Number(b.dataset.eff || 0),
-              flat: Number(b.dataset.flat || 0),
-            });
-            cartBar();
-          });
+    host.querySelectorAll("button[data-item]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        DELIVERY.addToCart(merchant, b.dataset.item, b.dataset.name, b.dataset.rate, 1, {
+          pct: Number(b.dataset.svcpct || 0),
+          fee: Number(b.dataset.svcfee || 0),
+          eff: Number(b.dataset.eff || 0),
+          flat: Number(b.dataset.flat || 0),
         });
+        cartBar();
+      });
+    });
+  }
+  function applyFilter(merchant) {
+    var q = (document.getElementById("m-search").value || "").trim().toLowerCase();
+    var list = !q ? ITEMS : ITEMS.filter(function (i) {
+      return (i.item_name || "").toLowerCase().indexOf(q) >= 0
+          || (i.category || "").toLowerCase().indexOf(q) >= 0
+          || (i.description || "").toLowerCase().indexOf(q) >= 0;
+    });
+    paint(list, merchant, q);
+  }
+
+  function load(merchant) {
+    if (!merchant) return;
+    DELIVERY.call("delivery.api.customer.merchant_catalog",
+                  { merchant: merchant })
+      .then(function (data) {
+        document.getElementById("title").textContent = data.merchant;
+        ITEMS = data.items || [];
+        document.getElementById("m-search-wrap").style.display = ITEMS.length ? "block" : "none";
+        document.getElementById("m-search").value = "";
+        paint(ITEMS, merchant, "");
       })
       .catch(function (e) { DELIVERY.toast(e.message, "error"); });
   }
+
+  var mt;
+  document.getElementById("m-search").addEventListener("input", function () {
+    var merchant = chosen;
+    clearTimeout(mt);
+    mt = setTimeout(function () { applyFilter(merchant); }, 160);
+  });
 
   DELIVERY.call("delivery.api.customer.platform_config").then(function (c) {
     DELIVERY.currency = c.currency;
