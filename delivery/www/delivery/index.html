@@ -345,6 +345,8 @@
   @media (max-width:760px){
     /* phones: no "Available now" grid - services & banners below surface instead */
     #items, #grid { display:none !important; }
+    /* ...but an active search always shows its results */
+    body.x-searching #items, body.x-searching #grid { display:block !important; }
     .ck-body{ grid-template-columns:1fr; }
     .ck-col.left{ border-right:none; border-bottom:1px solid var(--line); max-height:none; order:2; }
     .ck-col.right{ max-height:none; order:1; }
@@ -694,33 +696,16 @@
   }
 
   // ---------- items ----------
-  function renderItems(){
-    var q=(document.getElementById("q").value||"").trim().toLowerCase();
-    var sort=document.getElementById("sort").value;
-    var list=ALL.filter(function(it){
-      if(!matchCat(it)) return false;
-      if(!q) return true;
-      return (it.item_name||"").toLowerCase().indexOf(q)>=0
-          || (it.category||"").toLowerCase().indexOf(q)>=0
-          || (it.merchant_name||"").toLowerCase().indexOf(q)>=0;
-    });
-    list.sort(function(a,b){
-      if(sort==="price_asc") return a.rate-b.rate;
-      if(sort==="price_desc") return b.rate-a.rate;
-      if(sort==="fast") return a.prep_minutes-b.prep_minutes;
-      if(sort==="name") return (a.item_name||"").localeCompare(b.item_name||"");
-      return (b.featured?1:0)-(a.featured?1:0) || a.rate-b.rate;
-    });
-    var labelMap={all:"Available now",restaurant:"Restaurant",groceries:"Groceries",drinks:"Drinks",shopping:"Shopping",pharmacy:"Pharmacy & Cosmetics",others:"Others",offers:"Offers"};
-    var onHome = list.length > 8 ? list.slice(0,8) : list;
-    document.getElementById("items-title").textContent=(labelMap[cat]||"Available now")+" ("+list.length+")";
+  var searchSeq = 0;
+  function paintCards(list){
     var host=document.getElementById("grid");
     if(!list.length){ host.innerHTML='<div class="x-empty">No items match. Try another search or category.</div>'; return; }
-    host.innerHTML=onHome.map(function(it,i){
+    host.innerHTML=list.map(function(it,i){
       itemById[it.name]=it;
+      var feat=it.featured||it.is_featured;
       var old=it.discount_rate?'<span class="old">'+money(it.standard_rate)+'</span>':"";
       var off=it.discount_rate?'<span class="x-off">-'+Math.round(it.discount_rate)+'%</span>':"";
-      var pop=it.featured?'<span class="x-pop"><i class="fa-solid fa-star"></i> Popular</span>':"";
+      var pop=feat?'<span class="x-pop"><i class="fa-solid fa-star"></i> Popular</span>':"";
       var soldOut=(it.in_stock!==undefined && it.in_stock<=0);
       var thumb = it.image
         ? '<img src="'+DELIVERY.esc(it.image)+'" alt="'+DELIVERY.esc(it.item_name)+'" class="x-iimg">'
@@ -745,6 +730,59 @@
       });
     });
   }
+  // a real search goes to the server: EVERY published item of EVERY open shop
+  function searchItems(q){
+    var seq=++searchSeq;
+    var sort=document.getElementById("sort").value;
+    var host=document.getElementById("grid");
+    document.getElementById("items-title").textContent='Results for "'+q+'"';
+    host.innerHTML='<div class="x-empty"><i class="fa-solid fa-spinner fa-pulse"></i> Searching&hellip;</div>';
+    DELIVERY.call("delivery.api.customer.browse_items",{search:q, sort:sort, limit:60}).then(function(rows){
+      if(seq!==searchSeq) return;               // a newer keystroke already answered
+      var list=rows||[];
+      document.getElementById("items-title").textContent='Results for "'+q+'" ('+list.length+')';
+      document.body.classList.add("x-searching");   // phones: surface the results
+      if(!list.length){
+        host.innerHTML='<div class="x-empty"><i class="fa-solid fa-magnifying-glass"></i> No products match "'+
+          DELIVERY.esc(q)+'". Try another name, category or shop.</div>';
+        return;
+      }
+      paintCards(list);
+    }).catch(function(e){
+      if(seq!==searchSeq) return;
+      host.innerHTML='<div class="x-empty">Search failed: '+DELIVERY.esc((e&&e.message)||"")+'</div>';
+    });
+  }
+  function renderItems(){
+    var q=(document.getElementById("q").value||"").trim();
+    if(q.length>=2){ searchItems(q); return; }
+    document.body.classList.remove("x-searching");
+    var ql=q.toLowerCase();
+    var sort=document.getElementById("sort").value;
+    var list=ALL.filter(function(it){
+      if(!matchCat(it)) return false;
+      if(!ql) return true;
+      return (it.item_name||"").toLowerCase().indexOf(ql)>=0
+          || (it.category||"").toLowerCase().indexOf(ql)>=0
+          || (it.merchant_name||"").toLowerCase().indexOf(ql)>=0;
+    });
+    list.sort(function(a,b){
+      if(sort==="price_asc") return a.rate-b.rate;
+      if(sort==="price_desc") return b.rate-a.rate;
+      if(sort==="fast") return a.prep_minutes-b.prep_minutes;
+      if(sort==="name") return (a.item_name||"").localeCompare(b.item_name||"");
+      return (b.featured?1:0)-(a.featured?1:0) || a.rate-b.rate;
+    });
+    var labelMap={all:"Available now",restaurant:"Restaurant",groceries:"Groceries",drinks:"Drinks",shopping:"Shopping",pharmacy:"Pharmacy & Cosmetics",others:"Others",offers:"Offers"};
+    var onHome = list.length > 8 ? list.slice(0,8) : list;
+    document.getElementById("items-title").textContent=(labelMap[cat]||"Available now")+" ("+list.length+")";
+    if(!onHome.length){
+      document.getElementById("grid").innerHTML='<div class="x-empty">No items match. Try another search or category.</div>';
+      return;
+    }
+    paintCards(onHome);
+  }
+
 
   // ---------- merchants ----------
   function renderMerchants(rows){
