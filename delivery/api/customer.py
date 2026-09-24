@@ -25,7 +25,15 @@ def _require_login():
     return frappe.session.user
 
 
-GUEST_DOMAIN = "guests.kodatechnologies.co.tz"
+def _guest_domain():
+    """Synthetic namespace for guest login identities - follows the domain
+    actually serving the site, so moving the platform to its own domain
+    (e.g. zanziexpress.co.tz) keeps accounts under the client's name."""
+    try:
+        host = (frappe.request.host or "").split(":")[0]
+    except Exception:
+        host = ""
+    return host or "zanziexpress.co.tz"
 
 
 def _customer_identity(customer_name=None, phone=None):
@@ -44,7 +52,7 @@ def _customer_identity(customer_name=None, phone=None):
     if len(digits) < 7:
         frappe.throw(_("A valid phone number is required to order without an account."),
                      title=_("Phone Required"))
-    email = "guest-{}@{}".format(digits, GUEST_DOMAIN)
+    email = "guest-{}@{}".format(digits, _guest_domain())
     if frappe.db.exists("User", email):
         return email
     full = (customer_name or "Guest " + digits[-4:]).strip() or "Guest"
