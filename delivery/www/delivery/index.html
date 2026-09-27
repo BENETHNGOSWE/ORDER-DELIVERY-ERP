@@ -426,7 +426,7 @@
 <div class="x-app">
   <!-- LEFT SIDEBAR -->
   <aside class="x-side">
-    <a class="x-brand" href="/delivery"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
+    <a class="x-brand" href="/"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
     <nav class="x-nav">
       <a class="active" data-cat="all"><span class="e"><i class="fa-solid fa-house"></i></span> Home</a>
       <a href="/delivery/category?key=restaurant"><span class="e"><i class="fa-solid fa-utensils"></i></span> Restaurant</a>
@@ -445,10 +445,26 @@
       <a href="#items" data-cat="all">Order Now</a>
     </div>
     <div class="x-box">
-      <a id="acct-link" href="{% if frappe.session.user == 'Guest' %}/login{% else %}/delivery/me{% endif %}" style="display:block; text-decoration:none; color:inherit">
+      {% set _u = frappe.session.user %}
+      {% set _in = _u and _u != 'Guest' %}
+      {% set _ops = _in and frappe.db.exists('Has Role', {'parent': _u, 'role': 'Delivery Operations'}) %}
+      {% set _mer = _in and frappe.db.exists('Has Role', {'parent': _u, 'role': 'Merchant User'}) %}
+      {% set _drv = _in and frappe.db.exists('Has Role', {'parent': _u, 'role': 'Driver'}) %}
+      {% if _ops %}
+        {% set _acct_href, _acct_t, _acct_l = '/delivery/operations', 'Operations console', 'Open my dashboard' %}
+      {% elif _mer %}
+        {% set _acct_href, _acct_t, _acct_l = '/delivery/merchant', 'Merchant dashboard', 'Open my dashboard' %}
+      {% elif _drv %}
+        {% set _acct_href, _acct_t, _acct_l = '/delivery/driver', 'Driver dashboard', 'Open my dashboard' %}
+      {% elif _in %}
+        {% set _acct_href, _acct_t, _acct_l = '/delivery/me', 'My account', 'Go to my orders' %}
+      {% else %}
+        {% set _acct_href, _acct_t, _acct_l = '/login', 'Log in', 'Open login page' %}
+      {% endif %}
+      <a id="acct-link" href="{{ _acct_href }}" style="display:block; text-decoration:none; color:inherit">
       <div class="h"><i class="fa-solid fa-user"></i> My account</div>
-      <div class="t">{% if frappe.session.user == 'Guest' %}Log in{% else %}Welcome back{% endif %}</div>
-      <div class="lnk">{% if frappe.session.user == 'Guest' %}Open login page{% else %}Go to my orders{% endif %}</div>
+      <div class="t">{{ _acct_t }}</div>
+      <div class="lnk">{{ _acct_l }}</div>
       </a>
     </div>
     <div class="x-box">
@@ -462,7 +478,7 @@
   <div class="x-col">
     <header class="x-top">
       <button id="x-burger" class="x-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
-      <a class="x-mbrand" href="/delivery"><span class="logo"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span><span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
+      <a class="x-mbrand" href="/"><span class="logo"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span><span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
       <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
       <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
     </header>
@@ -485,7 +501,7 @@
         <a href="/delivery/cart"><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Cart</a>
         <div class="grp">Account</div>
         <a href="/delivery/me"><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
-        <a href="/login?redirect-to=/delivery"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
+        <a href="/login"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
       </nav>
     </aside>
 

@@ -7,18 +7,18 @@
 {% set is_driver = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Driver'}) %}
 {% set here = frappe.request.path if frappe.request else '' %}
 <nav class="dl-nav">
-  <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}>Home</a>
+  <a href="/"{% if here == '/' %} class="active"{% endif %}>Home</a>
   <a href="/delivery/menu">Menu</a>
   <a href="/delivery/cart">Cart (<span data-cart-count>0</span>)</a>
   <a href="/delivery/parcel">Parcel</a>
   <a href="/delivery/transport">Transport</a>
   <a href="/delivery/track">Track</a>
   {% if is_logged_in %}
-    <a href="/delivery/me">My Orders</a>
     {% if is_merchant %}<a href="/delivery/merchant">Merchant</a>{% endif %}
     {% if is_ops or is_admin %}
       <a href="/delivery/operations">Operations</a>{% endif %}
     {% if is_driver %}<a href="/delivery/driver">Driver</a>{% endif %}
+    {% if frappe.db.exists('Has Role', {'parent': frappe.session.user, 'role': 'Delivery Customer'}) %}<a href="/delivery/me">My Orders</a>{% endif %}
     <a href="#" id="pc-nav-logout">Log out</a>
     <script>
     (function () {
@@ -35,6 +35,6 @@
     })();
     </script>
   {% else %}
-    <a href="/login?redirect-to=/delivery">Log in</a>
+    <a href="/login">Log in</a>
   {% endif %}
 </nav>

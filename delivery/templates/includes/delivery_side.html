@@ -5,12 +5,13 @@
 {% set is_ops = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Delivery Operations'}) %}
 {% set is_admin = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'System Manager'}) %}
 {% set is_driver = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Driver'}) %}
+{% set is_customer = is_logged_in and frappe.db.exists('Has Role', {'parent': u, 'role': 'Delivery Customer'}) %}
 {% set here = frappe.request.path if frappe.request else '' %}
 <aside class="pc-side">
   <button id="pc-side-x" class="pc-side-x" type="button" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
-  <a class="pc-logo" href="/delivery"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
+  <a class="pc-logo" href="/"><img src="/assets/delivery/img/logo.png" alt="Zanzi Express" style="width:100%;max-width:172px;height:auto;border-radius:12px;display:block"></a>
   <nav class="pc-nav">
-    <a href="/delivery"{% if here == '/delivery' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
+    <a href="/"{% if here == '/' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-house"></i></span> Home</a>
     <a href="/delivery/menu"{% if here == '/delivery/menu' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-utensils"></i></span> Menu</a>
     <a href="/delivery/cart"{% if here == '/delivery/cart' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-cart-shopping"></i></span> Cart <span class="cnt" data-cart-count>0</span></a>
     <a href="/delivery/parcel"{% if here == '/delivery/parcel' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-box"></i></span> Send a Parcel</a>
@@ -18,13 +19,13 @@
     <a href="/delivery/track"{% if here == '/delivery/track' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
     {% if is_logged_in %}
       <div class="grp">My workspace</div>
-      <a href="/delivery/me"{% if here == '/delivery/me' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>
+      {% if is_customer %}<a href="/delivery/me"{% if here == '/delivery/me' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-boxes-stacked"></i></span> My Orders</a>{% endif %}
       {% if is_merchant %}<a href="/delivery/merchant"{% if here == '/delivery/merchant' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-shop"></i></span> Merchant</a>{% endif %}
       {% if is_driver %}<a href="/delivery/driver"{% if here == '/delivery/driver' %} class="active"{% endif %}><span class="ni"><i class="fa-solid fa-helmet-safety"></i></span> Driver</a>{% endif %}
       <div class="grp">Account</div>
       <a href="#" id="pc-logout"><span class="ni"><i class="fa-solid fa-arrow-right-from-bracket"></i></span> Log out</a>
     {% else %}
-      <a href="/login?redirect-to=/delivery"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
+      <a href="/login"><span class="ni"><i class="fa-solid fa-arrow-right-to-bracket"></i></span> Log in</a>
     {% endif %}
   </nav>
   <script>
