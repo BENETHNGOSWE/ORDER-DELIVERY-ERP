@@ -445,9 +445,11 @@
       <a href="#items" data-cat="all">Order Now</a>
     </div>
     <div class="x-box">
-      <div class="h"><i class="fa-solid fa-location-dot"></i> Deliver to</div>
-      <div class="t">Dar es Salaam</div>
-      <div class="lnk" id="loc-change">Change</div>
+      <a id="acct-link" href="{% if frappe.session.user == 'Guest' %}/login{% else %}/delivery/me{% endif %}" style="display:block; text-decoration:none; color:inherit">
+      <div class="h"><i class="fa-solid fa-user"></i> My account</div>
+      <div class="t">{% if frappe.session.user == 'Guest' %}Log in{% else %}Welcome back{% endif %}</div>
+      <div class="lnk">{% if frappe.session.user == 'Guest' %}Open login page{% else %}Go to my orders{% endif %}</div>
+      </a>
     </div>
     <div class="x-box">
       <div class="h">Need help?</div>
@@ -940,7 +942,7 @@
   var t;
   document.getElementById("q").addEventListener("input", function(){ clearTimeout(t); t=setTimeout(renderItems,220); });
   document.getElementById("sort").addEventListener("change", renderItems);
-  document.getElementById("loc-change").addEventListener("click", function(){ openCheckout(); });
+
 
   // ================= CHECKOUT MODAL =================
   var overlay=document.getElementById("ck-overlay");

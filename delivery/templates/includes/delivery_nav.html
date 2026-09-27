@@ -19,7 +19,21 @@
     {% if is_ops or is_admin %}
       <a href="/delivery/operations">Operations</a>{% endif %}
     {% if is_driver %}<a href="/delivery/driver">Driver</a>{% endif %}
-    <a href="/api/method/logout">Log out</a>
+    <a href="#" id="pc-nav-logout">Log out</a>
+    <script>
+    (function () {
+      window.addEventListener("load", function () {
+        var lo = document.getElementById("pc-nav-logout");
+        if (!lo) return;
+        lo.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          var done = function () { location.href = "/login"; };
+          if (window.DELIVERY && DELIVERY.call) DELIVERY.call("logout").then(done).catch(done);
+          else done();
+        });
+      });
+    })();
+    </script>
   {% else %}
     <a href="/login?redirect-to=/delivery">Log in</a>
   {% endif %}
