@@ -45,6 +45,25 @@ def get_website_user_home_page(user=None):
     return ""
 
 
+def clear_portal_default_workspace(doc, method=None):
+    """
+    Keep User.default_workspace empty for portal actors.
+
+    get_home_page() resolves the user's default workspace LAST and returns
+    its Desk URL, overriding every hook and role route - a merchant or
+    driver with that field set lands in the Desk they never use
+    (the /desk/delivery bug). Portal roles don't get a default workspace.
+    """
+    try:
+        roles = {r.role for r in (doc.get("roles") or [])}
+        portal_only = roles & {"Merchant User", "Driver", "Delivery Customer"}
+        desk_roles = roles & {"System Manager", "Delivery Operations"}
+        if portal_only and not desk_roles and doc.get("default_workspace"):
+            doc.default_workspace = None
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # home-page diagnostics
 # ---------------------------------------------------------------------------

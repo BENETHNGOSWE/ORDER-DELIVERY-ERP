@@ -34,7 +34,9 @@ after_migrate = [
 # Document methods (validate/after_insert), which is the idiomatic path. Wiring
 # doc_events to the same functions as well would run the validate pass twice and
 # draw merchant stock down twice per order.
-doc_events = {}
+doc_events = {
+    "User": {"validate": "delivery.portal.clear_portal_default_workspace"},
+}
 
 # ---------------------------------------------------------------------------
 # Portal / website
