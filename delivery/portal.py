@@ -45,32 +45,6 @@ def get_website_user_home_page(user=None):
     return ""
 
 
-def after_login(login_manager=None):
-    """
-    Send each delivery actor straight to their portal at sign-in.
-
-    ``role_home_page``/``get_website_user_home_page`` only cover Website
-    Users - merchants and drivers created as System Users would land in the
-    Desk they never use. This hook runs for every login; System Managers
-    (the office) keep the Desk.
-    """
-    try:
-        if login_manager is None:
-            return
-        user = frappe.session.user
-        if not user or user in ("Guest", "Administrator"):
-            return
-        roles = set(frappe.get_roles(user))
-        if "System Manager" in roles:
-            return
-        for role in PRECEDENCE:
-            if role in roles:
-                login_manager.redirect_to = ROLE_HOME[role]
-                return
-    except Exception:
-        pass
-
-
 # ---------------------------------------------------------------------------
 # home-page diagnostics
 # ---------------------------------------------------------------------------
