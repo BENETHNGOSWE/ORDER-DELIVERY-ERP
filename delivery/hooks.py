@@ -77,6 +77,7 @@ role_home_page = {
 # 404s; use the callable hook name. Returns "" for non-delivery users so ERPNext
 # falls back to its normal home/desk.
 get_website_user_home_page = "delivery.portal.get_website_user_home_page"
+after_login = "delivery.portal.after_login"
 
 # ---------------------------------------------------------------------------
 # Permissions: portal users may only touch their own service documents

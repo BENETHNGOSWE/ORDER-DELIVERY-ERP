@@ -16,10 +16,10 @@ from frappe import _
 
 #: delivery role -> landing page
 ROLE_HOME = {
-    "Delivery Operations": "/operations",
-    "Merchant User": "/merchant",
-    "Driver": "/driver",
-    "Delivery Customer": "/me",
+    "Delivery Operations": "/delivery/operations",
+    "Merchant User": "/delivery/merchant",
+    "Driver": "/delivery/driver",
+    "Delivery Customer": "/delivery/me",
 }
 
 #: order matters: the most privileged delivery role wins
@@ -43,6 +43,32 @@ def get_website_user_home_page(user=None):
 
     # not a delivery user - let Frappe use its own default
     return ""
+
+
+def after_login(login_manager=None):
+    """
+    Send each delivery actor straight to their portal at sign-in.
+
+    ``role_home_page``/``get_website_user_home_page`` only cover Website
+    Users - merchants and drivers created as System Users would land in the
+    Desk they never use. This hook runs for every login; System Managers
+    (the office) keep the Desk.
+    """
+    try:
+        if login_manager is None:
+            return
+        user = frappe.session.user
+        if not user or user in ("Guest", "Administrator"):
+            return
+        roles = set(frappe.get_roles(user))
+        if "System Manager" in roles:
+            return
+        for role in PRECEDENCE:
+            if role in roles:
+                login_manager.redirect_to = ROLE_HOME[role]
+                return
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
