@@ -636,6 +636,33 @@
   </div>
 </div>
 
+<div id="ok-overlay" style="display:none; position:fixed; inset:0; z-index:9990;
+     background:rgba(23,23,23,.55); align-items:center; justify-content:center; padding:16px">
+  <div class="pc-card" style="max-width:430px; width:100%; padding:26px 24px; text-align:center">
+    <div style="width:54px; height:54px; border-radius:16px; background:var(--purple-light);
+                display:grid; place-items:center; margin:0 auto 14px">
+      <i class="fa-solid fa-circle-check" style="font-size:24px; color:var(--purple)"></i>
+    </div>
+    <h3 style="margin:0 0 4px">Order placed!</h3>
+    <div class="dl-mut" style="margin-bottom:14px">Copy this tracking number &mdash; you will use it on the
+      <b>Track Order</b> page to follow your delivery.</div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <input id="ok-ref" class="dl-input" readonly
+             style="text-align:center; font-weight:800; letter-spacing:1px; flex:1">
+      <button id="ok-copy" class="dl-btn sm" style="min-height:44px; white-space:nowrap"><i class="fa-regular fa-copy"></i> Copy</button>
+    </div>
+    <div id="ok-otp-wrap" style="display:none; margin-top:14px; background:var(--purple-light);
+         border:1.5px dashed var(--purple); border-radius:12px; padding:10px 14px">
+      <span style="font-size:13px; font-weight:700; color:var(--purple-dark)">Handoff code &mdash; show it to the driver on delivery:</span>
+      <b id="ok-otp" style="display:block; font-size:22px; letter-spacing:8px; color:var(--purple-dark)"></b>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:18px">
+      <button id="ok-home" class="dl-btn sec" style="flex:1">Home</button>
+      <button id="ok-track" class="dl-btn" style="flex:1.4"><i class="fa-solid fa-location-dot"></i> Track my order</button>
+    </div>
+  </div>
+</div>
+
 <script src="/assets/delivery/js/delivery_portal.js"></script>
 <script>
 (function () {
@@ -1094,9 +1121,29 @@
     }).then(function(r){
       DELIVERY.cart=[]; DELIVERY.cartMerchant=null; DELIVERY.saveCart(); renderCart();
       closeCheckout(); btn.disabled=false; btn.textContent="Place order";
-      DELIVERY.toast("Order "+r.order+" placed!","success");
-      setTimeout(function(){ openTrack(r.order); }, 400);
+      showSuccess(r);
     }).catch(function(e){ DELIVERY.toast(e.message,"error"); btn.disabled=false; btn.textContent="Place order"; });
+
+    // ----- order-success dialog: copy the tracking number, keep the code -----
+    var okOv=document.getElementById("ok-overlay");
+    function showSuccess(r){
+      document.getElementById("ok-ref").value=r.order;
+      var w=document.getElementById("ok-otp-wrap");
+      if(r.otp_code){ w.style.display="block"; document.getElementById("ok-otp").textContent=r.otp_code; }
+      else{ w.style.display="none"; }
+      okOv.style.display="flex";
+    }
+    document.getElementById("ok-copy").addEventListener("click",function(){
+      var inp=document.getElementById("ok-ref"), b=this;
+      var done=function(){ b.innerHTML='<i class="fa-solid fa-check"></i> Copied';
+        setTimeout(function(){ b.innerHTML='<i class="fa-regular fa-copy"></i> Copy'; },1600); };
+      if(navigator.clipboard) navigator.clipboard.writeText(inp.value).then(done).catch(function(){ inp.select(); });
+      else inp.select();
+    });
+    document.getElementById("ok-track").addEventListener("click",function(){
+      openTrack(document.getElementById("ok-ref").value);
+    });
+    document.getElementById("ok-home").addEventListener("click",function(){ location.href="/"; });
   });
 
   // open modal from cart panel + mobile bar (stay on home)
