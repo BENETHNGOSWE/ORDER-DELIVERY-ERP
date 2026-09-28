@@ -110,33 +110,31 @@
 </main>
 </div>
 
-<div id="ok-overlay" style="display:none; position:fixed; inset:0; z-index:9990;
-     background:rgba(23,23,23,.55); align-items:center; justify-content:center; padding:16px">
-  <div class="pc-card" style="max-width:430px; width:100%; padding:26px 24px; text-align:center">
-    <div style="width:54px; height:54px; border-radius:16px; background:var(--purple-light);
-                display:grid; place-items:center; margin:0 auto 14px">
-      <i class="fa-solid fa-circle-check" style="font-size:24px; color:var(--purple)"></i>
+<div id="ok-overlay" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(20,20,20,.62); align-items:center; justify-content:center; padding:16px">
+  <div style="background:#ffffff; border-radius:18px; box-shadow:0 24px 64px rgba(0,0,0,.35); max-width:440px; width:100%; padding:28px 24px; text-align:center">
+    <div style="width:54px; height:54px; border-radius:16px; background:#FDECEC; display:grid; place-items:center; margin:0 auto 14px">
+      <i class="fa-solid fa-circle-check" style="font-size:24px; color:#C6050C"></i>
     </div>
-    <h3 style="margin:0 0 4px">Order placed!</h3>
-    <div class="dl-mut" style="margin-bottom:14px">Copy this tracking number &mdash; you will use it on the
-      <b>Track Order</b> page to follow your delivery.</div>
+    <h3 style="all:unset; display:block; font-size:20px; font-weight:800; color:#171717; margin:0 0 6px">Order placed!</h3>
+    <div style="font-size:13.5px; line-height:1.5; color:#6b7280; margin-bottom:14px">Copy this tracking number &mdash; you will use it on the
+      <b style="color:#374151">Track Order</b> page to follow your delivery.</div>
     <div style="display:flex; gap:8px; align-items:center">
-      <input id="ok-ref" class="dl-input" readonly
-             style="text-align:center; font-weight:800; letter-spacing:1px; flex:1">
-      <button id="ok-copy" class="dl-btn sm" style="min-height:44px; white-space:nowrap"><i class="fa-regular fa-copy"></i> Copy</button>
+      <input id="ok-ref" readonly
+             style="flex:1; min-width:0; text-align:center; font-weight:800; letter-spacing:1px; font-size:15px; padding:12px 10px; background:#FAFAFA; border:1.5px solid #e5e7eb; border-radius:10px; color:#171717; outline:none">
+      <button id="ok-copy" style="min-height:46px; white-space:nowrap; display:inline-flex; align-items:center; gap:8px; padding:0 18px; background:#C6050C; color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer"><i class="fa-regular fa-copy"></i> Copy</button>
     </div>
-    <div id="ok-otp-wrap" style="display:none; margin-top:14px; background:var(--purple-light);
-         border:1.5px dashed var(--purple); border-radius:12px; padding:10px 14px">
-      <span style="font-size:13px; font-weight:700; color:var(--purple-dark)">Handoff code &mdash; show it to the driver on delivery:</span>
-      <b id="ok-otp" style="display:block; font-size:22px; letter-spacing:8px; color:var(--purple-dark)"></b>
+    <div id="ok-otp-wrap" style="display:none; margin-top:14px; background:#FDECEC; border:1.5px dashed #C6050C; border-radius:12px; padding:10px 14px">
+      <span style="font-size:13px; font-weight:700; color:#8F0409">Handoff code &mdash; show it to the driver on delivery:</span>
+      <b id="ok-otp" style="display:block; font-size:22px; letter-spacing:8px; color:#8F0409; margin-top:2px"></b>
     </div>
     <div style="display:flex; gap:10px; margin-top:18px">
-      <button id="ok-home" class="dl-btn sec" style="flex:1">Home</button>
-      <button id="ok-track" class="dl-btn" style="flex:1.4"><i class="fa-solid fa-location-dot"></i> Track my order</button>
+      <button id="ok-home" style="flex:1; min-height:46px; background:#fff; color:#171717; border:1.5px solid #e5e7eb; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer">Home</button>
+      <button id="ok-track" style="flex:1.4; min-height:46px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:#C6050C; color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer"><i class="fa-solid fa-location-dot"></i> Track my order</button>
     </div>
   </div>
 </div>
 
+<script src="/assets/delivery/js/delivery_portal.js"></script>
 <script src="/assets/delivery/js/delivery_portal.js"></script>
 <script>
 (function () {
