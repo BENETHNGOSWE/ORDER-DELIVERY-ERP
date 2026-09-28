@@ -66,7 +66,11 @@ class ServiceDocument(Document):
             "picked_up_at": str(self.get("picked_up_at") or ""),
             "completed_at": str(self.get("completed_at") or ""),
         }
-        if privileged:
+        # the handoff code belongs to the CUSTOMER - they must show it to the
+        # driver at the door. Guest-placed orders have no session to check the
+        # ownership against, so expose it while the job is still moving and
+        # stop once it is COMPLETED/CANCELLED (then it is meaningless anyway).
+        if privileged or self.get("workflow_state") not in state_machine.TERMINAL:
             data["otp_code"] = self.get("otp_code")
         return data
 

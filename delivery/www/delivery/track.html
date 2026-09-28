@@ -97,6 +97,12 @@
       return '<span class="' + cls + '">' + s.replace(/_/g, " ") + "</span>";
     }).join("");
 
+    var otp = (t.otp_code && t.state !== "COMPLETED" && t.state !== "CANCELLED")
+      ? '<div style="margin-top:14px; display:inline-flex; align-items:center; gap:10px; background:var(--purple-light); border:1.5px dashed var(--purple); border-radius:12px; padding:10px 14px">' +
+        '<i class="fa-solid fa-key" style="color:var(--purple)"></i>' +
+        '<span style="font-size:13px; font-weight:700; color:var(--purple-dark)">Handoff code &mdash; show this to the driver on delivery:</span>' +
+        '<b style="font-size:20px; letter-spacing:6px; color:var(--purple-dark)">' + DELIVERY.esc(t.otp_code) + '</b></div>'
+      : "";
     var hist = (t.timeline || []).map(function (h) {
       return "<tr><td>" + DELIVERY.esc(h.timestamp || "") + "</td><td>" +
         DELIVERY.esc(h.label || h.state) + "</td><td>" + DELIVERY.esc(h.by || "") +
@@ -107,11 +113,10 @@
       '<div class="pc-card"><div class="dl-between">' +
         "<h3>" + DELIVERY.esc(t.reference) + " &middot; " + DELIVERY.esc(t.service) + "</h3>" +
         DELIVERY.statePill(t.state) + "</div>" +
-        '<div class="dl-steps">' + steps + "</div>" +
-        '<div class="dl-mut">Amount ' + DELIVERY.fmt(t.amount) + " &middot; " +
+        '<div class="dl-steps">' + steps + "</div>" + otp +
+        '<div class="dl-mut" style="margin-top:12px">Amount ' + DELIVERY.fmt(t.amount) + " &middot; " +
           DELIVERY.esc(t.payment_status || "") + " &middot; " + DELIVERY.esc(t.payment_method || "") +
           (t.driver_name ? " &middot; driver <b>" + DELIVERY.esc(t.driver_name) + "</b>" : "") +
-          (t.otp_code ? " &middot; handoff code <b>" + DELIVERY.esc(t.otp_code) + "</b>" : "") +
         "</div></div>" +
       '<div class="pc-card" style="margin-top:16px"><h3><i class="fa-solid fa-clock-rotate-left"></i> History</h3>' +
         '<div class="dl-twrap"><table class="dl-table"><thead><tr><th>When</th><th>State</th><th>By</th><th>Note</th>' +
