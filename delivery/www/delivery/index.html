@@ -440,7 +440,7 @@
       <a href="/delivery/track"><span class="e"><i class="fa-solid fa-location-dot"></i></span> Track Order</a>
     </nav>
     <div class="x-promo">
-      <h4>Free delivery</h4><p>On your first orders!</p>
+      <h4>ORDER WITH US TODAY.</h4>
       <div class="art"><i class="fa-solid fa-motorcycle"></i></div>
       <a href="#items" data-cat="all">Order Now</a>
     </div>
@@ -469,7 +469,7 @@
     </div>
     <div class="x-box">
       <div class="h">Need help?</div>
-      <div class="row"><i class="fa-solid fa-phone"></i> <span id="help-phone">+255 712 345 678</span></div>
+      <div class="row"><i class="fa-solid fa-phone"></i> <span id="help-phone">0774484383</span></div>
       <div class="row"><i class="fa-solid fa-envelope"></i> support@delivery.co.tz</div>
     </div>
   </aside>
@@ -479,7 +479,7 @@
     <header class="x-top">
       <button id="x-burger" class="x-burger" type="button" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
       <a class="x-mbrand" href="/"><span class="logo"><img src="/assets/delivery/img/logo-mark.png" alt=""/></span><span class="bt"><b>Zanzi Express</b><small>Fast &amp; Reliable Island Delivery</small></span></a>
-      <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Dar es Salaam <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
+      <div class="x-deliver"><span class="pin"><i class="fa-solid fa-location-dot"></i></span><span><small>Deliver to</small><b>Tanzania <i class="fa-solid fa-chevron-down" style="font-size:11px"></i></b></span></div>
       <div class="x-search"><span><i class="fa-solid fa-magnifying-glass"></i></span><input id="q" placeholder="What would you like to order?" autocomplete="off"><span class="flt"><i class="fa-solid fa-sliders"></i></span></div>
     </header>
 
@@ -532,7 +532,7 @@
     <div class="x-banners" style="margin-top:22px">
       <div class="x-banner" style="background:linear-gradient(135deg,#DC0A12,#8F0409)"><h4>Transport</h4><p>Point-to-point trips with live GPS tracking.</p><a class="b" href="/delivery/transport">Request Now</a><span class="em"><img src="/assets/delivery/img/banner-transport.jpg" alt="Transport"></span></div>
       <div class="x-banner" style="background:linear-gradient(135deg,#0ea5e9,#15803d)"><h4>Send a Parcel</h4><p>Door-to-door parcels, instant quote, delivered fast.</p><a class="b" href="/delivery/parcel">Send Now</a><span class="em"><img src="/assets/delivery/img/banner-parcel.jpg" alt="Delivery parcel"></span></div>
-      <div class="x-banner" style="background:linear-gradient(135deg,#fb923c,#ea580c)"><h4>Support</h4><p>We're here for you &mdash; call <b>+255 620 484 383</b></p><a class="b" href="tel:+255620484383">Call Now</a><span class="em"><img src="/assets/delivery/img/banner-support.jpg" alt="Support"></span></div>
+      <div class="x-banner" style="background:linear-gradient(135deg,#fb923c,#ea580c)"><h4>Support</h4><p>We're here for you &mdash; call <b>0774484383</b></p><a class="b" href="tel:0774484383">Call Now</a><span class="em"><img src="/assets/delivery/img/banner-support.jpg" alt="Support"></span></div>
     </div>
   </div>
 
@@ -1245,7 +1245,7 @@
 
   // wire all "Track" links/buttons to open the modal instead of navigating
   document.querySelectorAll('a[href="/delivery/track"], a[href="/delivery/track?"]').forEach(function(a){
-    a.setAttribute("href","javascript:void(0)"); a.addEventListener("click",openTrack);
+    a.setAttribute("href","javascript:void(0)"); a.addEventListener("click",function(){ openTrack(""); });
   });
 
   // auto-open track when returning from an order (?ref=...)
