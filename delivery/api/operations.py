@@ -387,6 +387,34 @@ def reports(from_date=None, to_date=None):
     share = billing.driver_fee_share_pct()
     all_fees = sum(flt(r.delivery_fee) for r in completed_all)
 
+    # -- parcel & transport: the company's commission on the agreed price ---
+    # Settings say the commission % the company KEEPS (parcel margin 40%,
+    # transport commission 30% by default): revenue = agreed x pct / 100.
+    def _rate(field, default):
+        try:
+            v = flt(frappe.db.get_single_value("Logistics Settings", field))
+        except Exception:
+            v = 0.0
+        return v if 0 < v <= 100 else default
+
+    parcel_pct = _rate("parcel_margin_rate", 40.0)
+    transport_pct = _rate("transport_commission_rate", 30.0)
+    period_window = [fd + " 00:00:00", td + " 23:59:59"]
+    parcels = frappe.get_all("Parcel Request",
+                             filters={"workflow_state": "COMPLETED",
+                                      "creation": ["between", period_window]},
+                             fields=["agreed_amount", "tariff_amount"])
+    transports = frappe.get_all("Transport Request",
+                                filters={"workflow_state": "COMPLETED",
+                                         "creation": ["between", period_window]},
+                                fields=["agreed_price", "suggested_fare"])
+    # binding price = agreed figure; blank falls back to the system tariff
+    parcel_take = sum((flt(p.agreed_amount) or flt(p.tariff_amount)) for p in parcels)
+    transport_take = sum((flt(t.agreed_price) or flt(t.suggested_fare)) for t in transports)
+    parcel_revenue = round(parcel_take * parcel_pct / 100.0, 2)
+    transport_revenue = round(transport_take * transport_pct / 100.0, 2)
+    platform_total = round(sel_fees * (100 - share) / 100.0 + sel_service, 2)
+
     sel_orders = len(completed_all)
     sel_items = round(sum(flt(r.items_total) for r in completed_all), 2)
     sel_service = round(sum(flt(r.service_fee_total) for r in completed_all), 2)
@@ -422,7 +450,16 @@ def reports(from_date=None, to_date=None):
             "merchant_items": sel_items,
             "delivery_office_share": round(sel_fees * (100 - share) / 100.0, 2),
             "service_fees": sel_service,
-            "total": round(sel_fees * (100 - share) / 100.0 + sel_service, 2),
+            "total": platform_total,
+        },
+        "service_revenues": {
+            "parcel_pct": parcel_pct,
+            "transport_pct": transport_pct,
+            "parcel_orders": len(parcels),
+            "transport_orders": len(transports),
+            "parcel_revenue": parcel_revenue,
+            "transport_revenue": transport_revenue,
+            "total": round(platform_total + parcel_revenue + transport_revenue, 2),
         },
         "driver_share_pct": share,
         "recent_orders": recent,

@@ -130,7 +130,14 @@ frappe.pages['delivery-reports'].on_page_load = function (wrapper) {
 			stat('fa-building-columns', money(d.platform_revenue.delivery_office_share), 'Office 30% of fees') +
 			stat('fa-percent', money(d.platform_revenue.service_fees), 'Service charges') +
 			stat('fa-motorcycle', money(DTOTAL), 'Driver payouts (' + (d.driver_share_pct || 70) + '% of fees)') +
-			stat('fa-calendar-day', d.selected.orders, 'Completed orders in period'));
+			stat('fa-calendar-day', d.selected.orders, 'Completed orders in period') +
+			(function () {
+				var sv = d.service_revenues || { parcel_pct: 0, transport_pct: 0,
+					parcel_revenue: 0, transport_revenue: 0, total: 0 };
+				return stat('fa-box', money(sv.parcel_revenue), 'Parcel revenue (' + sv.parcel_pct + '% of agreed)') +
+					stat('fa-car-side', money(sv.transport_revenue), 'Transport revenue (' + sv.transport_pct + '% of fare)') +
+					stat('fa-coins', money(sv.total), 'Total platform revenue (all services)');
+			})());
 
 		var per = [['Today', d.today], ['Last 7 days', d.week], ['This month', d.month], ['All time', d.all_time]];
 		$('#dlrep-periods').html(
