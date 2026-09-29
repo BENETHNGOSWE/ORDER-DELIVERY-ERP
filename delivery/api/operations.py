@@ -413,7 +413,6 @@ def reports(from_date=None, to_date=None):
     transport_take = sum((flt(t.agreed_price) or flt(t.suggested_fare)) for t in transports)
     parcel_revenue = round(parcel_take * parcel_pct / 100.0, 2)
     transport_revenue = round(transport_take * transport_pct / 100.0, 2)
-    platform_total = round(sel_fees * (100 - share) / 100.0 + sel_service, 2)
 
     sel_orders = len(completed_all)
     sel_items = round(sum(flt(r.items_total) for r in completed_all), 2)
@@ -450,7 +449,7 @@ def reports(from_date=None, to_date=None):
             "merchant_items": sel_items,
             "delivery_office_share": round(sel_fees * (100 - share) / 100.0, 2),
             "service_fees": sel_service,
-            "total": platform_total,
+            "total": round(sel_fees * (100 - share) / 100.0 + sel_service, 2),
         },
         "service_revenues": {
             "parcel_pct": parcel_pct,
@@ -459,7 +458,8 @@ def reports(from_date=None, to_date=None):
             "transport_orders": len(transports),
             "parcel_revenue": parcel_revenue,
             "transport_revenue": transport_revenue,
-            "total": round(platform_total + parcel_revenue + transport_revenue, 2),
+            "total": round(sel_fees * (100 - share) / 100.0 + sel_service
+                             + parcel_revenue + transport_revenue, 2),
         },
         "driver_share_pct": share,
         "recent_orders": recent,
