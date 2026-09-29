@@ -67,11 +67,29 @@
 .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px;
   font-weight: 700; letter-spacing: .03em; }
 .s-req { background: #e2e8f0; color: #334155; } .s-rev { background: #fef3c7; color: #92400e; }
-.s-quo { background: #e0e7ff; color: #3730a3; } .s-pen { background: #ffedd5; color: #9a3412; }
-.s-acc { background: var(--dl-brand-l); color: var(--dl-brand-d); } .s-pre { background: #fce7f3; color: #9d174d; }
-.s-rdy { background: #FDC702; color: #1a1a1a; }
+.s-quo { background: #e0e7ff; color: #3730a3; }
+/* NEEDS ACTION - solid colors + pulsing dot */
+.s-pen { background: #FDC702; color: #1a1a1a; }
+.s-rdy { background: #C6050C; color: #ffffff; }
+.s-pen::before, .s-rdy::before { content: "\25CF"; font-size: 8px; vertical-align: 1px;
+  margin-right: 6px; animation: dl-blink 1.2s ease-in-out infinite; }
+@keyframes dl-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+/* IN FLIGHT - calm tints */
+.s-acc { background: #FDECEC; color: #8F0409; } .s-pre { background: #fed7aa; color: #9a3412; }
 .s-drv { background: #e0e7ff; color: #3730a3; } .s-trn { background: #cffafe; color: #155e75; }
-.s-don { background: #dcfce7; color: #166534; } .s-can { background: #fee2e2; color: #991b1b; }
+.s-don { background: #dcfce7; color: #166534; } .s-can { background: #e2e8f0; color: #475569; }
+/* attention tints for table rows and cards */
+tr.attn-new { background: #FFFBEA; } tr.attn-ready { background: #FFF1F0; }
+tr.attn-new:hover { background: #FFF6DC; } tr.attn-ready:hover { background: #FFE9E7; }
+tr.attn-new td:first-child { border-left: 3px solid #FDC702; }
+tr.attn-ready td:first-child { border-left: 3px solid #C6050C; }
+.pc-card.drv-attn { border-left: 4px solid #FDC702; }
+/* status filter chips */
+.dl-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.dl-chip { cursor: pointer; user-select: none; border: 1px solid var(--dl-line); background: #fff;
+  color: var(--dl-mut); padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700; }
+.dl-chip:hover { border-color: var(--dl-brand); color: var(--dl-brand-d); }
+.dl-chip.on { background: var(--dl-brand); border-color: var(--dl-brand); color: #fff; }
 
 .dl-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .dl-nav a { text-decoration: none; color: var(--dl-mut); background: #fff;

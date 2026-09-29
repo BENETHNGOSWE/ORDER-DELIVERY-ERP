@@ -169,6 +169,18 @@
     },
 
     /* ---- state pill ---- */
+    // urgency groups: which states need someone to ACT right now
+    stateTone: function (state) {
+      return {
+        PENDING: "new",                    // merchant must accept -> yellow
+        ACCEPTED: "kitchen", PREPARING: "kitchen",
+        READY_FOR_DELIVERY: "ready",       // needs a driver -> red
+        DRIVER_ASSIGNED: "away", PICKED_UP: "away",
+        COMPLETED: "done", CANCELLED: "cancel",
+        REQUESTED: "flow", UNDER_REVIEW: "flow", PRICE_AGREED: "flow",
+      }[state] || "flow";
+    },
+
     statePill: function (state) {
       var cls = {
         REQUESTED: "s-req", UNDER_REVIEW: "s-rev", PRICE_AGREED: "s-quo",

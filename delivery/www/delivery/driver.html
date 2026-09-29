@@ -272,7 +272,8 @@
               '"><i class="fa-solid fa-clipboard-check"></i> Complete handoff' +
               (j.payment_status === "Paid" ? " (paid online)" : "") + '</button>';
         }
-        return '<div class="pc-card" style="margin-bottom:14px"><div class="dl-between">' +
+        var ac = j.state === "DRIVER_ASSIGNED" ? " drv-attn" : "";
+        return '<div class="pc-card' + ac + '" style="margin-bottom:14px"><div class="dl-between">' +
           '<div style="display:flex; align-items:center; gap:13px; min-width:0">' +
             '<span class="dl-stat-ic"><i class="fa-solid ' +
               (j.service === "Transport" ? "fa-car-side" : "fa-box") + '"></i></span>' +

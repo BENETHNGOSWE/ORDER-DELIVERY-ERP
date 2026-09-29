@@ -175,6 +175,8 @@
     }).catch(function () {});
   }
 
+  var kFilter = "all";
+
   function kitchen() {
     DELIVERY.call("delivery.api.merchant.active_orders").then(function (rows) {
       var host = document.getElementById("kitchen");
@@ -183,7 +185,21 @@
         return;
       }
       var methods = ["Cash On Delivery", "M-Pesa", "Tigo Pesa", "Card"];
-      host.innerHTML = '<div class="dl-twrap"><table class="dl-table"><thead><tr><th>Order</th><th>Total</th><th>State</th>' +
+      var counts = {};
+      rows.forEach(function (o) {
+        var t = DELIVERY.stateTone(o.workflow_state);
+        counts[t] = (counts[t] || 0) + 1;
+      });
+      var chips = '<div class="dl-chips">' +
+        [["all", "All", rows.length], ["new", "New", counts.new || 0],
+         ["kitchen", "Kitchen", counts.kitchen || 0], ["ready", "Ready", counts.ready || 0],
+         ["away", "On the way", counts.away || 0]]
+          .filter(function (c) { return c[0] === "all" || c[2] > 0; })
+          .map(function (c) {
+            return '<span class="dl-chip' + (kFilter === c[0] ? " on" : "") + '" data-f="' + c[0] + '">' +
+              c[1] + " (" + c[2] + ")</span>";
+          }).join("") + "</div>";
+      host.innerHTML = chips + '<div class="dl-twrap"><table class="dl-table"><thead><tr><th>Order</th><th>Total</th><th>State</th>' +
         '<th>Payment</th><th></th></tr></thead><tbody>' +
         rows.map(function (o) {
           var acts = "";
@@ -207,13 +223,30 @@
             }).join("") + "</select> " +
             '<button class="dl-btn sm sec" data-paysave="' + o.name +
             '"><i class="fa-solid fa-floppy-disk"></i> Save</button>';
-          return "<tr><td>" + o.name + "<br><span class='dl-mut'>" +
+          var tone = DELIVERY.stateTone(o.workflow_state);
+          var attn = tone === "new" ? " attn-new" : tone === "ready" ? " attn-ready" : "";
+          return "<tr data-tone=\"" + tone + "\" class=\"" + attn.trim() + "\"><td>" + o.name + "<br><span class='dl-mut'>" +
             DELIVERY.esc(o.customer_name || "") + "</span></td>" +
             "<td>" + DELIVERY.fmt(o.grand_total) + "</td>" +
             "<td>" + DELIVERY.statePill(o.workflow_state) + "</td>" +
             "<td>" + pay + "</td>" +
             "<td>" + acts + "</td></tr>";
         }).join("") + "</tbody></table></div>";
+
+      host.querySelectorAll(".dl-chip").forEach(function (ch) {
+        ch.addEventListener("click", function () {
+          kFilter = ch.dataset.f;
+          host.querySelectorAll(".dl-chip").forEach(function (x) { x.classList.toggle("on", x === ch); });
+          host.querySelectorAll("tr[data-tone]").forEach(function (tr) {
+            tr.style.display = (kFilter === "all" || tr.dataset.tone === kFilter) ? "" : "none";
+          });
+        });
+      });
+      if (kFilter !== "all") {
+        host.querySelectorAll("tr[data-tone]").forEach(function (tr) {
+          tr.style.display = tr.dataset.tone === kFilter ? "" : "none";
+        });
+      }
 
       host.querySelectorAll("[data-prep]").forEach(function (b) {
         b.addEventListener("click", function () {
