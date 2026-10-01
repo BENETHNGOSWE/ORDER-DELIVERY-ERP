@@ -154,27 +154,24 @@ def resolve_distance_km(merchant=None, dest_lat=0, dest_lng=0,
     """
     Server-side km for food/retail pricing, in order of truth:
 
-    1. merchant pin -> drop-off pin (map pin / GPS from checkout),
-    2. geocode the typed address, then the same pin math,
-    3. the zone's default ``distance_km``.
+    1. merchant pin -> drop-off pin (map pin / GPS from checkout) - the
+       ONLY distance driver: km are computed from the customer's pin
+       (search result or Use my location) and nothing else,
+    2. the zone's default ``distance_km``.
+
+    The typed address / notes field is supporting information for the
+    driver and is deliberately NOT geocoded - distance from a typed
+    place name was wrong (user report). place_order() rejects orders
+    without a pin before reaching here.
 
     Returns ``{"km", "source", "lat", "lng"}`` - lat/lng are the drop-off
-    coordinates the km came from (pin first, geocoded second) so checkout can
-    store them for tracking. A client-supplied distance is never used.
+    pin so checkout can store them for tracking. A client-supplied
+    distance is never used.
     """
     km = road_km(merchant, dest_lat, dest_lng)
     if km:
         return {"km": km, "source": "pin",
                 "lat": flt(dest_lat, 6), "lng": flt(dest_lng, 6)}
-    if address and (not flt(dest_lat) or not flt(dest_lng)):
-        try:
-            from delivery.delivery_logistics import geocode
-            lat, lng = geocode.geocode(address)
-        except Exception:
-            lat, lng = None, None
-        km = road_km(merchant, lat, lng)
-        if km:
-            return {"km": km, "source": "address", "lat": lat, "lng": lng}
     _base, _per_km, zone_km = zone_fees(zone)
     if flt(zone_km):
         return {"km": flt(zone_km), "source": "zone", "lat": 0, "lng": 0}

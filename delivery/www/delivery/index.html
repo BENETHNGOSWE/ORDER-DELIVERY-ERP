@@ -574,13 +574,13 @@
       <!-- LEFT: delivery details -->
       <div class="ck-col left">
         <div class="ck-label">Delivery location</div>
+        <div style="font-size:12.5px; color:#6b7280; margin-top:-2px; margin-bottom:6px; line-height:1.45">
+          <i class="fa-solid fa-circle-info" style="color:#C6050C; margin-right:4px"></i>
+          Location not available? Use the <b style="color:#374151">Use my location</b> button below.</div>
         <div class="ck-geowrap">
           <input class="ck-input" id="ck-search" placeholder="Search your hotel, apartment, street or area…" autocomplete="off">
           <div class="ck-geo-res" id="ck-geo-res" style="display:none"></div>
         </div>
-<div style="font-size:12.5px; color:#6b7280; margin-top:6px; line-height:1.45">
-      <i class="fa-solid fa-circle-info" style="color:#C6050C; margin-right:4px"></i>
-      Location not available? Use the <b style="color:#374151">Use my location</b> button below.</div>
         <div class="ck-geobtns">
           <button class="ck-btn ghost" id="ck-myloc"><i class="fa-solid fa-crosshairs"></i> Use my location</button>
           <button class="ck-btn" id="ck-clear">Clear</button>
@@ -588,7 +588,7 @@
         <div id="ck-map"></div>
         <div class="ck-geohint" id="ck-hint"></div>
 
-        <div class="ck-label">Delivery address / notes for the driver</div>
+        <div class="ck-label">Notes for the driver / additional information</div>
         <textarea class="ck-input" id="ck-addr" rows="2" placeholder="e.g. Slipway Villas, Block B, Apt 12 — or describe where to meet you"></textarea>
         <div class="ck-label">Your name</div>
         <input class="ck-input" id="ck-name" placeholder="e.g. Amina Juma">
@@ -1100,17 +1100,16 @@
     var btn=this;
     if(!DELIVERY.cart.length){ DELIVERY.toast("Cart is empty.","error"); return; }
     var search=document.getElementById("ck-search").value.trim();
-    var addr=document.getElementById("ck-addr").value.trim() || search;
     var cname=document.getElementById("ck-name").value.trim();
     var cphone=document.getElementById("ck-phone").value.trim();
     if(!cname){ DELIVERY.toast("Please enter your name.","error"); return; }
     if(!cphone){ DELIVERY.toast("Please enter your phone number.","error"); return; }
-    if(!addr && destLat===null){ DELIVERY.toast("Please choose a delivery location or type the address.","error"); return; }
+    if(destLat===null||destLng===null){ DELIVERY.toast("Please select a delivery location (search or Use my location).","error"); return; }
     btn.disabled=true; btn.textContent="Placing order…";
     DELIVERY.call("delivery.api.customer.place_order",{
       merchant:DELIVERY.cartMerchant,
       items:DELIVERY.cart.map(function(l){ return {item:l.item, qty:l.qty}; }),
-      delivery_address:addr || ("Pinned location ("+destLat.toFixed(5)+", "+destLng.toFixed(5)+")"),
+      delivery_address:search || ("Pinned location ("+destLat.toFixed(5)+", "+destLng.toFixed(5)+")"),
       order_type:"Food",
       delivery_zone:document.getElementById("ck-zone").value||null,
       payment_method:document.getElementById("ck-pay").value||"Cash On Delivery",

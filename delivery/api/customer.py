@@ -319,10 +319,12 @@ def quote_delivery_fee(merchant=None, zone=None, dest_lat=None, dest_lng=None,
     """
     Live fee preview for the cart (SRS 3.1 step 2).
 
-    Distance is resolved on the SERVER: merchant pin -> drop-off pin (map
-    pin / GPS), then the typed address, then the zone default. The legacy
-    client ``distance_km`` argument is accepted for compatibility but
-    IGNORED - a customer can no longer shrink the fee by typing less.
+    Distance is resolved on the SERVER: merchant pin -> drop-off pin
+    (map pin / GPS), then the zone default. The typed address is
+    supporting information only and is NEVER used to compute km - the
+    customer's pin (search result or Use my location) is the single
+    source of distance. The legacy client ``distance_km`` argument is
+    accepted for compatibility but IGNORED.
     """
     d = billing.resolve_distance_km(merchant, flt(dest_lat), flt(dest_lng),
                                     zone, address)
@@ -447,9 +449,15 @@ def place_order(merchant, items, delivery_address, order_type="Food",
         frappe.throw(_("{0} is not available. Choose from: {1}.")
                      .format(payment_method, ", ".join(methods)))
 
-    # distance is the server's business: merchant pin -> drop-off pin (map
-    # pin / GPS), falling back to geocoding the typed address, then the zone
-    # default. Never a client-supplied number.
+    # a delivery location (map pin / GPS) is mandatory - without it the
+    # order is rejected. The typed address is driver-only information and
+    # never used to derive distance.
+    if not flt(delivery_latitude) or not flt(delivery_longitude):
+        frappe.throw(_("Please select a delivery location (search or Use my location)."),
+                     title=_("Delivery Location Required"))
+
+    # distance is the server's business: merchant pin -> drop-off pin.
+    # Never a client-supplied number, never derived from the typed address.
     dist = billing.resolve_distance_km(merchant, flt(delivery_latitude),
                                        flt(delivery_longitude),
                                        delivery_zone, delivery_address)
