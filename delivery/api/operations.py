@@ -367,9 +367,9 @@ def reports(from_date=None, to_date=None):
     completed_all = frappe.get_all("Delivery Order",
                                    filters={"workflow_state": "COMPLETED",
                                             "creation": ["between", [fd + " 00:00:00", td + " 23:59:59"]]},
-                                   fields=["name", "creation", "merchant", "items_total",
-                                           "service_fee_total", "delivery_fee", "grand_total",
-                                           "payment_status"])
+                                   fields=["name", "creation", "merchant", "assigned_driver",
+                                           "items_total", "service_fee_total", "delivery_fee",
+                                           "grand_total", "payment_status"])
     payables = {}
     for r in completed_all:
         m = r.merchant or "Unknown"
@@ -419,13 +419,21 @@ def reports(from_date=None, to_date=None):
     sel_service = round(sum(flt(r.service_fee_total) for r in completed_all), 2)
     sel_fees = round(sum(flt(r.delivery_fee) for r in completed_all), 2)
     sel_grand = round(sum(flt(r.grand_total) for r in completed_all), 2)
+    recent_rows = sorted(completed_all, key=lambda x: str(x.creation), reverse=True)[:50]
+    dnames = {}
+    drvs = {r.assigned_driver for r in recent_rows if r.get("assigned_driver")}
+    if drvs:
+        dnames = {d["name"]: d["driver_name"] for d in
+                  frappe.get_all("Delivery Driver", filters={"name": ["in", list(drvs)]},
+                                 fields=["name", "driver_name"])}
     recent = [{"name": r.name,
                "date": str(r.creation)[:16] if r.creation else "",
                "merchant": mnames.get(r.merchant, r.merchant or "-"),
+               "driver": dnames.get(r.get("assigned_driver"), "-"),
                "items_total": flt(r.items_total), "service_fee_total": flt(r.service_fee_total),
                "delivery_fee": flt(r.delivery_fee), "grand_total": flt(r.grand_total),
                "payment_status": r.payment_status or "Pending"}
-              for r in sorted(completed_all, key=lambda x: str(x.creation), reverse=True)[:50]]
+              for r in recent_rows]
 
     return {
         "currency": billing.settings().currency,

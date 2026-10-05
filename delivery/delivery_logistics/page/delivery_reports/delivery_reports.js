@@ -158,11 +158,11 @@ frappe.pages['delivery-reports'].on_page_load = function (wrapper) {
 
 		var tx = d.recent_orders || [];
 		$('#dlrep-tx').html(tx.length
-			? '<div class="dlrep-twrap"><table><thead><tr><th>Order</th><th>Date</th><th>Merchant</th><th>Items</th>' +
+			? '<div class="dlrep-twrap"><table><thead><tr><th>Order</th><th>Date</th><th>Merchant</th><th>Driver</th><th>Items</th>' +
 			  '<th>Service</th><th>Delivery</th><th>Total</th><th>Payment</th></tr></thead><tbody>' +
 			  tx.map(function (o) {
 				  return '<tr><td><b>' + frappe.utils.escape_html(o.name) + '</b></td><td>' + frappe.utils.escape_html(o.date) + '</td>' +
-					  '<td>' + frappe.utils.escape_html(o.merchant) + '</td><td>' + money(o.items_total) + '</td>' +
+					  '<td>' + frappe.utils.escape_html(o.merchant) + '</td><td>' + frappe.utils.escape_html(o.driver || "-") + '</td><td>' + money(o.items_total) + '</td>' +
 					  '<td>' + money(o.service_fee_total) + '</td><td>' + money(o.delivery_fee) + '</td>' +
 					  '<td class="red">' + money(o.grand_total) + '</td><td>' + frappe.utils.escape_html(o.payment_status) + '</td></tr>';
 			  }).join('') + '</tbody></table></div>'
