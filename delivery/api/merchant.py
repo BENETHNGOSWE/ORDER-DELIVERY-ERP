@@ -355,6 +355,41 @@ PAYMENT_STATUSES = ("Pending", "Authorized", "Paid", "Failed", "Refunded")
 
 
 @frappe.whitelist()
+def order_items(order):
+    """Item lines of one of THIS merchant's orders - the driver-side
+    job_items flow applied to the merchant dashboard: open an order and
+    see exactly what must be prepared (name, qty, amount)."""
+    mine = _my_merchants()
+    if not frappe.db.exists("Delivery Order", order):
+        frappe.throw(_("Order {0} was not found.").format(order),
+                     frappe.DoesNotExistError)
+    if frappe.db.get_value("Delivery Order", order, "merchant") not in mine:
+        frappe.throw(_("That order does not belong to your shop."),
+                     frappe.PermissionError)
+    rows = frappe.get_all("Delivery Order Item",
+                          filters={"parent": order,
+                                   "parenttype": "Delivery Order"},
+                          fields=["item_name", "qty", "rate", "amount",
+                                  "service_fee"])
+    total = frappe.db.get_value("Delivery Order", order,
+                                ["items_total", "grand_total",
+                                 "payment_status", "payment_method",
+                                 "customer_name", "customer_phone",
+                                 "delivery_address", "delivery_instructions",
+                                 "workflow_state"], as_dict=True)
+    return {"order": order, "items": rows,
+            "items_total": total.get("items_total"),
+            "grand_total": total.get("grand_total"),
+            "payment_status": total.get("payment_status"),
+            "payment_method": total.get("payment_method"),
+            "customer_name": total.get("customer_name"),
+            "customer_phone": total.get("customer_phone"),
+            "delivery_address": total.get("delivery_address"),
+            "delivery_instructions": total.get("delivery_instructions"),
+            "workflow_state": total.get("workflow_state")}
+
+
+@frappe.whitelist()
 def active_orders(merchant=None, limit=50):
     """Orders this merchant is preparing / waiting on (for the kitchen list)."""
     name = _merchant_or_throw(merchant)

@@ -398,20 +398,32 @@ def earnings():
     items_collected = sum(flt(r.items_total) + flt(r.service_fee_total)
                           for r in rows)
     share = billing.driver_fee_share_pct()
-    from frappe.utils import nowdate, add_days
+    from datetime import datetime, timedelta
+    from frappe.utils import nowdate
     today = nowdate()
-    week_start = add_days(today, -6)
-    month_start = today[:8] + "01"
+    d = datetime.strptime(today, "%Y-%m-%d").date()
+    # calendar windows, computed independently: week = this week since
+    # Monday 00:00, month = this month since the 1st - never a rolling
+    # window that mixes days from another period (user report: the two
+    # cards looked swapped).
+    week_start = str(d - timedelta(days=d.weekday()))
+    month_start = str(d.replace(day=1))
 
     def period(since):
-        d = [r for r in rows if str(r.creation)[:10] >= since]
-        fees = sum(flt(r.delivery_fee) for r in d)
-        coll = sum(flt(r.items_total) + flt(r.service_fee_total) for r in d)
+        """Own DB query per window - week and month never share state."""
+        pr = frappe.get_all("Delivery Order",
+                            filters={"assigned_driver": code,
+                                     "workflow_state": "COMPLETED",
+                                     "creation": [">=", since + " 00:00:00"]},
+                            fields=["delivery_fee", "items_total",
+                                    "service_fee_total"])
+        fees = sum(flt(r.delivery_fee) for r in pr)
+        coll = sum(flt(r.items_total) + flt(r.service_fee_total) for r in pr)
         return {"fees": round(fees, 2),
                 "payable": round(fees * share / 100.0, 2),
                 "office": round(fees * (100 - share) / 100.0, 2),
                 "collected": round(coll, 2),
-                "jobs": len(d)}
+                "jobs": len(pr)}
 
     t, w, m = period(today), period(week_start), period(month_start)
     return {
