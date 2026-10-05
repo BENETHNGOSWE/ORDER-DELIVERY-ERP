@@ -91,12 +91,30 @@ def _my_merchant_ids():
 # ---------------------------------------------------------------------------
 # catalogue
 # ---------------------------------------------------------------------------
+# category -> every service_type value that belongs to it (legacy values
+# included). Restaurant/Food behaviour is unchanged; the other categories
+# resolve the same way so Category -> Merchants -> Merchant Products
+# works for all of them.
+SERVICE_FAMILY = {
+    "Food": ["Food", "Food & Retail", "Restaurant"],
+    "Groceries": ["Groceries", "Retail", "Grocery", "Food & Retail"],
+    "Drinks": ["Drinks"],
+    "Pharmacy & Cosmetics": ["Pharmacy & Cosmetics"],
+    "Shopping": ["Shopping"],
+    "Others": ["Others"],
+}
+
+
 @frappe.whitelist(allow_guest=True)
 def list_merchants(service_type=None, search=None, zone=None):
-    """Merchants currently open, for the customer landing page."""
+    """Merchants currently open, for the customer landing page.
+
+    ``service_type`` accepts a category name; the filter expands to the
+    whole family (e.g. Groceries also matches legacy Retail merchants).
+    """
     filters = {"status": "Open"}
     if service_type:
-        filters["service_type"] = ["in", [service_type, "Food & Retail"]]
+        filters["service_type"] = ["in", SERVICE_FAMILY.get(service_type, [service_type])]
 
     rows = frappe.get_all("Merchant", filters=filters,
                           fields=["name", "merchant_id", "merchant_name", "service_type",

@@ -1,1 +1,2 @@
 delivery.patches.set_workflow_state_styles
+delivery.patches.update_merchant_service_types
